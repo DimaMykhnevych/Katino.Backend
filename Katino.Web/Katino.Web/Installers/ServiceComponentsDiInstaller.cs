@@ -1,14 +1,26 @@
-﻿namespace Katino.Web.Installers;
+﻿using Katino.Application.Factories;
+using Katino.Application.Services.AuthorizationService;
+using Katino.Domain.Builders;
+using Katino.Domain.Services.Email.SendEmail;
+using Katino.Domain.Services.User.CreateUser;
+using Katino.Infrastructure.Persistance.Builders;
+
+namespace Katino.Web.Installers;
 
 public class ServiceComponentsDiInstaller : IInstaller
 {
     public void InstallServices(IServiceCollection services, IConfiguration configuration)
     {
         // factories
+        services.AddTransient<IAuthTokenFactory, AuthTokenFactory>();
 
         // services
+        services.AddTransient<BaseAuthorizationService, AppUserAuthorizationService>();
+        services.AddTransient<ISendEmailService, SendEmailService>();
+        services.AddTransient<ICreateUserService, CreateUserService>();
 
         // builders
+        services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();
 
         // repositories
     }
