@@ -35,14 +35,14 @@ public class AppUserAuthorizationService : BaseAuthorizationService
 
         if (user == null)
         {
-            return new List<Claim> { };
+            return [];
         }
 
         return new List<Claim>()
             {
-                new Claim(ClaimTypes.Name, user.UserName.ToString()),
-                new Claim(AuthorizationConstants.ID, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+                new(ClaimTypes.Name, user.UserName.ToString()),
+                new(AuthorizationConstants.ID, user.Id.ToString()),
+                new(ClaimTypes.Role, user.Role)
             };
     }
 

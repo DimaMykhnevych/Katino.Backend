@@ -3,20 +3,25 @@ using System.Net.Mail;
 using System.Net;
 using Katino.Domain.Options;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace Katino.Domain.Services.Email.SendEmail;
 
 public class SendEmailService : ISendEmailService
 {
     private readonly EmailServiceOptions _emailServiceDetails;
+    private readonly ILogger _logger;
 
-    public SendEmailService(IOptions<EmailServiceOptions> options)
+    public SendEmailService(IOptions<EmailServiceOptions> options, ILoggerFactory loggerFactory)
     {
         _emailServiceDetails = options.Value;
+        _logger = loggerFactory?.CreateLogger(nameof(SendEmailService));
     }
 
     public async Task SendAccountConfirmationEmail(AppUser user, string url)
     {
+        _logger.LogDebug("Sending account confirmation email to {userName}", user.UserName);
+
         MailAddress addressFrom = new(_emailServiceDetails.EmailAddress, "Katino");
         MailAddress addressTo = new(user.Email);
         MailMessage message = new(addressFrom, addressTo);
