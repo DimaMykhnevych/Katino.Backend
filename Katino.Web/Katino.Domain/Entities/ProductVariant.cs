@@ -8,6 +8,7 @@ public class ProductVariant
     public Guid ProductId { get; set; }
     public Guid SizeId { get; set; }
     public ProductStatus Status { get; set; }
+    public Guid ColorId { get; set; }
     public int QuantityInStock { get; set; }
     public int QuantityDropSold { get; set; }
     public int QuantityRegularSold { get; set; }
@@ -17,6 +18,7 @@ public class ProductVariant
 
 
     // Navigation properties
+    public Color Color { get; set; }
     public Product Product { get; set; }
     public Size Size { get; set; }
     public List<ProductVariantMeasurement> Measurements { get; set; } = [];

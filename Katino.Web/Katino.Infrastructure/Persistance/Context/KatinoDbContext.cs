@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Katino.Domain.Entities;
-using System.Reflection.Emit;
 
 namespace Katino.Infrastructure.Persistance.Context;
 
@@ -35,10 +34,6 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
 
             // Relationships
-            entity.HasOne(d => d.Color)
-                  .WithMany(p => p.Products)
-                  .HasForeignKey(d => d.ColorId)
-                  .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(d => d.Category)
                   .WithMany(p => p.Products)
@@ -56,6 +51,11 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>
             entity.HasIndex(e => new { e.ProductId, e.SizeId }).IsUnique();
 
             // Relationships
+            entity.HasOne(d => d.Color)
+                   .WithMany(p => p.ProductVariants)
+                   .HasForeignKey(d => d.ColorId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(d => d.Product)
                   .WithMany(p => p.Variants)
                   .HasForeignKey(d => d.ProductId)

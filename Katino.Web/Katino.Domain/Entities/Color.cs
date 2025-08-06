@@ -7,5 +7,5 @@ public class Color
     public string HexCode { get; set; }
 
     // Navigation properties
-    public List<Product> Products { get; set; } = [];
+    public List<ProductVariant> ProductVariants { get; set; } = [];
 }
