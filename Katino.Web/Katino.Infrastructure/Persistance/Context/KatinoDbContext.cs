@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Katino.Domain.Entities;
+using Katino.Domain.Context;
 
 namespace Katino.Infrastructure.Persistance.Context;
 
-public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>
+public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKatinoDbContext
 {
     public KatinoDbContext(DbContextOptions<KatinoDbContext> options) : base(options)
     {
