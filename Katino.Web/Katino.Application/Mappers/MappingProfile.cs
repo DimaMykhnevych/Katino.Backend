@@ -3,6 +3,8 @@ using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
+using Katino.Application.DTOs.Category;
+using Katino.Application.DTOs.Product;
 using Katino.Domain.Entities;
 
 namespace Katino.Application.Mappers;
@@ -20,6 +22,9 @@ public class MappingProfile : Profile
 
         CreateMap<AddProductCommand, Product>();
         CreateMap<AddCategoryCommand, Category>();
+
+        CreateMap<Category, CategoryDto>();
+        CreateMap<Product, ProductDto>();
     }
 }
 

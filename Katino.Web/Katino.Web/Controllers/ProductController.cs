@@ -1,4 +1,6 @@
 ﻿using Katino.Application.Commands.ProductN.AddProduct;
+using Katino.Application.DTOs.Product;
+using Katino.Application.Queries.ProductN.GetProducts;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +17,13 @@ public class ProductController : ControllerBase
     public ProductController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Get([FromQuery] GetProductsQuery getProductsQuery)
+    {
+        GetProductDto products = await _mediator.Send(getProductsQuery);
+        return Ok(products);
     }
 
     [HttpPost]
