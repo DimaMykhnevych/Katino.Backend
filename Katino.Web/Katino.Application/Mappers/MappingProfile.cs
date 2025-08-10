@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Domain.Entities;
@@ -15,6 +16,8 @@ public class MappingProfile : Profile
 
         CreateMap<AppUser, UserAuthInfoDto>()
             .ForMember(u => u.UserId, m => m.MapFrom(u => u.Id));
+
+        CreateMap<AddProductCommand, Product>();
     }
 }
 

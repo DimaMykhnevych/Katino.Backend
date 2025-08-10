@@ -31,6 +31,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.CostPrice).HasColumnType("decimal(10,2)");
             entity.Property(e => e.Price).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.DropPrice).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.WholesalePrice).HasColumnType("decimal(10,2)");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
 
