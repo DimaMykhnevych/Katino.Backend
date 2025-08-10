@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
@@ -18,6 +19,7 @@ public class MappingProfile : Profile
             .ForMember(u => u.UserId, m => m.MapFrom(u => u.Id));
 
         CreateMap<AddProductCommand, Product>();
+        CreateMap<AddCategoryCommand, Category>();
     }
 }
 
