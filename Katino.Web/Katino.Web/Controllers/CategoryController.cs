@@ -1,4 +1,6 @@
 ﻿using Katino.Application.Commands.CategoryN.AddCategory;
+using Katino.Application.DTOs.Category;
+using Katino.Application.Queries.CategoryN.GetCategories;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +17,13 @@ public class CategoryController : ControllerBase
     public CategoryController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Get([FromQuery] GetCategoriesQuery getCategoriesQuery)
+    {
+        GetCategoryDto categories = await _mediator.Send(getCategoriesQuery);
+        return Ok(categories);
     }
 
     [HttpPost]

@@ -38,13 +38,14 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
         }
 
         var resultProducts = await products.ToListAsync();
-        IEnumerable<ProductDto> productDtos = 
-            _mapper.Map<IEnumerable<ProductDto>>(resultProducts);
+        List<ProductDto> productDtos = 
+            _mapper.Map<IEnumerable<ProductDto>>(resultProducts)
+                .ToList();
 
-        return new GetProductDto()
+        return new GetProductDto
         {
             Products = productDtos,
-            ResultsAmount = productDtos.Count()
+            ResultsAmount = productDtos.Count
         };
     }
 }
