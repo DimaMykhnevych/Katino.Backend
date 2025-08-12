@@ -1,4 +1,6 @@
 ﻿using Katino.Application.Commands.ProductN.AddProduct;
+using Katino.Application.Commands.ProductN.DeleteProduct;
+using Katino.Application.Commands.ProductN.UpdateProduct;
 using Katino.Application.DTOs.Product;
 using Katino.Application.Queries.ProductN.GetProducts;
 using Katino.Domain.Constants;
@@ -31,6 +33,23 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> Add([FromBody] AddProductCommand addProductCommand)
     {
         bool result = await _mediator.Send(addProductCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpPut]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Update([FromBody] UpdateProductCommand updateProductCommand)
+    {
+        bool result = await _mediator.Send(updateProductCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpDelete("{productId}")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Delete(Guid productId)
+    {
+        DeleteProductCommand command = new() { Id = productId };
+        bool result = await _mediator.Send(command);
         return result ? Ok(result) : BadRequest();
     }
 }

@@ -13,7 +13,7 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
         this.context = context;
     }
 
-    public async Task<TEntity> Get(int id)
+    public async Task<TEntity> Get(Guid id)
     {
         return await context.Set<TEntity>().FindAsync(id);
     }
@@ -34,7 +34,7 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
         context.Set<TEntity>().Remove(entity);
     }
 
-    public async Task DeleteById(int id)
+    public async Task DeleteById(Guid id)
     {
         TEntity entity = await Get(id);
         if (entity != null)
