@@ -23,7 +23,7 @@ public class MappingProfile : Profile
         CreateMap<AddProductCommand, Product>();
         CreateMap<AddCategoryCommand, Category>();
 
-        CreateMap<Category, CategoryDto>();
+        CreateMap<Category, CategoryDto>().ReverseMap();
         CreateMap<Product, ProductDto>();
     }
 }

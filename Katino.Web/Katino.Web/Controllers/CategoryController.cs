@@ -1,4 +1,6 @@
 ﻿using Katino.Application.Commands.CategoryN.AddCategory;
+using Katino.Application.Commands.CategoryN.DeleteCategory;
+using Katino.Application.Commands.CategoryN.UpdateCategory;
 using Katino.Application.DTOs.Category;
 using Katino.Application.Queries.CategoryN.GetCategories;
 using Katino.Domain.Constants;
@@ -31,6 +33,23 @@ public class CategoryController : ControllerBase
     public async Task<IActionResult> Add([FromBody] AddCategoryCommand addCategoryCommand)
     {
         bool result = await _mediator.Send(addCategoryCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpPut]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Update([FromBody] UpdateCategoryCommand updateCategoryCommand)
+    {
+        bool result = await _mediator.Send(updateCategoryCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpDelete("{categoryId}")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Delete(Guid categoryId)
+    {
+        DeleteCategoryCommand command = new() { Id = categoryId };
+        bool result = await _mediator.Send(command);
         return result ? Ok(result) : BadRequest();
     }
 }
