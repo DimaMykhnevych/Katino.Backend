@@ -5,7 +5,9 @@ using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Product;
+using Katino.Application.DTOs.Size;
 using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 
 namespace Katino.Application.Mappers;
 
@@ -25,6 +27,9 @@ public class MappingProfile : Profile
 
         CreateMap<Category, CategoryDto>().ReverseMap();
         CreateMap<Product, ProductDto>();
+
+        CreateMap<SizeType, SizeTypeDto>();
+        CreateMap<Size, SizeDto>();
     }
 }
 
