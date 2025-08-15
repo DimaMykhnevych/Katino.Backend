@@ -35,7 +35,7 @@ public class GetCategoriesQueryHandler : IRequestHandler<GetCategoriesQuery, Get
             categories = categories.Where(p => p.Name.Contains(request.Name));
         }
 
-        var resultCategories = await categories.ToListAsync();
+        var resultCategories = await categories.ToListAsync(cancellationToken);
         List<CategoryDto> categoryDtos =
             _mapper.Map<IEnumerable<CategoryDto>>(resultCategories)
                 .ToList();

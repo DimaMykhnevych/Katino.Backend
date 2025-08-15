@@ -4,6 +4,7 @@ using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
+using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.Size;
 using Katino.Domain.Entities;
@@ -30,6 +31,8 @@ public class MappingProfile : Profile
 
         CreateMap<SizeType, SizeTypeDto>();
         CreateMap<Size, SizeDto>();
+
+        CreateMap<Color, ColorDto>();
     }
 }
 
