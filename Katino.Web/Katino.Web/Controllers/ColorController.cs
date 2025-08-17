@@ -1,6 +1,11 @@
-﻿using Katino.Application.DTOs.Color;
+﻿using Katino.Application.Commands.ColorN.AddColor;
+using Katino.Application.Commands.ColorN.DeleteColor;
+using Katino.Application.Commands.ColorN.UpdateColor;
+using Katino.Application.DTOs.Color;
 using Katino.Application.Queries.ColorN.GetColors;
+using Katino.Domain.Constants;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Katino.Web.Controllers;
@@ -21,5 +26,30 @@ public class ColorController : ControllerBase
     {
         GetColorDto colors = await _mediator.Send(getColorsQuery);
         return Ok(colors);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Add([FromBody] AddColorCommand addColorCommand)
+    {
+        bool result = await _mediator.Send(addColorCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpPut]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Update([FromBody] UpdateColorCommand updateColorCommand)
+    {
+        bool result = await _mediator.Send(updateColorCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpDelete("{colorId}")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Delete(Guid colorId)
+    {
+        DeleteColorCommand command = new() { Id = colorId };
+        bool result = await _mediator.Send(command);
+        return result ? Ok(result) : BadRequest();
     }
 }

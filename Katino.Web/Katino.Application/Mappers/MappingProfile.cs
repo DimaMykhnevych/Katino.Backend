@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Katino.Application.Commands.CategoryN.AddCategory;
+using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
@@ -25,6 +26,7 @@ public class MappingProfile : Profile
 
         CreateMap<AddProductCommand, Product>();
         CreateMap<AddCategoryCommand, Category>();
+        CreateMap<AddColorCommand, Color>();
 
         CreateMap<Category, CategoryDto>().ReverseMap();
         CreateMap<Product, ProductDto>();
@@ -32,7 +34,7 @@ public class MappingProfile : Profile
         CreateMap<SizeType, SizeTypeDto>();
         CreateMap<Size, SizeDto>();
 
-        CreateMap<Color, ColorDto>();
+        CreateMap<Color, ColorDto>().ReverseMap();
     }
 }
 
