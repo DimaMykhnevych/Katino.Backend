@@ -37,7 +37,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
             products = products.Where(p => p.Name.Contains(request.Name));
         }
 
-        var resultProducts = await products.ToListAsync();
+        var resultProducts = await products.ToListAsync(cancellationToken);
         List<ProductDto> productDtos = 
             _mapper.Map<IEnumerable<ProductDto>>(resultProducts)
                 .ToList();

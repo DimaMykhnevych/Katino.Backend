@@ -35,7 +35,7 @@ public class GetSizesQueryHandler : IRequestHandler<GetSizesQuery, GetSizeDto>
             sizes = sizes.Where(p => p.Name.Contains(request.Name));
         }
 
-        var resultSizes = await sizes.ToListAsync();
+        var resultSizes = await sizes.ToListAsync(cancellationToken);
         List<SizeDto> sizeDtos =
             _mapper.Map<IEnumerable<SizeDto>>(resultSizes)
                 .ToList();
