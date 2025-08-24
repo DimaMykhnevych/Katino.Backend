@@ -3,12 +3,15 @@ using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
 using Katino.Application.Commands.ProductN.AddProduct;
+using Katino.Application.Commands.ProductVariantN.AddProductVariant;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.Product;
+using Katino.Application.DTOs.ProductVariant;
+using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
@@ -39,6 +42,13 @@ public class MappingProfile : Profile
 
         CreateMap<Color, ColorDto>().ReverseMap();
         CreateMap<MeasurementType, MeasurementTypeDto>().ReverseMap();
+
+        CreateMap<ProductStatus, ProductStatusDto>();
+
+        CreateMap<ProductVariantMeasurement, GetProductVariantMeasurementDto>();
+        CreateMap<ProductVariant, ProductVariantDto>();
+        CreateMap<AddProductVariantDto, ProductVariant>();
+        CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
     }
 }
 
