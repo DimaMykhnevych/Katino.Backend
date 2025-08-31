@@ -1,4 +1,6 @@
 ﻿using Katino.Application.Commands.ProductVariantN.AddProductVariant;
+using Katino.Application.Commands.ProductVariantN.DeleteProductVariant;
+using Katino.Application.Commands.ProductVariantN.UpdateProductVariant;
 using Katino.Application.DTOs.ProductVariant;
 using Katino.Application.Queries.ProductVariantN.GetProductVariants;
 using Katino.Domain.Constants;
@@ -32,6 +34,23 @@ public class ProductVariantController : ControllerBase
     public async Task<IActionResult> Add([FromBody] AddProductVariantCommand addProductVariantCommand)
     {
         bool result = await _mediator.Send(addProductVariantCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpPut]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Update([FromBody] UpdateProductVariantCommand updateProductVariantCommand)
+    {
+        bool result = await _mediator.Send(updateProductVariantCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpDelete("{productVariantId}")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Delete(Guid productVariantId)
+    {
+        DeleteProductVariantCommand command = new() { Id = productVariantId };
+        bool result = await _mediator.Send(command);
         return result ? Ok(result) : BadRequest();
     }
 }

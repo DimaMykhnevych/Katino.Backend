@@ -49,6 +49,7 @@ public class MappingProfile : Profile
         CreateMap<ProductVariant, ProductVariantDto>();
         CreateMap<AddProductVariantDto, ProductVariant>();
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
+        CreateMap<UpdateProductVariantDto, ProductVariant>();
     }
 }
 
