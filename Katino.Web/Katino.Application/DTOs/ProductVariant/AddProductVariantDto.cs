@@ -12,6 +12,7 @@ public class AddProductVariantDto
     public int QuantityDropSold { get; set; }
     public int QuantityRegularSold { get; set; }
     public bool IsDrop { get; set; }
+    public string Article { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

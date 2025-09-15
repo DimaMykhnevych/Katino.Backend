@@ -49,6 +49,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             entity.HasKey(e => e.Id);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+            entity.Property(e => e.Article).IsRequired().HasMaxLength(50);
 
             // Unique constraint - one product variant can't has same sizes
             entity.HasIndex(e => new { e.ProductId, e.SizeId }).IsUnique();

@@ -14,6 +14,7 @@ public class UpdateProductVariantDto
     public bool IsDrop { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public string Article { get; set; }
 
     public List<AddProductVariantMeasurementDto> Measurements { get; set; } = [];
 }

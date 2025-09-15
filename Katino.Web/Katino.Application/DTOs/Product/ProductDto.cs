@@ -6,7 +6,6 @@ public class ProductDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
-    public string Article { get; set; }
     public decimal CostPrice { get; set; }
     public decimal WholesalePrice { get; set; }
     public decimal DropPrice { get; set; }
