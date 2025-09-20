@@ -2,6 +2,7 @@
 using Katino.Application.DTOs.ProductVariant;
 using Katino.Domain.Context;
 using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,7 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
 
         IQueryable<ProductVariant> productVariants = _katinoDbContext.ProductVariants
             .Include(p => p.Product)
-            .ThenInclude( p => p.Category)
+            .ThenInclude(p => p.Category)
             .AsNoTracking()
             .Include(pv => pv.Size)
             .AsNoTracking()
@@ -40,6 +41,25 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
             .Include(pv => pv.Measurements)
             .ThenInclude(pvm => pvm.MeasurementType)
             .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(request.ProductName))
+        {
+            productVariants = productVariants
+                .Where(pv => pv.Product.Name.ToLower().Contains(request.ProductName.ToLower()));
+        }
+
+        if (request.CategoryId != null)
+        {
+            productVariants = productVariants
+                .Where(pv => pv.Product.Category.Id == request.CategoryId);
+        }
+
+        if (request.ProductStatus != null)
+        {
+            var productStatus = _mapper.Map<ProductStatus>(request.ProductStatus);
+            productVariants = productVariants
+                .Where(pv => pv.Status == productStatus);
+        }
 
         var resultProductVariants = await productVariants.ToListAsync(cancellationToken);
         List<ProductVariantDto> productVariantDtos =
