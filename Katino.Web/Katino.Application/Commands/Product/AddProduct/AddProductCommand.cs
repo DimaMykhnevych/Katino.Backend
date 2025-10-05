@@ -1,8 +1,9 @@
-﻿using MediatR;
+﻿using Katino.Application.DTOs.Product;
+using MediatR;
 
 namespace Katino.Application.Commands.ProductN.AddProduct;
 
-public class AddProductCommand : IRequest<bool>
+public class AddProductCommand : IRequest<ProductDto>
 {
     public string Name { get; set; }
     public Guid CategoryId { get; set; }

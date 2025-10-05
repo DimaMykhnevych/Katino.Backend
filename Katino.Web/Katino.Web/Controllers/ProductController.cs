@@ -22,6 +22,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Get([FromQuery] GetProductsQuery getProductsQuery)
     {
         GetProductDto products = await _mediator.Send(getProductsQuery);
@@ -32,16 +33,16 @@ public class ProductController : ControllerBase
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Add([FromBody] AddProductCommand addProductCommand)
     {
-        bool result = await _mediator.Send(addProductCommand);
-        return result ? Ok(result) : BadRequest();
+        ProductDto result = await _mediator.Send(addProductCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpPut]
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Update([FromBody] UpdateProductCommand updateProductCommand)
     {
-        bool result = await _mediator.Send(updateProductCommand);
-        return result ? Ok(result) : BadRequest();
+        ProductDto result = await _mediator.Send(updateProductCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpDelete("{productId}")]

@@ -1,8 +1,9 @@
-﻿using MediatR;
+﻿using Katino.Application.DTOs.Product;
+using MediatR;
 
 namespace Katino.Application.Commands.ProductN.UpdateProduct;
 
-public class UpdateProductCommand : IRequest<bool>
+public class UpdateProductCommand : IRequest<ProductDto>
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
