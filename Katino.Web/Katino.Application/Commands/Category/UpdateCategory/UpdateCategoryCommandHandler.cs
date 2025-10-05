@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.DTOs.Category;
 using Katino.Domain.Entities;
 using Katino.Domain.Repositories.CategoryRepository;
 using MediatR;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Katino.Application.Commands.CategoryN.UpdateCategory;
 
-public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryCommand, bool>
+public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryCommand, CategoryDto>
 {
     private readonly ICategoryRepository _categoryRepository;
     private readonly ILogger _logger;
@@ -22,7 +23,7 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
         _logger = loggerFactory?.CreateLogger(nameof(UpdateCategoryCommandHandler));
     }
 
-    public async Task<bool> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
+    public async Task<CategoryDto> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Handling update category request");
         ArgumentNullException.ThrowIfNull(request);
@@ -33,12 +34,12 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
 
             await _categoryRepository.Update(category);
             await _categoryRepository.Save();
-            return true;
+            return request.Category;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occured during updating category");
-            return false;
+            return null;
         }
     }
 }

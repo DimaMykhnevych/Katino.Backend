@@ -32,16 +32,16 @@ public class CategoryController : ControllerBase
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Add([FromBody] AddCategoryCommand addCategoryCommand)
     {
-        bool result = await _mediator.Send(addCategoryCommand);
-        return result ? Ok(result) : BadRequest();
+        CategoryDto result = await _mediator.Send(addCategoryCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpPut]
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Update([FromBody] UpdateCategoryCommand updateCategoryCommand)
     {
-        bool result = await _mediator.Send(updateCategoryCommand);
-        return result ? Ok(result) : BadRequest();
+        CategoryDto result = await _mediator.Send(updateCategoryCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpDelete("{categoryId}")]

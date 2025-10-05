@@ -29,7 +29,9 @@ public class GetCategoriesQueryHandler : IRequestHandler<GetCategoriesQuery, Get
         _logger.LogInformation("Handling get categories");
         ArgumentNullException.ThrowIfNull(request);
 
-        IQueryable<Category> categories = _katinoDbContext.Categories.AsNoTracking();
+        IQueryable<Category> categories = _katinoDbContext.Categories
+            .OrderBy(c => c.Name)
+            .AsNoTracking();
         if (!string.IsNullOrEmpty(request.Name))
         {
             categories = categories.Where(p => p.Name.Contains(request.Name));
