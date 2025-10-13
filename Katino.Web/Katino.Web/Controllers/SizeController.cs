@@ -32,8 +32,8 @@ public class SizeController : ControllerBase
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Add([FromBody] AddSizeCommand addSizeCommand)
     {
-        bool result = await _mediator.Send(addSizeCommand);
-        return result ? Ok(result) : BadRequest();
+        SizeDto result = await _mediator.Send(addSizeCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpPut]

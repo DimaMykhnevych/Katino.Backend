@@ -1,4 +1,6 @@
-﻿using Katino.Domain.Entities;
+﻿using AutoMapper;
+using Katino.Application.DTOs.Size;
+using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Repositories.SizeRepository;
 using MediatR;
@@ -6,20 +8,23 @@ using Microsoft.Extensions.Logging;
 
 namespace Katino.Application.Commands.SizeN.AddSize;
 
-public class AddSizeCommandHandler : IRequestHandler<AddSizeCommand, bool>
+public class AddSizeCommandHandler : IRequestHandler<AddSizeCommand, SizeDto>
 {
     private readonly ISizeRepository _sizeRepository;
     private readonly ILogger _logger;
+    private readonly IMapper _mapper;
 
     public AddSizeCommandHandler(
         ISizeRepository sizeRepository,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IMapper mapper)
     {
         _sizeRepository = sizeRepository;
+        _mapper = mapper;
         _logger = loggerFactory?.CreateLogger(nameof(AddSizeCommandHandler));
     }
 
-    public async Task<bool> Handle(AddSizeCommand request, CancellationToken cancellationToken)
+    public async Task<SizeDto> Handle(AddSizeCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Handling add size request");
         ArgumentNullException.ThrowIfNull(request);
@@ -33,14 +38,14 @@ public class AddSizeCommandHandler : IRequestHandler<AddSizeCommand, bool>
                 Type = isNumeric ? SizeType.Number : SizeType.Letter
             };
 
-            await _sizeRepository.Insert(size);
+            var addedSize = await _sizeRepository.Insert(size);
             await _sizeRepository.Save();
-            return true;
+            return _mapper.Map<SizeDto>(addedSize);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occured during adding product category");
-            return false;
+            _logger.LogError(ex, "An error occured during adding product size");
+            return null;
         }
     }
 }
