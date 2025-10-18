@@ -35,7 +35,7 @@ public class GetColorsQueryHandler : IRequestHandler<GetColorsQuery, GetColorDto
             colors = colors.Where(p => p.Name.Contains(request.Name));
         }
 
-        var resultColors = await colors.ToListAsync(cancellationToken);
+        var resultColors = await colors.OrderBy(c => c.Name).ToListAsync(cancellationToken);
         List<ColorDto> colorDtos =
             _mapper.Map<IEnumerable<ColorDto>>(resultColors)
                 .ToList();

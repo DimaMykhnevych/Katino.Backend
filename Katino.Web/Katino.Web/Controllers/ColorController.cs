@@ -32,16 +32,16 @@ public class ColorController : ControllerBase
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Add([FromBody] AddColorCommand addColorCommand)
     {
-        bool result = await _mediator.Send(addColorCommand);
-        return result ? Ok(result) : BadRequest();
+        ColorDto result = await _mediator.Send(addColorCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpPut]
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Update([FromBody] UpdateColorCommand updateColorCommand)
     {
-        bool result = await _mediator.Send(updateColorCommand);
-        return result ? Ok(result) : BadRequest();
+        ColorDto result = await _mediator.Send(updateColorCommand);
+        return result != null ? Ok(result) : BadRequest();
     }
 
     [HttpDelete("{colorId}")]

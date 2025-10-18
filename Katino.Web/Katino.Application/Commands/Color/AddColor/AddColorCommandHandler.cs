@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.DTOs.Color;
 using Katino.Domain.Entities;
 using Katino.Domain.Repositories.ColorRepository;
 using MediatR;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Katino.Application.Commands.ColorN.AddColor;
 
-public class AddColorCommandHandler : IRequestHandler<AddColorCommand, bool>
+public class AddColorCommandHandler : IRequestHandler<AddColorCommand, ColorDto>
 {
     private readonly IColorRepository _colorRepository;
     private readonly ILogger _logger;
@@ -22,7 +23,7 @@ public class AddColorCommandHandler : IRequestHandler<AddColorCommand, bool>
         _mapper = mapper;
     }
 
-    public async Task<bool> Handle(AddColorCommand request, CancellationToken cancellationToken)
+    public async Task<ColorDto> Handle(AddColorCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Handling add product color request");
         ArgumentNullException.ThrowIfNull(request);
@@ -30,14 +31,14 @@ public class AddColorCommandHandler : IRequestHandler<AddColorCommand, bool>
         try
         {
             Color color = _mapper.Map<Color>(request);
-            await _colorRepository.Insert(color);
+            var addedColor = await _colorRepository.Insert(color);
             await _colorRepository.Save();
-            return true;
+            return _mapper.Map<ColorDto>(addedColor);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occured during adding product color");
-            return false;
+            return null;
         }
     }
 }

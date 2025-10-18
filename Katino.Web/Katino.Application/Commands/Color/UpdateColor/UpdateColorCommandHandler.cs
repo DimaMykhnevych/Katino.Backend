@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.DTOs.Color;
 using Katino.Domain.Entities;
 using Katino.Domain.Repositories.ColorRepository;
 using MediatR;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Katino.Application.Commands.ColorN.UpdateColor;
 
-public class UpdateColorCommandHandler : IRequestHandler<UpdateColorCommand, bool>
+public class UpdateColorCommandHandler : IRequestHandler<UpdateColorCommand, ColorDto>
 {
     private readonly IColorRepository _colorRepository;
     private readonly ILogger _logger;
@@ -22,7 +23,7 @@ public class UpdateColorCommandHandler : IRequestHandler<UpdateColorCommand, boo
         _logger = loggerFactory?.CreateLogger(nameof(UpdateColorCommandHandler));
     }
 
-    public async Task<bool> Handle(UpdateColorCommand request, CancellationToken cancellationToken)
+    public async Task<ColorDto> Handle(UpdateColorCommand request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Handling update color request");
         ArgumentNullException.ThrowIfNull(request);
@@ -33,12 +34,12 @@ public class UpdateColorCommandHandler : IRequestHandler<UpdateColorCommand, boo
 
             await _colorRepository.Update(color);
             await _colorRepository.Save();
-            return true;
+            return request.Color;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occured during updating color");
-            return false;
+            return null;
         }
     }
 }
