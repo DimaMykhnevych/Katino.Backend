@@ -2,6 +2,7 @@
 using Katino.Application.Commands.ProductVariantN.DeleteProductVariant;
 using Katino.Application.Commands.ProductVariantN.UpdateProductVariant;
 using Katino.Application.DTOs.ProductVariant;
+using Katino.Application.Queries.Article.GetGeneratedArticle;
 using Katino.Application.Queries.ProductVariantN.GetProductVariants;
 using Katino.Domain.Constants;
 using MediatR;
@@ -27,6 +28,14 @@ public class ProductVariantController : ControllerBase
     {
         GetProductVariantDto productVariants = await _mediator.Send(getProductVariantsQuery);
         return Ok(productVariants);
+    }
+
+    [HttpGet("article/generate")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> GetGeneratedArticle()
+    {
+        string article = await _mediator.Send(new GetGeneratedArticleQuery());
+        return Ok(article);
     }
 
 

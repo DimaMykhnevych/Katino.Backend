@@ -10,6 +10,7 @@ using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.SizeRepository;
 using Katino.Domain.Services.AppLogs.GetLogs;
+using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.Email.SendEmail;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Domain.Services.User.CreateUser;
@@ -23,6 +24,7 @@ using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRe
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
 using Katino.Infrastructure.Persistance.Repositories.SizeRepository;
 using Katino.Infrastructure.Persistance.Services.AppLogs;
+using Katino.Infrastructure.Persistance.Services.Article;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
 
 namespace Katino.Web.Installers;
@@ -43,6 +45,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ICreateUserService, CreateUserService>();
         services.AddTransient<IGetLogsService, GetLogsService>();
         services.AddTransient<IUpdateProductVariantService, UpdateProductVariantService>();
+        services.AddTransient<IArticleGenerator, ArticleGenerator>();
 
         // builders
         services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();
