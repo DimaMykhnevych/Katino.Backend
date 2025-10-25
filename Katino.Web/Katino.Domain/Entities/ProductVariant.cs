@@ -23,6 +23,7 @@ public class ProductVariant
     public Product Product { get; set; }
     public Size Size { get; set; }
     public List<ProductVariantMeasurement> Measurements { get; set; } = [];
+    public List<ProductPhoto> Photos { get; set; } = [];
 
 
     // Calculated properties

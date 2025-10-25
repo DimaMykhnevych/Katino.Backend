@@ -1,6 +1,5 @@
 ﻿namespace Katino.Domain.Entities;
 
-// TODO set length in ProductVariant (in ProductVariantMeasurement)
 public class Product
 {
     public Guid Id { get; set; }
@@ -15,6 +14,5 @@ public class Product
 
     // Navigation properties
     public Category Category { get; set; }
-    public List<ProductPhoto> Photos { get; set; } = [];
     public List<ProductVariant> Variants { get; set; } = [];
 }

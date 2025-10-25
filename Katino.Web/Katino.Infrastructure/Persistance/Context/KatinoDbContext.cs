@@ -102,9 +102,9 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             entity.Property(e => e.UploadedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
             // Relationships
-            entity.HasOne(d => d.Product)
+            entity.HasOne(d => d.ProductVariant)
                   .WithMany(p => p.Photos)
-                  .HasForeignKey(d => d.ProductId)
+                  .HasForeignKey(d => d.ProductVariantId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

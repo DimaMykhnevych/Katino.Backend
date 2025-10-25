@@ -25,10 +25,6 @@ public class UpdateProductVariantService : IUpdateProductVariantService
 
     public async Task<bool> UpdateProductVariantAsync(ProductVariant productVariant)
     {
-        // TODO
-        // 4. on UI prouct properties update should be disabled on product variant update page,
-        // size and color however can be modified
-
         try
         {
             var productVariantFromDb = await _productVariantRepository.GetWithMeasurements(productVariant.Id);
