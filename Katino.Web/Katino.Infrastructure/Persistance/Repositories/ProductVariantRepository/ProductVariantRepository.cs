@@ -17,4 +17,11 @@ public class ProductVariantRepository : Repository<ProductVariant>, IProductVari
             .Include(x => x.Measurements)
             .FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<ProductVariant> GetWithPhotos(Guid id)
+    {
+        return await context.ProductVariants
+            .Include(x => x.Photos)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
 }

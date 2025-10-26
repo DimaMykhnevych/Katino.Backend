@@ -1,4 +1,5 @@
 ﻿using Katino.Application.DTOs.ProductVariantMeasurement;
+using Microsoft.AspNetCore.Http;
 
 namespace Katino.Application.DTOs.ProductVariant;
 
@@ -17,4 +18,5 @@ public class AddProductVariantDto
     public DateTime UpdatedAt { get; set; }
 
     public List<AddProductVariantMeasurementDto> Measurements { get; set; } = [];
+    public IFormFileCollection Photos { get; set; }
 }

@@ -28,6 +28,7 @@ public class UpdateProductVariantCommandHandler : IRequestHandler<UpdateProductV
         ArgumentNullException.ThrowIfNull(request);
 
         ProductVariant pv = _mapper.Map<ProductVariant>(request.ProductVariant);
-        return await _updateProductVariantService.UpdateProductVariantAsync(pv);
+        return await _updateProductVariantService
+            .UpdateProductVariantAsync(pv, request.ProductVariant.NewPhotos, request.ProductVariant.PhotoIdsToDelete);
     }
 }

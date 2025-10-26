@@ -41,7 +41,7 @@ public class ProductVariantController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = Role.Admin)]
-    public async Task<IActionResult> Add([FromBody] AddProductVariantCommand addProductVariantCommand)
+    public async Task<IActionResult> Add([FromForm] AddProductVariantCommand addProductVariantCommand)
     {
         bool result = await _mediator.Send(addProductVariantCommand);
         return result ? Ok(result) : BadRequest();
@@ -49,7 +49,7 @@ public class ProductVariantController : ControllerBase
 
     [HttpPut]
     [Authorize(Roles = Role.Admin)]
-    public async Task<IActionResult> Update([FromBody] UpdateProductVariantCommand updateProductVariantCommand)
+    public async Task<IActionResult> Update([FromForm] UpdateProductVariantCommand updateProductVariantCommand)
     {
         bool result = await _mediator.Send(updateProductVariantCommand);
         return result ? Ok(result) : BadRequest();

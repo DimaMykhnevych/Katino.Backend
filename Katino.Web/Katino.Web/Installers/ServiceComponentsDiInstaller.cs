@@ -5,12 +5,14 @@ using Katino.Domain.Context;
 using Katino.Domain.Repositories.CategoryRepository;
 using Katino.Domain.Repositories.ColorRepository;
 using Katino.Domain.Repositories.MeasurementTypeRepository;
+using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.SizeRepository;
 using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
+using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.Email.SendEmail;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Domain.Services.User.CreateUser;
@@ -19,12 +21,14 @@ using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.CategoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.ColorRepository;
 using Katino.Infrastructure.Persistance.Repositories.MeasurementTypeRepository;
+using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
 using Katino.Infrastructure.Persistance.Repositories.SizeRepository;
 using Katino.Infrastructure.Persistance.Services.AppLogs;
 using Katino.Infrastructure.Persistance.Services.Article;
+using Katino.Infrastructure.Persistance.Services.AzureStorage;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
 
 namespace Katino.Web.Installers;
@@ -46,6 +50,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IGetLogsService, GetLogsService>();
         services.AddTransient<IUpdateProductVariantService, UpdateProductVariantService>();
         services.AddTransient<IArticleGenerator, ArticleGenerator>();
+        services.AddTransient<IAzureStorageService, AzureStorageService>();
 
         // builders
         services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();
@@ -58,6 +63,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IMeasurementTypeRepository, MeasurementTypeRepository>();
         services.AddTransient<IProductVariantRepository, ProductVariantRepository>();
         services.AddTransient<IProductVariantMeasurementRepository, ProductVariantMeasurementRepository>();
+        services.AddTransient<IProductPhotoRepository, ProductPhotoRepository>();
     }
 }
 

@@ -47,7 +47,8 @@ public class MappingProfile : Profile
 
         CreateMap<ProductVariantMeasurement, GetProductVariantMeasurementDto>();
         CreateMap<ProductVariant, ProductVariantDto>();
-        CreateMap<AddProductVariantDto, ProductVariant>();
+        CreateMap<AddProductVariantDto, ProductVariant>()
+            .ForMember(pv => pv.Photos, m => m.Ignore());
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
         CreateMap<UpdateProductVariantDto, ProductVariant>();
     }
