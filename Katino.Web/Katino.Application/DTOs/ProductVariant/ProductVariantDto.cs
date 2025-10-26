@@ -1,5 +1,6 @@
 ﻿using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.Product;
+using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
 
@@ -24,4 +25,5 @@ public class ProductVariantDto
     public ProductDto Product { get; set; }
     public SizeDto Size { get; set; }
     public List<GetProductVariantMeasurementDto> Measurements { get; set; } = [];
+    public List<ProductPhotoDto> Photos { get; set; } = [];
 }

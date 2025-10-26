@@ -10,6 +10,7 @@ using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.Product;
+using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
 using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
@@ -44,6 +45,7 @@ public class MappingProfile : Profile
         CreateMap<MeasurementType, MeasurementTypeDto>().ReverseMap();
 
         CreateMap<ProductStatus, ProductStatusDto>();
+        CreateMap<ProductPhoto, ProductPhotoDto>();
 
         CreateMap<ProductVariantMeasurement, GetProductVariantMeasurementDto>();
         CreateMap<ProductVariant, ProductVariantDto>();
