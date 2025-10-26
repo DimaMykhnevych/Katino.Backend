@@ -38,6 +38,8 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
             .AsNoTracking()
             .Include(pv => pv.Color)
             .AsNoTracking()
+            .Include(pv => pv.Photos)
+            .AsNoTracking()
             .Include(pv => pv.Measurements)
             .ThenInclude(pvm => pvm.MeasurementType)
             .AsNoTracking();
