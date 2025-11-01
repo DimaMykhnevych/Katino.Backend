@@ -63,6 +63,21 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
                 .Where(pv => pv.Status == productStatus);
         }
 
+        if (request.GetLastAddedProductVariant != null && request.GetLastAddedProductVariant.Value)
+        {
+            var lastAddedProductVariant = await productVariants
+                .OrderByDescending(pv => pv.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var mappedProductVariant = _mapper.Map<ProductVariantDto>(lastAddedProductVariant);
+
+            return new GetProductVariantDto
+            {
+                ProductVariants = mappedProductVariant == null ? [] : [mappedProductVariant],
+                ResultsAmount = mappedProductVariant == null ? 0 : 1
+            };
+        }
+
         var resultProductVariants = await productVariants.ToListAsync(cancellationToken);
         List<ProductVariantDto> productVariantDtos =
             _mapper.Map<IEnumerable<ProductVariantDto>>(resultProductVariants)
