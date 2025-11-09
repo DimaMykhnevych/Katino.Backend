@@ -14,6 +14,8 @@ using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.Email.SendEmail;
+using Katino.Domain.Services.NovaPost.InternetDocument;
+using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Domain.Services.User.CreateUser;
 using Katino.Infrastructure.Persistance.Builders;
@@ -29,6 +31,8 @@ using Katino.Infrastructure.Persistance.Repositories.SizeRepository;
 using Katino.Infrastructure.Persistance.Services.AppLogs;
 using Katino.Infrastructure.Persistance.Services.Article;
 using Katino.Infrastructure.Persistance.Services.AzureStorage;
+using Katino.Infrastructure.Persistance.Services.NovaPost;
+using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
 
 namespace Katino.Web.Installers;
@@ -51,6 +55,10 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IUpdateProductVariantService, UpdateProductVariantService>();
         services.AddTransient<IArticleGenerator, ArticleGenerator>();
         services.AddTransient<IAzureStorageService, AzureStorageService>();
+        services.AddTransient<IAddOrderService, AddOrderService>();
+
+        // HTTP clients
+        services.AddHttpClient<IInternetDocumentService, InternetDocumentService>();
 
         // builders
         services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();

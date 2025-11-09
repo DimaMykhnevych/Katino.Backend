@@ -3,12 +3,12 @@ using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
 using Katino.Application.Commands.ProductN.AddProduct;
-using Katino.Application.Commands.ProductVariantN.AddProductVariant;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.MeasurementType;
+using Katino.Application.DTOs.Order;
 using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
@@ -16,6 +16,8 @@ using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Models;
+using Katino.Domain.Models.NovaPost;
 
 namespace Katino.Application.Mappers;
 
@@ -53,6 +55,10 @@ public class MappingProfile : Profile
             .ForMember(pv => pv.Photos, m => m.Ignore());
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
         CreateMap<UpdateProductVariantDto, ProductVariant>();
+
+        CreateMap<AddOrderDto, Order>();
+        CreateMap<AddNovaPostInternetDocumentDto, CreateNovaPostInternetDocument>();
+        CreateMap<OrderCreationResult, OrderCreationResultDto>();
     }
 }
 

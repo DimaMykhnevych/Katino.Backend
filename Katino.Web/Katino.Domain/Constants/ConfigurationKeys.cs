@@ -10,4 +10,5 @@ public static class ConfigurationKeys
     public const string ConnectionStrings = "ConnectionStrings";
     public const string SecretKeyOptions = "SecretKeyOptions";
     public const string EmailServiceOptions = "EmailServiceOptions";
+    public const string NovaPostOptions = "NovaPostOptions";
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace Katino.Web.Options;
+namespace Katino.Domain.Options;
 
 public class MySqlConfigOptions
 {

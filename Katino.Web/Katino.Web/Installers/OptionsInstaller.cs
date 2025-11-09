@@ -1,6 +1,5 @@
 ﻿using Katino.Domain.Constants;
 using Katino.Domain.Options;
-using Katino.Web.Options;
 
 namespace Katino.Web.Installers;
 
@@ -11,5 +10,6 @@ public class OptionsInstaller : IInstaller
         services.Configure<MySqlConfigOptions>(configuration.GetSection(ConfigurationKeys.ConnectionStrings));
         services.Configure<SecretKeyOptions>(configuration.GetSection(ConfigurationKeys.SecretKeyOptions));
         services.Configure<EmailServiceOptions>(configuration.GetSection(ConfigurationKeys.EmailServiceOptions));
+        services.Configure<NovaPostOptions>(configuration.GetSection(ConfigurationKeys.NovaPostOptions));
     }
 }
