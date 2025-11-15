@@ -1,4 +1,5 @@
 ﻿using Katino.Application.DTOs.Order;
+using Katino.Application.DTOs.Order.NovaPost;
 using MediatR;
 
 namespace Katino.Application.Commands.OrderN.AddOrder;

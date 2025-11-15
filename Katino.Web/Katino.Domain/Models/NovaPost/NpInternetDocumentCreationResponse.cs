@@ -6,5 +6,5 @@ public class NpInternetDocumentCreationResponse
     public string CostOnSite { get; set; }
     public string IntDocNumber { get; set; }
     public string TypeDocument { get; set; }
-    public DateOnly EstimatedDeliveryDate { get; set; }
+    public string EstimatedDeliveryDate { get; set; }
 }

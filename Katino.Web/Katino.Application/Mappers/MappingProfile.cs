@@ -9,6 +9,7 @@ using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.Order;
+using Katino.Application.DTOs.Order.NovaPost;
 using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
@@ -16,6 +17,7 @@ using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 
@@ -59,6 +61,10 @@ public class MappingProfile : Profile
         CreateMap<AddOrderDto, Order>();
         CreateMap<AddNovaPostInternetDocumentDto, CreateNovaPostInternetDocument>();
         CreateMap<OrderCreationResult, OrderCreationResultDto>();
+        CreateMap<PayerTypeDto, PayerType>().ReverseMap();
+        CreateMap<PaymentMethodDto, PaymentMethod>().ReverseMap();
+        CreateMap<DeliveryTypeDto, DeliveryType>().ReverseMap();
+        CreateMap<OptionsSeatDto, OptionsSeat>().ReverseMap();
     }
 }
 

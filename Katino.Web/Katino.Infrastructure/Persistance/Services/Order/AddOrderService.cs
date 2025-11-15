@@ -31,6 +31,8 @@ public class AddOrderService : IAddOrderService
             // Handling creating internet document
             try
             {
+                // !!!!!!!TODO firstly save this info in database - probably document and not the model of NP request!!!!!!!!!!
+
                 var internetDocumentCreationResponse = await _internetDocumentService.CreateInternetDocumentAsync(document);
                 if (!internetDocumentCreationResponse.Success)
                 {
@@ -39,7 +41,7 @@ public class AddOrderService : IAddOrderService
                     return new() { OrderAddedSuccessfully = true };
                 }
 
-                _logger.LogError($"Internet document for order {order.Id} created successfuly");
+                _logger.LogInformation($"Internet document for order {order.Id} created successfuly");
 
                 // After successful creation update order with required info
 

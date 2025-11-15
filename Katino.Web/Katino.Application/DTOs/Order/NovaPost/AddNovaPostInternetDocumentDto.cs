@@ -1,8 +1,6 @@
-﻿using Katino.Domain.Enums.NovaPost;
+﻿namespace Katino.Application.DTOs.Order.NovaPost;
 
-namespace Katino.Domain.Models.NovaPost;
-
-public class CreateNovaPostInternetDocument
+public class AddNovaPostInternetDocumentDto
 {
     public string SenderCityName { get; set; }
     public string SenderWarehouseId { get; set; }
@@ -10,8 +8,8 @@ public class CreateNovaPostInternetDocument
     public string RecipientCityName { get; set; }
     public string RecipientWarehouseId { get; set; }
 
-    public PayerType PayerType { get; set; }
-    public PaymentMethod PaymentMethod { get; set; }
+    public PayerTypeDto PayerType { get; set; }
+    public PaymentMethodDto PaymentMethod { get; set; }
     public double Weight { get; set; }
     public int SeatsAmount { get; set; }
     public string Description { get; set; }
@@ -20,10 +18,10 @@ public class CreateNovaPostInternetDocument
     public string RecipientMiddleName { get; set; }
     public string RecipientLastName { get; set; }
     public string RecipientPhone { get; set; }
-    public IEnumerable<OptionsSeat> OptionsSeat { get; set; }
+    public IEnumerable<OptionsSeatDto> OptionsSeat { get; set; }
 
     public double? AfterpaymentOnGoodsCost { get; set; }
 
     // Non NovaPost required properties
-    public DeliveryType DeliveryType { get; set; }
+    public DeliveryTypeDto DeliveryType { get; set; }
 }
