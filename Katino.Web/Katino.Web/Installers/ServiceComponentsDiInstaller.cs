@@ -5,6 +5,7 @@ using Katino.Domain.Context;
 using Katino.Domain.Repositories.CategoryRepository;
 using Katino.Domain.Repositories.ColorRepository;
 using Katino.Domain.Repositories.MeasurementTypeRepository;
+using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
@@ -15,6 +16,8 @@ using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.Email.SendEmail;
 using Katino.Domain.Services.NovaPost.InternetDocument;
+using Katino.Domain.Services.NovaPost.Sync;
+using Katino.Domain.Services.NovaPost.Warehouse;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Domain.Services.User.CreateUser;
@@ -23,6 +26,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.CategoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.ColorRepository;
 using Katino.Infrastructure.Persistance.Repositories.MeasurementTypeRepository;
+using Katino.Infrastructure.Persistance.Repositories.NpWarehouseRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
@@ -56,9 +60,14 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IArticleGenerator, ArticleGenerator>();
         services.AddTransient<IAzureStorageService, AzureStorageService>();
         services.AddTransient<IAddOrderService, AddOrderService>();
+        services.AddTransient<INovaPoshtaSyncService, NovaPoshtaSyncService>();
+
+        // hosted services
+        services.AddHostedService<NovaPoshtaSyncBackgroundService>();
 
         // HTTP clients
         services.AddHttpClient<IInternetDocumentService, InternetDocumentService>();
+        services.AddHttpClient<IWarehouseService, WarehouseService>();
 
         // builders
         services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();
@@ -72,6 +81,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IProductVariantRepository, ProductVariantRepository>();
         services.AddTransient<IProductVariantMeasurementRepository, ProductVariantMeasurementRepository>();
         services.AddTransient<IProductPhotoRepository, ProductPhotoRepository>();
+        services.AddTransient<INpWarehouseRepository, NpWarehouseRepository>();
     }
 }
 

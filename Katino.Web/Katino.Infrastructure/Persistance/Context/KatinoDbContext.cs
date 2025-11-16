@@ -21,6 +21,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<ProductPhoto> ProductPhotos { get; set; }
     public DbSet<ProductVariantMeasurement> ProductVariantMeasurements { get; set; }
     public DbSet<MeasurementType> MeasurementTypes { get; set; }
+    public DbSet<NpWarehouse> NpWarehouses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -136,6 +137,13 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Unit).IsRequired().HasMaxLength(10);
             entity.HasIndex(e => e.Name).IsUnique();
+        });
+
+        builder.Entity<NpWarehouse>(entity =>
+        {
+            entity.HasIndex(e => e.Ref).IsUnique();
+            entity.HasIndex(e => e.CityRef);
+            entity.HasIndex(e => e.Description);
         });
 
         base.OnModelCreating(builder);

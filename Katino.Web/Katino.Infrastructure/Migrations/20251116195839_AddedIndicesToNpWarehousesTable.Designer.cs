@@ -4,6 +4,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Katino.Infrastructure.Migrations
 {
     [DbContext(typeof(KatinoDbContext))]
-    partial class KatinoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251116195839_AddedIndicesToNpWarehousesTable")]
+    partial class AddedIndicesToNpWarehousesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -186,9 +189,6 @@ namespace Katino.Infrastructure.Migrations
                     b.Property<string>("ShortAddress")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("WarehouseIndex")
                         .IsRequired()

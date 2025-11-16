@@ -1,8 +1,8 @@
 ﻿using Katino.Domain.Enums.NovaPost;
-using Katino.Domain.Exceptions;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Options;
 using Katino.Domain.Services.NovaPost.InternetDocument;
+using Katino.Domain.Services.NovaPost.Warehouse;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,11 +14,13 @@ namespace Katino.Infrastructure.Persistance.Services.NovaPost;
 
 // TODO implement caching for getWarehouses, getCounterparties, getCounterpartyContactPersons (after front implementation ???)
 // TODO maybe models will be slighlty changed (already Id's of cities will be sent, not names, etc.)
-public class InternetDocumentService : IInternetDocumentService
+// TODO create endpoint for manual update of warehouses
+public class InternetDocumentService : BaseNpApiService, IInternetDocumentService
 {
     private const int CacheExpirationHours = 1;
 
     private readonly HttpClient _httpClient;
+    private readonly IWarehouseService _warehouseService;
     private readonly NovaPostOptions _novaPostOptions;
     private readonly ILogger _logger;
     private readonly IMemoryCache _memoryCache;
@@ -26,11 +28,13 @@ public class InternetDocumentService : IInternetDocumentService
 
     public InternetDocumentService(
         HttpClient httpClient,
+        IWarehouseService warehouseService,
         IOptions<NovaPostOptions> options,
         ILoggerFactory loggerFactory,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache) : base(httpClient, options, loggerFactory)
     {
         _httpClient = httpClient;
+        _warehouseService = warehouseService;
         _novaPostOptions = options.Value;
         _logger = loggerFactory?.CreateLogger(nameof(InternetDocumentService));
         _memoryCache = memoryCache;
@@ -239,26 +243,8 @@ public class InternetDocumentService : IInternetDocumentService
             return warehouses;
         }
 
-        NpApiRequest<object> getSenderWarehouseRequest = new()
-        {
-            ApiKey = _novaPostOptions.ApiKey,
-            ModelName = "AddressGeneral",
-            CalledMethod = "getWarehouses",
-            MethodProperties = new
-            {
-                CityRef = cityRef,
-                WarehouseId = warehouseId
-            }
-        };
+        var result = await _warehouseService.SearchWarehousesAsync(cityRef, warehouseId);
 
-        var responseString = await GetProcessedStringResponse(getSenderWarehouseRequest);
-        var getWarehouseResponse = JsonConvert.DeserializeObject<NpApiResponse<WarehousesResponse>>(responseString);
-
-        _logger.LogDebug("GetWarehousesResponse response: {Response}", responseString);
-
-        CheckApiResponse(getWarehouseResponse);
-
-        var result = getWarehouseResponse.Data.FirstOrDefault();
         _memoryCache.Set(cacheKey, result, _memoryCacheEntryOptions);
 
         return result;
@@ -296,45 +282,5 @@ public class InternetDocumentService : IInternetDocumentService
         CheckApiResponse(saveRecipientCounterpartyResponse);
 
         return saveRecipientCounterpartyResponse.Data.FirstOrDefault();
-    }
-
-    private async Task<string> GetProcessedStringResponse<T>(NpApiRequest<T> request, JsonSerializerSettings jsonSerializerSettings = null)
-    {
-        var json = string.Empty;
-        if (jsonSerializerSettings == null)
-        {
-            json = JsonConvert.SerializeObject(request);
-        }
-        else
-        {
-            json = JsonConvert.SerializeObject(request, Formatting.Indented, jsonSerializerSettings);
-        }
-
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(_novaPostOptions.BaseUrl, content);
-
-        response.EnsureSuccessStatusCode();
-
-        var responseString = await response.Content.ReadAsStringAsync();
-
-        return DecodeUnicodeOnly(responseString);
-    }
-
-    private string DecodeUnicodeOnly(string value)
-    {
-        return System.Text.RegularExpressions.Regex.Replace(
-            value,
-            @"\\u([0-9a-fA-F]{4})",
-            match => ((char)Convert.ToInt32(match.Groups[1].Value, 16)).ToString()
-        );
-    }
-
-    private void CheckApiResponse<T>(NpApiResponse<T> response)
-    {
-        if (response == null || !response.Success)
-        {
-            _logger.LogError($"An error occurred while communicating with NP API: {response.Errors.FirstOrDefault()}");
-            throw new NpInternalException();
-        }
     }
 }

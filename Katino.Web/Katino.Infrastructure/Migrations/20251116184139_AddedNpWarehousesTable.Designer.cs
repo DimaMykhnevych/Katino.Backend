@@ -4,6 +4,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Katino.Infrastructure.Migrations
 {
     [DbContext(typeof(KatinoDbContext))]
-    partial class KatinoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251116184139_AddedNpWarehousesTable")]
+    partial class AddedNpWarehousesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,14 +169,11 @@ namespace Katino.Infrastructure.Migrations
 
                     b.Property<string>("CityRef")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -181,27 +181,17 @@ namespace Katino.Infrastructure.Migrations
 
                     b.Property<string>("Ref")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ShortAddress")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("WarehouseIndex")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CityRef");
-
-                    b.HasIndex("Description");
-
-                    b.HasIndex("Ref")
-                        .IsUnique();
 
                     b.ToTable("NpWarehouses");
                 });
