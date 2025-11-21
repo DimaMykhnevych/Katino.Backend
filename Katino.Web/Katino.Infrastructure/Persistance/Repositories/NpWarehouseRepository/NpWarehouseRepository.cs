@@ -16,6 +16,12 @@ public class NpWarehouseRepository : Repository<NpWarehouse>, INpWarehouseReposi
         return await context.NpWarehouses.Where(w => !w.IsActive).CountAsync();
     }
 
+    public async Task<NpWarehouse> GetWarehouseByNumberAndCityRefAsync(string warehouseNumber, string cityRef)
+    {
+        return await context.NpWarehouses
+            .FirstOrDefaultAsync(w => w.Number == warehouseNumber && w.CityRef == cityRef);
+    }
+
     public async Task<NpWarehouse> GetWarehouseByRefAsync(string warehouseRef)
     {
         return await context.NpWarehouses.FirstOrDefaultAsync(w => w.Ref == warehouseRef);

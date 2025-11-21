@@ -1,6 +1,8 @@
 ﻿using Katino.Domain.Enums.NovaPost;
+using Katino.Domain.Exceptions;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Options;
+using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NovaPost.Warehouse;
 using Microsoft.Extensions.Caching.Memory;
@@ -21,6 +23,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
 
     private readonly HttpClient _httpClient;
     private readonly IWarehouseService _warehouseService;
+    private readonly INpWarehouseRepository _npWarehouseRepository;
     private readonly NovaPostOptions _novaPostOptions;
     private readonly ILogger _logger;
     private readonly IMemoryCache _memoryCache;
@@ -31,7 +34,8 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         IWarehouseService warehouseService,
         IOptions<NovaPostOptions> options,
         ILoggerFactory loggerFactory,
-        IMemoryCache memoryCache) : base(httpClient, options, loggerFactory)
+        IMemoryCache memoryCache,
+        INpWarehouseRepository npWarehouseRepository) : base(httpClient, options, loggerFactory)
     {
         _httpClient = httpClient;
         _warehouseService = warehouseService;
@@ -40,17 +44,25 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         _memoryCache = memoryCache;
         _memoryCacheEntryOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(TimeSpan.FromHours(CacheExpirationHours));
+
+        _npWarehouseRepository = npWarehouseRepository;
     }
 
     public async Task<NpApiResponse<NpInternetDocumentCreationResponse>> CreateInternetDocumentAsync(CreateNovaPostInternetDocument request)
     {
+
         var senderCityRef = await GetCityRefAsync(request.SenderCityName);
         var senderCounterpartyRef = await GetSenderCounterpartyRef();
         var senderContactPerson = await GetSenderContactPerson(senderCounterpartyRef);
         var senderWarehouseResponse = await GetWarehousesResponse(senderCityRef, request.SenderWarehouseId);
 
-        var recipientCityRef = await GetCityRefAsync(request.RecipientCityName);
-        var recipientWarehouseResponse = await GetWarehousesResponse(recipientCityRef, request.RecipientWarehouseId);
+        string recipientCityRef = null;
+        WarehousesResponse recipientWarehouseResponse = null;
+        if (request.DeliveryType != DeliveryType.Address)
+        {
+            recipientCityRef = await GetCityRefAsync(request.RecipientCityName);
+            recipientWarehouseResponse = await GetWarehousesResponse(recipientCityRef, request.RecipientWarehouseId);
+        }
 
         ServiceType serviceType;
         switch (request.DeliveryType)
@@ -66,44 +78,62 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
                 break;
         }
 
-        var recipientCounterparty = await SaveRecipientCounterparty(
+        if (request.DeliveryType == DeliveryType.Address)
+        {
+            ValidateAddressDeliveryFields(request);
+        }
+
+        SaveCounterpartyGeneralResponse recipientCounterparty = null;
+        if (request.DeliveryType != DeliveryType.Address)
+        {
+            recipientCounterparty = await SaveRecipientCounterparty(
             request.RecipientFirstName,
             request.RecipientMiddleName,
             request.RecipientLastName,
             request.RecipientPhone);
+        }
 
-        SaveInternetDocumentRequest saveDocumentRequest = new()
+        SaveInternetDocumentRequest saveDocumentRequest;
+        if (request.DeliveryType != DeliveryType.Address)
         {
-            SenderWarehouseIndex = senderWarehouseResponse.WarehouseIndex,
-            RecipientWarehouseIndex = recipientWarehouseResponse.WarehouseIndex,
-            PayerType = request.PayerType.ToString(),
-            PaymentMethod = request.PaymentMethod.ToString(),
-            DateTime = DateTime.Now.ToString("dd.MM.yyyy"),
-            CargoType = "Cargo",
-            Weight = request.Weight.ToString(),
-            ServiceType = serviceType.ToString(),
-            SeatsAmount = request.SeatsAmount.ToString(),
-            Description = request.Description,
-            Cost = request.Cost.ToString(),
-            AfterpaymentOnGoodsCost = request.AfterpaymentOnGoodsCost?.ToString(),
-            CitySender = senderCityRef,
-            Sender = senderCounterpartyRef,
-            SenderAddress = senderWarehouseResponse.Ref,
-            ContactSender = senderContactPerson.Ref,
-            SendersPhone = senderContactPerson.Phones,
-            CityRecipient = recipientCityRef,
-            Recipient = recipientCounterparty.Ref,
-            RecipientAddress = recipientWarehouseResponse.Ref,
-            ContactRecipient = recipientCounterparty.ContactPerson.Data.First().Ref,
-            RecipientsPhone = request.RecipientPhone,
-            OptionsSeat = request.OptionsSeat.Select(np => new OptionsSeatNpModel()
+            saveDocumentRequest = new()
             {
-                VolumetricWidth = np.VolumetricWidth.ToString(),
-                VolumetricLength = np.VolumetricLength.ToString(),
-                VolumetricHeight = np.VolumetricHeight.ToString(),
-                Weight = np.Weight.ToString(),
-            }),
-        };
+                SenderWarehouseIndex = senderWarehouseResponse.WarehouseIndex,
+                RecipientWarehouseIndex = recipientWarehouseResponse.WarehouseIndex,
+                PayerType = request.PayerType.ToString(),
+                PaymentMethod = request.PaymentMethod.ToString(),
+                DateTime = DateTime.Now.ToString("dd.MM.yyyy"),
+                CargoType = "Cargo",
+                Weight = request.Weight.ToString(),
+                ServiceType = serviceType.ToString(),
+                SeatsAmount = request.SeatsAmount.ToString(),
+                Description = request.Description,
+                Cost = request.Cost.ToString(),
+                AfterpaymentOnGoodsCost = request.AfterpaymentOnGoodsCost?.ToString(),
+                CitySender = senderCityRef,
+                Sender = senderCounterpartyRef,
+                SenderAddress = senderWarehouseResponse.Ref,
+                ContactSender = senderContactPerson.Ref,
+                SendersPhone = senderContactPerson.Phones,
+                CityRecipient = recipientCityRef,
+                Recipient = recipientCounterparty.Ref,
+                RecipientAddress = recipientWarehouseResponse.Ref,
+                ContactRecipient = recipientCounterparty.ContactPerson.Data.First().Ref,
+                RecipientsPhone = request.RecipientPhone,
+                OptionsSeat = request.OptionsSeat.Select(np => new OptionsSeatNpModel()
+                {
+                    VolumetricWidth = np.VolumetricWidth.ToString(),
+                    VolumetricLength = np.VolumetricLength.ToString(),
+                    VolumetricHeight = np.VolumetricHeight.ToString(),
+                    Weight = np.Weight.ToString(),
+                }),
+            };
+        }
+        else
+        {
+            saveDocumentRequest = 
+                GetRequestForAddressDelivery(request, serviceType, senderCityRef, senderCounterpartyRef, senderWarehouseResponse, senderContactPerson);
+        }
 
         var npRequest = new NpApiRequest<SaveInternetDocumentRequest>()
         {
@@ -126,6 +156,57 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         CheckApiResponse(saveDocumentResponse);
 
         return saveDocumentResponse;
+    }
+
+    private SaveInternetDocumentRequest GetRequestForAddressDelivery(
+        CreateNovaPostInternetDocument request,
+        ServiceType serviceType,
+        string senderCityRef,
+        string senderCounterpartyRef,
+        WarehousesResponse senderWarehouseResponse,
+        ContactPersonsResponse senderContactPerson)
+    {
+        return new()
+        {
+            PayerType = request.PayerType.ToString(),
+            PaymentMethod = request.PaymentMethod.ToString(),
+            DateTime = DateTime.Now.ToString("dd.MM.yyyy"),
+            CargoType = "Cargo",
+            Weight = request.Weight.ToString(),
+            ServiceType = serviceType.ToString(),
+            SeatsAmount = request.SeatsAmount.ToString(),
+            Description = request.Description,
+            Cost = request.Cost.ToString(),
+            AfterpaymentOnGoodsCost = request.AfterpaymentOnGoodsCost?.ToString(),
+            CitySender = senderCityRef,
+            Sender = senderCounterpartyRef,
+            SenderAddress = senderWarehouseResponse.Ref,
+            ContactSender = senderContactPerson.Ref,
+            SendersPhone = senderContactPerson.Phones,
+            RecipientsPhone = request.RecipientPhone,
+            OptionsSeat = request.OptionsSeat.Select(np => new OptionsSeatNpModel()
+            {
+                VolumetricWidth = np.VolumetricWidth.ToString(),
+                VolumetricLength = np.VolumetricLength.ToString(),
+                VolumetricHeight = np.VolumetricHeight.ToString(),
+                Weight = np.Weight.ToString(),
+            }),
+
+            // Address delivery properties
+            RecipientAddressNote = request.RecipientAddressNote,
+            NewAddress = "1",
+            RecipientCityName = request.RecipientCityName,
+            RecipientArea = string.Empty,
+            RecipientAreaRegions = string.Empty,
+            RecipientAddressName = request.RecipientAddressName,
+            RecipientHouse = request.RecipientHouse,
+            RecipientFlat = request.RecipientFlat,
+            RecipientName = $"{request.RecipientLastName} {request.RecipientFirstName} {request.RecipientMiddleName}",
+            RecipientType = "PrivatePerson",
+            SettlementType = string.Empty,
+            RecipientContactName = $"{request.RecipientLastName} {request.RecipientFirstName} {request.RecipientMiddleName}",
+            EDRPOU = string.Empty,
+        };
     }
 
     private async Task<string> GetCityRefAsync(string cityName)
@@ -243,6 +324,23 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
             return warehouses;
         }
 
+        var resultFromDb = await _npWarehouseRepository.GetWarehouseByNumberAndCityRefAsync(warehouseId, cityRef);
+        if (resultFromDb != null)
+        {
+            var mappedResponse = new WarehousesResponse()
+            {
+                Ref = resultFromDb.Ref,
+                CityRef = resultFromDb.CityRef,
+                WarehouseIndex = resultFromDb.WarehouseIndex,
+                Description = resultFromDb.Description,
+                Number = resultFromDb.Number,
+                ShortAddress = resultFromDb.ShortAddress,
+            };
+
+            _memoryCache.Set(cacheKey, mappedResponse, _memoryCacheEntryOptions);
+            return mappedResponse;
+        }
+
         var result = await _warehouseService.SearchWarehousesAsync(cityRef, warehouseId);
 
         _memoryCache.Set(cacheKey, result, _memoryCacheEntryOptions);
@@ -282,5 +380,23 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         CheckApiResponse(saveRecipientCounterpartyResponse);
 
         return saveRecipientCounterpartyResponse.Data.FirstOrDefault();
+    }
+
+    private void ValidateAddressDeliveryFields(CreateNovaPostInternetDocument request)
+    {
+        List<string> requiredFields = new()
+        {
+            request.RecipientAddressNote, request.RecipientCityName, request.RecipientAddressName,
+            request.RecipientHouse, request.RecipientFlat, request.RecipientMiddleName,
+        };
+
+        foreach (var field in requiredFields)
+        {
+            if (string.IsNullOrEmpty(field))
+            {
+                throw new NpInternalException("RecipientAddressNote, RecipientCityName, RecipientAddressName" +
+                    ", RecipientHouse, RecipientFlat,RecipientName, RecipientMiddleName are required for DeliveryType = Address");
+            }
+        }
     }
 }

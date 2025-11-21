@@ -85,8 +85,10 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
 
         _logger.LogInformation($"Saving {allWarehouses.Count} warehouses to database...");
 
-        foreach (var warehouse in allWarehouses)
+        for (var i = 0; i < allWarehouses.Count; i++)
         {
+            var warehouse = allWarehouses[i];
+
             var existingWarehouse = await _npWarehouseRepository.GetWarehouseByRefAsync(warehouse.Ref);
 
 
@@ -115,6 +117,10 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
                 });
             }
 
+            if (i % 10_000 == 0)
+            {
+                _logger.LogTrace($"Saved/updated {i} warehouses/postomats");
+            }
         }
 
         await _npWarehouseRepository.Save();

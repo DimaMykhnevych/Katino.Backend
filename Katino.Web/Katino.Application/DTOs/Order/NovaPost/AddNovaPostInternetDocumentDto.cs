@@ -22,6 +22,13 @@ public class AddNovaPostInternetDocumentDto
 
     public double? AfterpaymentOnGoodsCost { get; set; }
 
+    // Address delivery properties
+    public string RecipientAddressNote { get; set; }
+    public string RecipientAddressName { get; set; }
+    public string RecipientHouse { get; set; }
+    public string RecipientFlat { get; set; }
+
+
     // Non NovaPost required properties
     public DeliveryTypeDto DeliveryType { get; set; }
 }

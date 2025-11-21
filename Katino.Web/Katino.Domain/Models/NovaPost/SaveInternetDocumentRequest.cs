@@ -25,4 +25,19 @@ public class SaveInternetDocumentRequest
     public string ContactRecipient { get; set; }
     public string RecipientsPhone { get; set; }
     public IEnumerable<OptionsSeatNpModel> OptionsSeat { get; set; }
+
+    // Address delivery fields
+    public string RecipientAddressNote { get; set; }
+    public string NewAddress { get; set; }
+    public string RecipientCityName { get; set; }
+    public string RecipientArea { get; set; }
+    public string RecipientAreaRegions { get; set; }
+    public string RecipientAddressName { get; set; }
+    public string RecipientHouse { get; set; }
+    public string RecipientFlat { get; set; }
+    public string RecipientName { get; set; }
+    public string RecipientType { get; set; }
+    public string SettlementType { get; set; }
+    public string RecipientContactName { get; set; }
+    public string EDRPOU { get; set; }
 }
