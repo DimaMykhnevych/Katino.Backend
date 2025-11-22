@@ -8,6 +8,7 @@ using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.MeasurementType;
+using Katino.Application.DTOs.NovaPost;
 using Katino.Application.DTOs.Order;
 using Katino.Application.DTOs.Order.NovaPost;
 using Katino.Application.DTOs.Product;
@@ -65,6 +66,11 @@ public class MappingProfile : Profile
         CreateMap<PaymentMethodDto, PaymentMethod>().ReverseMap();
         CreateMap<DeliveryTypeDto, DeliveryType>().ReverseMap();
         CreateMap<OptionsSeatDto, OptionsSeat>().ReverseMap();
+
+        CreateMap<SyncStatusDto, SyncStatus>().ReverseMap();
+        CreateMap<SyncTypeDto, SyncType>().ReverseMap();
+
+        CreateMap<NovaPoshtaSyncStatus, SyncRecordDto>();
     }
 }
 

@@ -317,6 +317,10 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
 
     private async Task<WarehousesResponse> GetWarehousesResponse(string cityRef, string warehouseId)
     {
+        // TODO if we are going to pass Id from NpWarehouses table to create TTN request (that id we are going to take from UI imput to search warehouses)
+        // this method will be redundant and fallbeck to real API then cannot be implemented.
+        // At first manual update will be okay, in future some progress of update can be shown to user and appropriate endpoints should be disabled.
+        // To store progress/history of update separate table can be used with updaterequested time, updatefinished time, etc.
         var cacheKey = $"{nameof(GetWarehousesResponse)}_{cityRef}_{warehouseId}";
 
         if (_memoryCache.TryGetValue(cacheKey, out WarehousesResponse warehouses))

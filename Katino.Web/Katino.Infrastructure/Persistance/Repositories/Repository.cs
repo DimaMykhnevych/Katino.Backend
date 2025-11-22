@@ -46,7 +46,6 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
     public async Task Update(TEntity entity)
     {
         context.Set<TEntity>().Update(entity);
-        await Save();
     }
 
     public async Task Save()

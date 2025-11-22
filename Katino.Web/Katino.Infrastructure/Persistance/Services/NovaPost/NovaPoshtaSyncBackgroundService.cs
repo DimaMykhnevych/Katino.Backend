@@ -9,7 +9,6 @@ public class NovaPoshtaSyncBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
-    private static bool _isFirstSyncOnStartup = true;
 
     public NovaPoshtaSyncBackgroundService(
         IServiceProvider serviceProvider,
@@ -25,32 +24,24 @@ public class NovaPoshtaSyncBackgroundService : BackgroundService
 
         await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
+            using var scope = _serviceProvider.CreateScope();
+            var syncService = scope.ServiceProvider
+                .GetRequiredService<INovaPoshtaSyncService>();
+
+            var isSyncCompleted = await syncService.IsSyncCompletedAsync();
+
+            if (!isSyncCompleted)
             {
-                using var scope = _serviceProvider.CreateScope();
-                var syncService = scope.ServiceProvider
-                    .GetRequiredService<INovaPoshtaSyncService>();
-
-                var isSyncCompleted = await syncService.IsSyncCompletedAsync();
-
-                if (!isSyncCompleted || !_isFirstSyncOnStartup)
-                {
-                    _logger.LogInformation("Starting initial Nova Poshta data sync...");
-                    await syncService.SyncAllDataAsync();
-                    _logger.LogInformation("Initial sync completed successfully.");
-                }
-
-                _isFirstSyncOnStartup = false;
-
-                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
+                _logger.LogInformation("Starting initial Nova Poshta data sync...");
+                await syncService.SyncAllDataAsync(Guid.Empty);
+                _logger.LogInformation("Initial sync completed successfully.");
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in Nova Poshta sync background service");
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Nova Poshta sync background service");
         }
     }
 }

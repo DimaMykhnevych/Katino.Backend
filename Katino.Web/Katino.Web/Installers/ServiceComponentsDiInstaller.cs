@@ -5,6 +5,7 @@ using Katino.Domain.Context;
 using Katino.Domain.Repositories.CategoryRepository;
 using Katino.Domain.Repositories.ColorRepository;
 using Katino.Domain.Repositories.MeasurementTypeRepository;
+using Katino.Domain.Repositories.NovaPoshtaSyncStatusRepository;
 using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
@@ -26,6 +27,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.CategoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.ColorRepository;
 using Katino.Infrastructure.Persistance.Repositories.MeasurementTypeRepository;
+using Katino.Infrastructure.Persistance.Repositories.NovaPoshtaSyncStatusRepository;
 using Katino.Infrastructure.Persistance.Repositories.NpWarehouseRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
@@ -61,6 +63,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IAzureStorageService, AzureStorageService>();
         services.AddTransient<IAddOrderService, AddOrderService>();
         services.AddTransient<INovaPoshtaSyncService, NovaPoshtaSyncService>();
+        services.AddTransient<INovaPoshtaSyncStatusService, NovaPoshtaSyncStatusService>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();
@@ -82,6 +85,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IProductVariantMeasurementRepository, ProductVariantMeasurementRepository>();
         services.AddTransient<IProductPhotoRepository, ProductPhotoRepository>();
         services.AddTransient<INpWarehouseRepository, NpWarehouseRepository>();
+        services.AddTransient<INovaPoshtaSyncStatusRepository, NovaPoshtaSyncStatusRepository>();
     }
 }
 

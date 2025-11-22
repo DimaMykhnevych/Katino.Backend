@@ -1,8 +1,10 @@
 ﻿using Katino.Domain.Entities;
+using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Services.NovaPost.Sync;
 using Katino.Domain.Services.NovaPost.Warehouse;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.NovaPost;
@@ -14,15 +16,18 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
 
     private readonly IWarehouseService _warehouseService;
     private readonly INpWarehouseRepository _npWarehouseRepository;
+    private readonly INovaPoshtaSyncStatusService _syncStatusService;
     private readonly ILogger _logger;
 
     public NovaPoshtaSyncService(
         IWarehouseService warehouseService,
         INpWarehouseRepository npWarehouseRepository,
+        INovaPoshtaSyncStatusService novaPoshtaSyncStatusService,
         ILoggerFactory loggerFactory)
     {
         _warehouseService = warehouseService;
         _npWarehouseRepository = npWarehouseRepository;
+        _syncStatusService = novaPoshtaSyncStatusService;
         _logger = loggerFactory?.CreateLogger(nameof(NovaPoshtaSyncService));
     }
 
@@ -32,30 +37,51 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
         return warehouseCount > 0;
     }
 
-    public async Task SyncAllDataAsync()
+    public async Task SyncAllDataAsync(Guid triggeredBy)
     {
+        if (await _syncStatusService.IsSyncInProgressAsync(SyncType.Warehouses))
+        {
+            _logger.LogWarning("Sync already in progress, skipping");
+            return;
+        }
+
+        NovaPoshtaSyncStatus syncStatus = null;
+
         try
         {
+            syncStatus = await _syncStatusService.StartSyncAsync(SyncType.Warehouses, triggeredBy);
+
             _logger.LogInformation("Starting Nova Poshta data synchronization...");
 
-            await SyncWarehousesAsync();
+            var totalRecordsInserted = await SyncWarehousesAsync(syncStatus.Id);
+
+            await _syncStatusService.CompleteSyncAsync(syncStatus.Id, totalRecordsInserted);
 
             _logger.LogInformation("Nova Poshta data synchronization completed successfully.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during Nova Poshta data synchronization");
+
+            if (syncStatus != null)
+            {
+                await _syncStatusService.FailSyncAsync(syncStatus.Id, ex.Message);
+            }
+
             throw;
         }
     }
 
-    private async Task SyncWarehousesAsync()
+    private async Task<int> SyncWarehousesAsync(Guid syncId)
     {
         _logger.LogInformation("Syncing warehouses...");
+
+        await _npWarehouseRepository.SetWarehouseActiveAsync(false);
 
         var allWarehouses = new List<WarehousesResponse>();
         var page = 1;
         var hasMorePages = true;
+        var totalRecordsRequested = 0;
 
         while (hasMorePages)
         {
@@ -66,7 +92,17 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
                 if (response.Any())
                 {
                     allWarehouses.AddRange(response);
-                    _logger.LogInformation($"Downloaded {response.Count()} warehouses (page {page})");
+
+                    var responseCount = response.Count();
+                    _logger.LogDebug($"Downloaded {responseCount} warehouses (page {page})");
+
+                    totalRecordsRequested += responseCount;
+
+                    await _syncStatusService.UpdateSyncProgressAsync(
+                        syncId,
+                        totalRecordsRequested,
+                        0);
+
                     page++;
 
                     await Task.Delay(RateLimitDelayMs);
@@ -101,6 +137,8 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
                 existingWarehouse.ShortAddress = warehouse.ShortAddress;
                 existingWarehouse.IsActive = true;
                 existingWarehouse.UpdatedAt = DateTime.UtcNow;
+
+                await _npWarehouseRepository.Update(existingWarehouse);
             }
             else
             {
@@ -117,9 +155,13 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
                 });
             }
 
-            if (i % 10_000 == 0)
+            if (i != 0 && i % 10_000 == 0)
             {
                 _logger.LogTrace($"Saved/updated {i} warehouses/postomats");
+                await _syncStatusService.UpdateSyncProgressAsync(
+                    syncId,
+                    allWarehouses.Count,
+                    i);
             }
         }
 
@@ -129,5 +171,7 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
         var closedWarehousesCount = await _npWarehouseRepository.GetInactiveWarehousesCountAsync();
 
         _logger.LogWarning($"Found {closedWarehousesCount} closed warehouses");
+
+        return allWarehouses.Count;
     }
 }

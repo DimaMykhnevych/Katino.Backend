@@ -22,6 +22,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<ProductVariantMeasurement> ProductVariantMeasurements { get; set; }
     public DbSet<MeasurementType> MeasurementTypes { get; set; }
     public DbSet<NpWarehouse> NpWarehouses { get; set; }
+    public DbSet<NovaPoshtaSyncStatus> NovaPoshtaSyncStatuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
