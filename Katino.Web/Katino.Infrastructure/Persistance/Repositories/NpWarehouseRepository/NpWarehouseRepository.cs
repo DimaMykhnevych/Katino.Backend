@@ -32,6 +32,13 @@ public class NpWarehouseRepository : Repository<NpWarehouse>, INpWarehouseReposi
         return await context.NpWarehouses.CountAsync();
     }
 
+    public async Task<IEnumerable<NpWarehouse>> SearchWarehouseBySearchStringAsync(string cityRef, string searchString)
+    {
+        return await context.NpWarehouses
+            .Where(w => w.CityRef == cityRef && w.IsActive && w.Number == searchString)
+            .ToListAsync();
+    }
+
     public async Task SetWarehouseActiveAsync(bool isActive)
     {
         await context.NpWarehouses

@@ -9,6 +9,7 @@ using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.NovaPost;
+using Katino.Application.DTOs.NpWarehouse;
 using Katino.Application.DTOs.Order;
 using Katino.Application.DTOs.Order.NovaPost;
 using Katino.Application.DTOs.Product;
@@ -75,6 +76,7 @@ public class MappingProfile : Profile
         CreateMap<CityResponse, NpCityResponseDto>();
         CreateMap<GetCitiesResponse, GetNpCitiesResponseDto>();
         CreateMap<NpContactPersonResponse, NpContactPersonResponseDto>();
+        CreateMap<NpWarehouse, NpWarehouseDto>();
     }
 }
 
