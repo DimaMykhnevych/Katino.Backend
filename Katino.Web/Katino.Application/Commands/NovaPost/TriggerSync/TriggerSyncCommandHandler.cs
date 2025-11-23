@@ -2,6 +2,7 @@
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Services.NovaPost.Sync;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Application.Commands.NovaPost.TriggerSync;
@@ -9,20 +10,20 @@ namespace Katino.Application.Commands.NovaPost.TriggerSync;
 public class TriggerSyncCommandHandler : IRequestHandler<TriggerSyncCommand, bool>
 {
     private readonly INovaPoshtaSyncStatusService _novaPoshtaSyncStatusService;
-    private readonly INovaPoshtaSyncService _syncService;
     private readonly IMapper _mapper;
     private readonly ILogger _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public TriggerSyncCommandHandler(
-    INovaPoshtaSyncStatusService novaPoshtaSyncStatus,
-    INovaPoshtaSyncService novaPoshtaSyncService,
-    IMapper mapper,
-    ILoggerFactory loggerFactory)
+        INovaPoshtaSyncStatusService novaPoshtaSyncStatus,
+        IMapper mapper,
+        ILoggerFactory loggerFactory,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _novaPoshtaSyncStatusService = novaPoshtaSyncStatus;
-        _syncService = novaPoshtaSyncService;
         _mapper = mapper;
         _logger = loggerFactory?.CreateLogger(nameof(TriggerSyncCommandHandler));
+        _scopeFactory = serviceScopeFactory;
     }
 
     public async Task<bool> Handle(TriggerSyncCommand request, CancellationToken cancellationToken)
@@ -38,12 +39,18 @@ public class TriggerSyncCommandHandler : IRequestHandler<TriggerSyncCommand, boo
                 return false;
             }
 
-            // TODO fix and test
             _ = Task.Run(async () =>
             {
+                using var scope = _scopeFactory.CreateScope();
+
+                var syncService = scope.ServiceProvider.GetRequiredService<INovaPoshtaSyncService>();
+                var logger = scope.ServiceProvider.GetService<ILogger<TriggerSyncCommandHandler>>();
+
                 try
                 {
-                    await _syncService.SyncAllDataAsync(request.TriggeredBy);
+                    logger.LogInformation("Starting background sync");
+                    await syncService.SyncAllDataAsync(request.TriggeredBy);
+                    logger.LogInformation("Background sync completed");
                 }
                 catch (Exception ex)
                 {
