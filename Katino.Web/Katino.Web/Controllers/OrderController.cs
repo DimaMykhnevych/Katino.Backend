@@ -19,8 +19,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost]
-    // TODO uncomment after testing
-    //[Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> Add([FromBody] AddOrderCommand addOrderCommand)
     {
         OrderCreationResultDto result = await _mediator.Send(addOrderCommand);

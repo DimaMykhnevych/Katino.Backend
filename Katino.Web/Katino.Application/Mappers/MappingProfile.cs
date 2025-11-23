@@ -74,6 +74,7 @@ public class MappingProfile : Profile
 
         CreateMap<CityResponse, NpCityResponseDto>();
         CreateMap<GetCitiesResponse, GetNpCitiesResponseDto>();
+        CreateMap<NpContactPersonResponse, NpContactPersonResponseDto>();
     }
 }
 
