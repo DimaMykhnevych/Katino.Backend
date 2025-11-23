@@ -23,7 +23,6 @@ public class WarehouseService : BaseNpApiService, IWarehouseService
         _logger = loggerFactory?.CreateLogger(nameof(WarehouseService));
     }
 
-
     public async Task<IEnumerable<WarehousesResponse>> GetWarehousesWithPaginationAsync(string page, string limit)
     {
         NpApiRequest<object> getWarehouseRequest = new()

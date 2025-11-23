@@ -1,0 +1,26 @@
+﻿using Katino.Application.DTOs.NovaPost;
+using Katino.Application.Queries.NovaPost.GetNpCities;
+using Katino.Domain.Entities;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Katino.Web.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class NovaPostController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public NovaPostController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    [HttpGet("cities/search")]
+    public async Task<ActionResult<List<NovaPoshtaSyncStatus>>> GetSyncHistory([FromQuery] string cityName)
+    {
+        GetNpCitiesResponseDto cities = await _mediator.Send(new GetNpCitiesQuery() { CityName = cityName });
+        return Ok(cities);
+    }
+}

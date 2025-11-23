@@ -16,6 +16,7 @@ using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.Email.SendEmail;
+using Katino.Domain.Services.NovaPost.City;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NovaPost.Sync;
 using Katino.Domain.Services.NovaPost.Warehouse;
@@ -71,6 +72,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         // HTTP clients
         services.AddHttpClient<IInternetDocumentService, InternetDocumentService>();
         services.AddHttpClient<IWarehouseService, WarehouseService>();
+        services.AddHttpClient<INpCityService, NpCityService>();
 
         // builders
         services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();
