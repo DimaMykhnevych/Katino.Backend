@@ -23,6 +23,9 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<MeasurementType> MeasurementTypes { get; set; }
     public DbSet<NpWarehouse> NpWarehouses { get; set; }
     public DbSet<NovaPoshtaSyncStatus> NovaPoshtaSyncStatuses { get; set; }
+    public DbSet<NpCity> NpCities { get; set; }
+    public DbSet<NpContactPerson> NpContactPersons { get; set; }
+    public DbSet<CrmUserSettings> CrmUserSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -146,6 +149,16 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             entity.HasIndex(e => e.CityRef);
             entity.HasIndex(e => e.Description);
         });
+
+        builder.Entity<CrmUserSettings>()
+            .HasOne(x => x.NpCity)
+            .WithOne()
+            .HasForeignKey<CrmUserSettings>(x => x.NpCityId);
+
+        builder.Entity<CrmUserSettings>()
+            .HasOne(x => x.NpWarehouse)
+            .WithOne()
+            .HasForeignKey<CrmUserSettings>(x => x.NpWarehouseId);
 
         base.OnModelCreating(builder);
     }

@@ -2,7 +2,6 @@
 
 namespace Katino.Domain.Entities;
 
-// TODO create table later
 public class NpContactPerson
 {
     public Guid Id { get; set; }
