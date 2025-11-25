@@ -1,0 +1,31 @@
+﻿using Katino.Application.Commands.CrmUserSettingsN.AddCrmUserSettings;
+using Katino.Application.Commands.SizeN.AddSize;
+using Katino.Application.DTOs.Size;
+using Katino.Domain.Constants;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Katino.Web.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class CrmUserSettingsController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    public CrmUserSettingsController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+
+    [HttpPost]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Add([FromBody] AddCrmUserSettingsCommand crmUserSettingsCommand)
+    {
+        var user = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
+        crmUserSettingsCommand.AppUserId = Guid.Parse(user);
+        var result = await _mediator.Send(crmUserSettingsCommand);
+        return result ? Ok(result) : BadRequest();
+    }
+}

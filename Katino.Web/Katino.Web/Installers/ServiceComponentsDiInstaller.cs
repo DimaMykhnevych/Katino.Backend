@@ -4,8 +4,10 @@ using Katino.Domain.Builders;
 using Katino.Domain.Context;
 using Katino.Domain.Repositories.CategoryRepository;
 using Katino.Domain.Repositories.ColorRepository;
+using Katino.Domain.Repositories.CrmUserSettingsRepository;
 using Katino.Domain.Repositories.MeasurementTypeRepository;
 using Katino.Domain.Repositories.NovaPoshtaSyncStatusRepository;
+using Katino.Domain.Repositories.NpCityRepository;
 using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
@@ -15,12 +17,14 @@ using Katino.Domain.Repositories.SizeRepository;
 using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.AzureStorage;
+using Katino.Domain.Services.CrmUserSettingsN.AddCrmUserSettingsService;
 using Katino.Domain.Services.Email.SendEmail;
 using Katino.Domain.Services.NovaPost.City;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NovaPost.Sync;
 using Katino.Domain.Services.NovaPost.Warehouse;
+using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Domain.Services.User.CreateUser;
@@ -28,8 +32,10 @@ using Katino.Infrastructure.Persistance.Builders;
 using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.CategoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.ColorRepository;
+using Katino.Infrastructure.Persistance.Repositories.CrmUserSettingsRepository;
 using Katino.Infrastructure.Persistance.Repositories.MeasurementTypeRepository;
 using Katino.Infrastructure.Persistance.Repositories.NovaPoshtaSyncStatusRepository;
+using Katino.Infrastructure.Persistance.Repositories.NpCityRepository;
 using Katino.Infrastructure.Persistance.Repositories.NpWarehouseRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
@@ -39,7 +45,9 @@ using Katino.Infrastructure.Persistance.Repositories.SizeRepository;
 using Katino.Infrastructure.Persistance.Services.AppLogs;
 using Katino.Infrastructure.Persistance.Services.Article;
 using Katino.Infrastructure.Persistance.Services.AzureStorage;
+using Katino.Infrastructure.Persistance.Services.CrmUserSettingsN;
 using Katino.Infrastructure.Persistance.Services.NovaPost;
+using Katino.Infrastructure.Persistance.Services.NpCityN;
 using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
 
@@ -66,6 +74,8 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IAddOrderService, AddOrderService>();
         services.AddTransient<INovaPoshtaSyncService, NovaPoshtaSyncService>();
         services.AddTransient<INovaPoshtaSyncStatusService, NovaPoshtaSyncStatusService>();
+        services.AddTransient<IAddNpCityService, AddNpCityService>();
+        services.AddTransient<IAddCrmUserSettingsService, AddCrmUserSettingsService>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();
@@ -90,6 +100,8 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IProductPhotoRepository, ProductPhotoRepository>();
         services.AddTransient<INpWarehouseRepository, NpWarehouseRepository>();
         services.AddTransient<INovaPoshtaSyncStatusRepository, NovaPoshtaSyncStatusRepository>();
+        services.AddTransient<INpCityRepository, NpCityRepository>();
+        services.AddTransient<ICrmUserSettingsRepository, CrmUserSettingsRepository>();
     }
 }
 
