@@ -50,7 +50,27 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
 
     public async Task<NpApiResponse<NpInternetDocumentCreationResponse>> CreateInternetDocumentAsync(CreateNovaPostInternetDocument request)
     {
+        // Начать с пункта 6, после него разобраться с модельками ордера и сделать сохранение ордера (также сохранять номер ттн), после чего переходить к юайке (также не забыть про страничку с настройками),
+        // вначале сделать создание ордера, а потом уже обновление по ходу дела сделать, будет понятнее (флоу апдейта - если новое добавляем, если старое находим в бд и апдейтим)
 
+
+        //TODO start with:
+        // [DONE] 1. [Finish implementing address delivery (remove not required fields)]
+        // [DONE] 2. [Manual sync of NP (separate admin controller, update in separate thread)]
+        // [DONE] 3. [Store sync status in db]
+        // [DONE] 4. [Сделать поиск отделений по номеру добавить соответсвующий ендпоинт]
+        // [DONE] 5. [Разобраться с посиком городов, контактных лиц - сделать эндпоинты на гет (возвращать нужные поля только).]
+        // [DONE] 6. [Имплементировать настройки юзера срм - город и отделение отправки, там же можно запускать ручное обновление городов (в отдельном потоке).]
+        //6.1 Проапдейтить код создания ТТНок, там теперь просто айдишники будут приходить (GetSenderCounterpartyRef придется таки брать с НП АПИ, а вот ContactPerson будет уже приходить извне)
+        //7. Потом уже логическое структурирование модели заказа + имплементация сохранения/апдейта/удаление ордера - те, кто что-то заказал - в отдельной таблице (ФИО+номер телефона+инстурла+их recipientCounterparty).
+        //8. Имплементировать юайку.
+        //9. Разобраться со статусами ттнок.
+        //10. On UI on order save city present and DeliveryRef will also be sent in request and will be saved in NpCity table if not exist and the NpCityId will be stored
+        //    in Order. On get orders by this NpCityId we can load the requried info. Same should be done in User settings (for cities and warehouses, NpCityId and NpWarehouseID
+        //    will be stored in settings and on load all info will be retrieved).
+        //    FOR SENDER CONTACT PERSON WE ALSO SHOULD STORE IT IN CONTACT PERSONS
+
+        // TODO remove GetCityRefAsync, GetSenderCounterpartyRef, GetSenderContactPerson, GetWarehousesResponse
         var senderCityRef = await GetCityRefAsync(request.SenderCityName);
         var senderCounterpartyRef = await GetSenderCounterpartyRef();
         var senderContactPerson = await GetSenderContactPerson(senderCounterpartyRef);

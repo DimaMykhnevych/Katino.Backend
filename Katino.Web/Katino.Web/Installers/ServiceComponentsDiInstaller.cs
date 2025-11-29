@@ -18,6 +18,7 @@ using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.CrmUserSettingsN.AddCrmUserSettingsService;
+using Katino.Domain.Services.CrmUserSettingsN.UpdateCrmUserSettingsService;
 using Katino.Domain.Services.Email.SendEmail;
 using Katino.Domain.Services.NovaPost.City;
 using Katino.Domain.Services.NovaPost.ContactPerson;
@@ -76,6 +77,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<INovaPoshtaSyncStatusService, NovaPoshtaSyncStatusService>();
         services.AddTransient<IAddNpCityService, AddNpCityService>();
         services.AddTransient<IAddCrmUserSettingsService, AddCrmUserSettingsService>();
+        services.AddTransient<IUpdateCrmUserSettingsService, UpdateCrmUserSettingsService>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();

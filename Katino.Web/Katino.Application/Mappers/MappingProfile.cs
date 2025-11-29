@@ -81,7 +81,9 @@ public class MappingProfile : Profile
         CreateMap<NpWarehouse, NpWarehouseDto>();
 
         CreateMap<AddNpCityDto, NpCity>();
+        CreateMap<NpCity, GetNpCityDto>();
         CreateMap<AddCrmUserSettingsDto, CrmUserSettings>();
+        CreateMap<UpdateCrmUserSettingsDto, CrmUserSettings>();
     }
 }
 
