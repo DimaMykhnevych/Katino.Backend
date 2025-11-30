@@ -26,6 +26,11 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<NpCity> NpCities { get; set; }
     public DbSet<NpContactPerson> NpContactPersons { get; set; }
     public DbSet<CrmUserSettings> CrmUserSettings { get; set; }
+    public DbSet<NpOptionsSeat> NpOptionsSeats { get; set; }
+    public DbSet<OrderNpOptionsSeat> OrderNpOptionsSeats { get; set; }
+    public DbSet<OrderRecipient> OrderRecipients { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<OrderAddressInfo> OrderAddressInfo { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -159,6 +164,51 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             .HasOne(x => x.NpWarehouse)
             .WithOne()
             .HasForeignKey<CrmUserSettings>(x => x.NpWarehouseId);
+
+        builder.Entity<OrderRecipient>()
+            .HasOne(x => x.NpContactPerson)
+            .WithOne()
+            .HasForeignKey<OrderRecipient>(x => x.NpContactPersonId);
+
+        builder.Entity<Order>(entity =>
+        {
+            entity.HasOne(o => o.SenderNpWarehouse)
+                .WithMany()
+                .HasForeignKey(o => o.SenderNpWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.RecipientNpWarehouse)
+                .WithMany()
+                .HasForeignKey(o => o.RecipientNpWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            entity.HasOne(o => o.SenderNpCity)
+                .WithMany()
+                .HasForeignKey(o => o.SenderNpCityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.RecipientNpCity)
+                .WithMany()
+                .HasForeignKey(o => o.RecipientNpCityId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            entity.HasOne(d => d.SenderContactPerson)
+                  .WithMany(p => p.Orders)
+                  .HasForeignKey(d => d.SenderContactPersonId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.OrderRecipient)
+                  .WithMany(p => p.Orders)
+                  .HasForeignKey(d => d.OrderRecipientId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.AddressInfo)
+                  .WithOne()
+                  .HasForeignKey<OrderAddressInfo>(d => d.Id)
+                  .IsRequired(false);
+        });
 
         base.OnModelCreating(builder);
     }

@@ -24,6 +24,7 @@ public class ProductVariant
     public Size Size { get; set; }
     public List<ProductVariantMeasurement> Measurements { get; set; } = [];
     public List<ProductPhoto> Photos { get; set; } = [];
+    public List<OrderItem> OrderItems { get; set; } = [];
 
 
     // Calculated properties

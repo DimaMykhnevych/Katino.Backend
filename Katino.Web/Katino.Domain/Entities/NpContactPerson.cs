@@ -18,9 +18,10 @@ public class NpContactPerson
     [Required]
     public string FirstName { get; set; }
 
-    [Required]
     public string MiddleName { get; set; }
 
     [Required]
     public string Phones { get; set; }
+
+    public List<Order> Orders { get; set; } = [];
 }
