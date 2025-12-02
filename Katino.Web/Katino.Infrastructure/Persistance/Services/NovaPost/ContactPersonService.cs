@@ -57,6 +57,40 @@ public class ContactPersonService : BaseNpApiService, IContactPersonService
         });
     }
 
+    public async Task<SaveCounterpartyGeneralResponse> SaveRecipientCounterparty(
+        string firstName,
+        string middleName,
+        string lastName,
+        string phone)
+    {
+        NpApiRequest<object> saveRecipientCounterpartyRequest = new()
+        {
+            ApiKey = _novaPostOptions.ApiKey,
+            ModelName = "CounterpartyGeneral",
+            CalledMethod = "save",
+            MethodProperties = new
+            {
+                FirstName = firstName,
+                MiddleName = middleName,
+                LastName = lastName,
+                Phone = phone,
+                Email = string.Empty,
+                CounterpartyType = "PrivatePerson",
+                CounterpartyProperty = "Recipient",
+            }
+        };
+
+        var responseString = await GetProcessedStringResponse(saveRecipientCounterpartyRequest);
+
+        var saveRecipientCounterpartyResponse = JsonConvert.DeserializeObject<NpApiResponse<SaveCounterpartyGeneralResponse>>(responseString);
+
+        _logger.LogDebug("SaveRecipientCounterparty response: {Response}", responseString);
+
+        CheckApiResponse(saveRecipientCounterpartyResponse);
+
+        return saveRecipientCounterpartyResponse.Data.FirstOrDefault();
+    }
+
     private async Task<string> GetSenderCounterpartyRef()
     {
         NpApiRequest<object> getSenderCounterpartyRefRequest = new()

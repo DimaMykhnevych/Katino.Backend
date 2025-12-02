@@ -7,9 +7,9 @@ public class Order
 {
     public Guid Id { get; set; }
     public Guid SenderNpWarehouseId { get; set; }
-    public Guid? RecipientNpWarehouseId { get; set; }
+    public Guid? RecipientNpWarehouseId { get; set; } // Nullable because for address delivery this field is null
     public Guid SenderNpCityId { get; set; }
-    public Guid? RecipientNpCityId { get; set; }
+    public Guid? RecipientNpCityId { get; set; } // Nullable because for address delivery this field is null
     public Guid SenderContactPersonId { get; set; }
     public Guid OrderRecipientId { get; set; }
     public PayerType PayerType { get; set; }
@@ -32,6 +32,8 @@ public class Order
 
     public List<OrderItem> OrderItems { get; set; } = [];
     public List<OrderNpOptionsSeat> OrderNpOptionsSeats { get; set; } = [];
+
+
     public NpWarehouse SenderNpWarehouse { get; set; }
     public NpWarehouse RecipientNpWarehouse { get; set; }
     public NpCity SenderNpCity { get; set; }
