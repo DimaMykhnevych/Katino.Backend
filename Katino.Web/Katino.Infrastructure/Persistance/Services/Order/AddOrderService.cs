@@ -8,6 +8,7 @@ using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
+using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,7 @@ public class AddOrderService : IAddOrderService
     private readonly IAddOrderRecipientService _addOrderRecipientService;
     private readonly IContactPersonService _contactPersonService;
     private readonly IOrderRecipientRepository _orderRecipientRepository;
+    private readonly IAddNpOptionsSeatService _addNpOptionsSeatService;
     private readonly ILogger _logger;
 
     public AddOrderService(
@@ -32,6 +34,7 @@ public class AddOrderService : IAddOrderService
         IAddOrderRecipientService addOrderRecipientService,
         IContactPersonService contactPersonService,
         IOrderRecipientRepository orderRecipientRepository,
+        IAddNpOptionsSeatService addNpOptionsSeatService,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -40,6 +43,7 @@ public class AddOrderService : IAddOrderService
         _addOrderRecipientService = addOrderRecipientService;
         _contactPersonService = contactPersonService;
         _orderRecipientRepository = orderRecipientRepository;
+        _addNpOptionsSeatService = addNpOptionsSeatService;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -85,6 +89,14 @@ public class AddOrderService : IAddOrderService
                 orderRecipientId = await _addOrderRecipientService.UpsertOrderRecipientAsync(newOrderRecipient);
             }
 
+            List<OrderNpOptionsSeat> npOptionSeats = [];
+            foreach(var orderOptionsSeat in order.OrderNpOptionsSeats)
+            {
+                var npOptionsSeat = orderOptionsSeat.NpOptionsSeat;
+                var oprionsSeatId = await _addNpOptionsSeatService.GetOrCreateNpOptionsSeat(npOptionsSeat);
+                npOptionSeats.Add(new() { NpOptionsSeatId = oprionsSeatId });
+            }
+
             Order orderToAdd = new()
             {
                 SenderNpWarehouseId = order.SenderNpWarehouseId,
@@ -105,8 +117,9 @@ public class AddOrderService : IAddOrderService
                 Cost = order.Cost,
                 AfterpaymentOnGoodsCost = order.AfterpaymentOnGoodsCost,
                 OrderItems = order.OrderItems,
+                OrderNpOptionsSeats = npOptionSeats,
 
-                // TODO implement OrderNpOptionsSeats, AddressInfo
+                // TODO implement AddressInfo
             };
 
             // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
