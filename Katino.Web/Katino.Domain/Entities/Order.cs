@@ -29,6 +29,9 @@ public class Order
     public string InternetDocumentRef { get; set; }
     public string InternetDocumentIntDocNumber { get; set; }
 
+    // Internally calculated fields
+    public OrderReadinessStatus OrderReadinessStatus { get; set; }
+
 
     public List<OrderItem> OrderItems { get; set; } = [];
     public List<OrderNpOptionsSeat> OrderNpOptionsSeats { get; set; } = [];

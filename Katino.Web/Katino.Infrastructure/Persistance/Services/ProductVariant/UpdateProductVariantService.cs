@@ -38,7 +38,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         {
             var productVariantFromDb = await _productVariantRepository.GetWithMeasurements(productVariant.Id);
             productVariantFromDb.Status = productVariant.Status;
-            if (productVariantFromDb.AvailableQuantity == 0 && productVariantFromDb.Status != ProductStatus.Discontinued)
+            if (productVariantFromDb.QuantityInStock <= 0 && productVariantFromDb.Status != ProductStatus.Discontinued)
             {
                 productVariant.Status = ProductStatus.OnOrder;
             }

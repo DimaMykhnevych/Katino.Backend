@@ -4,6 +4,8 @@ using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.OrderRecipientRepository;
+using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
@@ -16,6 +18,7 @@ using System.Text.Json;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderN;
 
+// TODO cover with logs
 public class AddOrderService : IAddOrderService
 {
     private readonly IInternetDocumentService _internetDocumentService;
@@ -25,6 +28,8 @@ public class AddOrderService : IAddOrderService
     private readonly IContactPersonService _contactPersonService;
     private readonly IOrderRecipientRepository _orderRecipientRepository;
     private readonly IAddNpOptionsSeatService _addNpOptionsSeatService;
+    private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IOrderRepository _orderRepository;
     private readonly ILogger _logger;
 
     public AddOrderService(
@@ -35,6 +40,8 @@ public class AddOrderService : IAddOrderService
         IContactPersonService contactPersonService,
         IOrderRecipientRepository orderRecipientRepository,
         IAddNpOptionsSeatService addNpOptionsSeatService,
+        IProductVariantRepository productVariantRepository,
+        IOrderRepository orderRepository,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -44,6 +51,8 @@ public class AddOrderService : IAddOrderService
         _contactPersonService = contactPersonService;
         _orderRecipientRepository = orderRecipientRepository;
         _addNpOptionsSeatService = addNpOptionsSeatService;
+        _productVariantRepository = productVariantRepository;
+        _orderRepository = orderRepository;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -90,12 +99,15 @@ public class AddOrderService : IAddOrderService
             }
 
             List<OrderNpOptionsSeat> npOptionSeats = [];
-            foreach(var orderOptionsSeat in order.OrderNpOptionsSeats)
+            foreach (var orderOptionsSeat in order.OrderNpOptionsSeats)
             {
                 var npOptionsSeat = orderOptionsSeat.NpOptionsSeat;
                 var oprionsSeatId = await _addNpOptionsSeatService.GetOrCreateNpOptionsSeat(npOptionsSeat);
                 npOptionSeats.Add(new() { NpOptionsSeatId = oprionsSeatId });
             }
+
+            // 1. Process orderItems (set quantity to produce + order item statuses)
+            await ProcessNewOrderItems(order.OrderItems);
 
             Order orderToAdd = new()
             {
@@ -118,9 +130,27 @@ public class AddOrderService : IAddOrderService
                 AfterpaymentOnGoodsCost = order.AfterpaymentOnGoodsCost,
                 OrderItems = order.OrderItems,
                 OrderNpOptionsSeats = npOptionSeats,
-
-                // TODO implement AddressInfo
+                AddressInfo = order.AddressInfo,
             };
+
+            // 2.Calculate Order status and add it to order
+            orderToAdd.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
+                ? OrderReadinessStatus.InProgress
+                : OrderReadinessStatus.ReadyToShip;
+
+            // 3. Save order
+            var insertedOrder = await _orderRepository.Insert(orderToAdd);
+            await _orderRepository.Save();
+
+            // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) QuantityRegularSold QuantityDropSold
+
+            // 5. Save ttn
+
+            // 6. Update ttn related order properties
+
+            // 7. On Product variant update (quantity in stock) go through all orders that have such order item and update order status and order items, etc.
+
+            // TODO calculate QuantityInStock QuantityRegularSold QuantityDropSold (introduce statuses for Order and OrderItems)
 
             // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
 
@@ -153,6 +183,47 @@ public class AddOrderService : IAddOrderService
         {
             _logger.LogError(ex, $"An error occurred while adding order");
             return new();
+        }
+    }
+
+    private async Task ProcessNewOrderItems(List<OrderItem> orderItems)
+    {
+        foreach (var orderItem in orderItems)
+        {
+            if (orderItem.IsCustomTailoring)
+            {
+                orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
+                orderItem.QuantityToProduce = orderItem.Quantity;
+                continue;
+            }
+
+            var productVariant = await _productVariantRepository.Get(orderItem.ProductVariantId);
+            if (productVariant.Status == ProductStatus.OnOrder)
+            {
+                orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
+                orderItem.QuantityToProduce = orderItem.Quantity;
+                continue;
+            }
+
+            if (productVariant.Status == ProductStatus.Discontinued)
+            {
+                continue;
+            }
+
+            if (productVariant.Status == ProductStatus.InStock)
+            {
+                var enoughItemsInStock = productVariant.QuantityInStock - orderItem.Quantity >= 0;
+                if (enoughItemsInStock)
+                {
+                    orderItem.OrderItemStatus = OrderItemStatus.Ready;
+                    orderItem.QuantityToProduce = 0;
+                }
+                else
+                {
+                    orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
+                    orderItem.QuantityToProduce = orderItem.Quantity - productVariant.QuantityInStock;
+                }
+            }
         }
     }
 }

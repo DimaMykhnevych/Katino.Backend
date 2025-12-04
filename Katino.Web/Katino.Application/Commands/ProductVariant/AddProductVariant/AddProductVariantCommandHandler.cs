@@ -39,7 +39,7 @@ public class AddProductVariantCommandHandler : IRequestHandler<AddProductVariant
         try
         {
             ProductVariant productVariant = _mapper.Map<ProductVariant>(request.ProductVariant);
-            if (productVariant.AvailableQuantity == 0 && productVariant.Status != ProductStatus.Discontinued)
+            if (productVariant.QuantityInStock <= 0 && productVariant.Status != ProductStatus.Discontinued)
             {
                 productVariant.Status = ProductStatus.OnOrder;
             }

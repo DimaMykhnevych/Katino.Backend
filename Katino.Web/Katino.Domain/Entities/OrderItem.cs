@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Katino.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Katino.Domain.Entities;
 
@@ -10,6 +11,9 @@ public class OrderItem
     public bool IsCustomTailoring { get; set; }
     public string Comment { get; set; }
     public int Quantity { get; set; }
+
+    public OrderItemStatus OrderItemStatus { get; set; }
+    public int QuantityToProduce { get; set; }
 
     public Guid ProductVariantId { get; set; }
     public Guid OrderId { get; set; }
