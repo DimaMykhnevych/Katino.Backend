@@ -18,7 +18,6 @@ using System.Text.Json;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderN;
 
-// TODO cover with logs
 public class AddOrderService : IAddOrderService
 {
     private readonly IInternetDocumentService _internetDocumentService;
@@ -58,23 +57,31 @@ public class AddOrderService : IAddOrderService
 
     public async Task<OrderCreationResult> AddAsync(Order order)
     {
+        _logger.LogInformation($"Adding order, order items count: {order.OrderItems.Count}");
+
         try
         {
             // Handling adding order
+            _logger.LogTrace($"Upserting sender city {order.SenderNpCity.Present}");
             var senderNpCityId = await _addNpCityService.UpsertNpCityAsync(order.SenderNpCity);
 
             Guid? recipientNpCityId = null;
             if (order.DeliveryType == DeliveryType.WarehouseOrPost)
             {
+                _logger.LogTrace($"Upserting recipient city {order.SenderNpCity.Present}");
                 recipientNpCityId = await _addNpCityService.UpsertNpCityAsync(order.RecipientNpCity);
             }
 
+            _logger.LogTrace($"Upserting sender contect person {order.SenderContactPerson.Phones}");
             var senderContactPersonId = await _addNpContactPersonService.UpsertNpContactPersonAsync(order.SenderContactPerson);
 
+            _logger.LogTrace($"Getting existing order recipient {order.OrderRecipient.NpContactPerson.Phones}");
             var existingOrderRecipient = await _orderRecipientRepository.GetOrderRecipientByPhoneNumberAsync(order.OrderRecipient.NpContactPerson.Phones);
             Guid? orderRecipientId = existingOrderRecipient?.Id;
             if (existingOrderRecipient == null)
             {
+                _logger.LogTrace($"Adding recipient contact person {order.OrderRecipient.NpContactPerson.MiddleName}");
+
                 var addedContactPerson = await _contactPersonService.SaveRecipientCounterparty(
                     order.OrderRecipient.NpContactPerson.FirstName,
                     order.OrderRecipient.NpContactPerson.MiddleName,
@@ -95,10 +102,18 @@ public class AddOrderService : IAddOrderService
                     }
                 };
 
+                _logger.LogTrace("Inserting order recipient and contact person");
                 orderRecipientId = await _addOrderRecipientService.UpsertOrderRecipientAsync(newOrderRecipient);
+            }
+            else
+            {
+                _logger.LogTrace($"Order recipient with phone number {order.OrderRecipient.NpContactPerson.Phones} exist, updating existing info...");
+                await _addOrderRecipientService.UpsertOrderRecipientAsync(order.OrderRecipient);
             }
 
             List<OrderNpOptionsSeat> npOptionSeats = [];
+
+            _logger.LogTrace("Handling NP options seat creation");
             foreach (var orderOptionsSeat in order.OrderNpOptionsSeats)
             {
                 var npOptionsSeat = orderOptionsSeat.NpOptionsSeat;
@@ -107,6 +122,7 @@ public class AddOrderService : IAddOrderService
             }
 
             // 1. Process orderItems (set quantity to produce + order item statuses)
+            _logger.LogTrace("Processing order items statuses");
             await ProcessNewOrderItems(order.OrderItems);
 
             Order orderToAdd = new()
@@ -139,11 +155,13 @@ public class AddOrderService : IAddOrderService
                 : OrderReadinessStatus.ReadyToShip;
 
             // 3. Save order
+            _logger.LogTrace("Saving order in db");
             var insertedOrder = await _orderRepository.Insert(orderToAdd);
             await _orderRepository.Save();
 
             // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
             // QuantityRegularSold QuantityDropSold <-- for all product variant items
+            _logger.LogTrace("Updting order product variant quentities");
             await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
 
             // 7. On Product variant update (quantity in stock) go through all orders that have such order item and update order status and order items, etc.
@@ -151,29 +169,36 @@ public class AddOrderService : IAddOrderService
             // 7.2 On order delete go through all orders that have such order item and update order status and order items
             //     On delete recalculate QuantityInStock for product variants and then analyze existing orders, maybe some orders can be fulfilled, if yes - then reduce product variant amount
             //     Do the same action for order update (order items may be added, removed, quantity changed)
-            // 8. Cover with logs.
-            // 9. Test order creation (add dtos firstly)
+            // 9. [TODO] Test order creation (add dtos firstly)
 
             try
             {
                 // 5. Save ttn (creating internet document)
-                CreateNovaPostInternetDocument document = await CreateNovaPostInternetDocument(insertedOrder.Id);
+                var orderWithAllInfo = await _orderRepository.GetOrderWithInfoForInternetDocCreation(insertedOrder.Id);
+                CreateNovaPostInternetDocument document = CreateNovaPostInternetDocument(orderWithAllInfo);
 
+                _logger.LogTrace($"Creating internet document for order {orderWithAllInfo.Id}");
                 var internetDocumentCreationResponse = await _internetDocumentService.CreateInternetDocumentAsync(document);
                 if (!internetDocumentCreationResponse.Success)
                 {
                     var response = JsonSerializer.Serialize(internetDocumentCreationResponse);
                     _logger.LogError($"An error occurred while creating internet document for order {order.Id}: {response}");
 
-                    // 6. TODO Update ttn related order properties
-                    // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
+                    orderWithAllInfo.InternetDocumentCreationAttempted = true;
+                    await _orderRepository.Update(orderWithAllInfo);
+                    await _orderRepository.Save();
+
                     return new() { OrderAddedSuccessfully = true };
                 }
 
                 _logger.LogInformation($"Internet document for order {order.Id} created successfuly");
 
-                // 6. TODO Update ttn related order properties
-                // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
+                orderWithAllInfo.InternetDocumentCreationAttempted = true;
+                orderWithAllInfo.InternetDocumentRef = internetDocumentCreationResponse.Data[0].Ref;
+                orderWithAllInfo.InternetDocumentIntDocNumber = internetDocumentCreationResponse.Data[0].IntDocNumber;
+
+                await _orderRepository.Update(orderWithAllInfo);
+                await _orderRepository.Save();
 
                 return new() { OrderAddedSuccessfully = true, NpInternetDocCreatedSuccessfully = true };
             }
@@ -265,10 +290,8 @@ public class AddOrderService : IAddOrderService
         }
     }
 
-    private async Task<CreateNovaPostInternetDocument> CreateNovaPostInternetDocument(Guid orderId)
+    private CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)
     {
-        var orderWithAllInfo = await _orderRepository.GetOrderWithInfoForInternetDocCreation(orderId);
-
         CreateNovaPostInternetDocument createIntDocRequest = new() 
         {
             SenderCityRef = orderWithAllInfo.SenderNpCity.DeliveryCity,
