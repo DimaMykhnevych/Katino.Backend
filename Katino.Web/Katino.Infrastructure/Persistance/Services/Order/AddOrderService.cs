@@ -56,7 +56,7 @@ public class AddOrderService : IAddOrderService
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
-    public async Task<OrderCreationResult> AddAsync(Order order, CreateNovaPostInternetDocument document)
+    public async Task<OrderCreationResult> AddAsync(Order order)
     {
         try
         {
@@ -142,34 +142,38 @@ public class AddOrderService : IAddOrderService
             var insertedOrder = await _orderRepository.Insert(orderToAdd);
             await _orderRepository.Save();
 
-            // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) QuantityRegularSold QuantityDropSold
-
-            // 5. Save ttn
-
-            // 6. Update ttn related order properties
+            // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
+            // QuantityRegularSold QuantityDropSold <-- for all product variant items
+            await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
 
             // 7. On Product variant update (quantity in stock) go through all orders that have such order item and update order status and order items, etc.
+            // 7.1 Do following actions when sewer completes their work (update order status and order items).
+            // 7.2 On order delete go through all orders that have such order item and update order status and order items
+            //     On delete recalculate QuantityInStock for product variants and then analyze existing orders, maybe some orders can be fulfilled, if yes - then reduce product variant amount
+            //     Do the same action for order update (order items may be added, removed, quantity changed)
+            // 8. Cover with logs.
+            // 9. Test order creation (add dtos firstly)
 
-            // TODO calculate QuantityInStock QuantityRegularSold QuantityDropSold (introduce statuses for Order and OrderItems)
-
-            // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
-
-            // Handling creating internet document
             try
             {
-                // !!!!!!!TODO firstly save this info in database - probably document and not the model of NP request!!!!!!!!!!
+                // 5. Save ttn (creating internet document)
+                CreateNovaPostInternetDocument document = await CreateNovaPostInternetDocument(insertedOrder.Id);
 
                 var internetDocumentCreationResponse = await _internetDocumentService.CreateInternetDocumentAsync(document);
                 if (!internetDocumentCreationResponse.Success)
                 {
                     var response = JsonSerializer.Serialize(internetDocumentCreationResponse);
                     _logger.LogError($"An error occurred while creating internet document for order {order.Id}: {response}");
+
+                    // 6. TODO Update ttn related order properties
+                    // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
                     return new() { OrderAddedSuccessfully = true };
                 }
 
                 _logger.LogInformation($"Internet document for order {order.Id} created successfuly");
 
-                // After successful creation update order with required info
+                // 6. TODO Update ttn related order properties
+                // TODO after NP document creation populate InternetDocumentCreationAttempted, InternetDocumentRef, InternetDocumentIntDocNumber
 
                 return new() { OrderAddedSuccessfully = true, NpInternetDocCreatedSuccessfully = true };
             }
@@ -184,6 +188,40 @@ public class AddOrderService : IAddOrderService
             _logger.LogError(ex, $"An error occurred while adding order");
             return new();
         }
+    }
+
+    public async Task UpdateProductVariantsQuantities(SaleType saleType, List<OrderItem> orderItems)
+    {
+        // Updating QuantityInStock, QuantityRegularSold and QuantityDropSold + ProductVariant status
+        foreach (var orderItem in orderItems)
+        {
+            var productVariant = await _productVariantRepository.Get(orderItem.ProductVariantId);
+            if (saleType == SaleType.Retail)
+            {
+                productVariant.QuantityRegularSold += 1;
+            }
+            else if (saleType == SaleType.Drop || saleType == SaleType.Wholesale)
+            {
+                productVariant.QuantityDropSold += 1;
+            }
+
+            if (orderItem.IsCustomTailoring || productVariant.Status != ProductStatus.InStock)
+            {
+                await _productVariantRepository.Update(productVariant);
+                continue;
+            }
+
+            var newQuantityInStock = productVariant.QuantityInStock < orderItem.Quantity
+                ? 0
+                : productVariant.QuantityInStock - orderItem.Quantity;
+
+            productVariant.QuantityInStock = newQuantityInStock;
+            productVariant.Status = newQuantityInStock > 0 ? ProductStatus.InStock : ProductStatus.OnOrder;
+
+            await _productVariantRepository.Update(productVariant);
+        }
+
+        await _productVariantRepository.Save();
     }
 
     private async Task ProcessNewOrderItems(List<OrderItem> orderItems)
@@ -225,5 +263,48 @@ public class AddOrderService : IAddOrderService
                 }
             }
         }
+    }
+
+    private async Task<CreateNovaPostInternetDocument> CreateNovaPostInternetDocument(Guid orderId)
+    {
+        var orderWithAllInfo = await _orderRepository.GetOrderWithInfoForInternetDocCreation(orderId);
+
+        CreateNovaPostInternetDocument createIntDocRequest = new() 
+        {
+            SenderCityRef = orderWithAllInfo.SenderNpCity.DeliveryCity,
+            SenderCounterpartyRef = orderWithAllInfo.SenderContactPerson.CounterpartyRef,
+            SenderContactPersonRef = orderWithAllInfo.SenderContactPerson.Ref,
+            SenderContactPersonPhones = orderWithAllInfo.SenderContactPerson.Phones,
+            SenderWarehouseIndex = orderWithAllInfo.SenderNpWarehouse.WarehouseIndex,
+            SenderWarehouseRef = orderWithAllInfo.SenderNpWarehouse.Ref,
+
+            RecipientCityRef = orderWithAllInfo.RecipientNpCity?.DeliveryCity,
+            RecipientCounterpartyRef = orderWithAllInfo.OrderRecipient.NpContactPerson.CounterpartyRef,
+            RecipientContactPersonRef = orderWithAllInfo.OrderRecipient.NpContactPerson.Ref,
+            RecipientPhone = orderWithAllInfo.OrderRecipient.NpContactPerson.Phones,
+            RecipientWarehouseIndex = orderWithAllInfo.RecipientNpWarehouse?.WarehouseIndex,
+            RecipientWarehouseRef = orderWithAllInfo.RecipientNpWarehouse?.Ref,
+            RecipientFirstName = orderWithAllInfo.OrderRecipient.NpContactPerson.FirstName,
+            RecipientMiddleName = orderWithAllInfo.OrderRecipient.NpContactPerson.MiddleName,
+            RecipientLastName = orderWithAllInfo.OrderRecipient.NpContactPerson.LastName,
+
+            DeliveryType = orderWithAllInfo.DeliveryType,
+            PayerType = orderWithAllInfo.PayerType,
+            PaymentMethod = orderWithAllInfo.PaymentMethod,
+            Weight = orderWithAllInfo.Weight,
+            SeatsAmount = orderWithAllInfo.SeatsAmount,
+            Description = orderWithAllInfo.Description,
+            Cost = orderWithAllInfo.Cost,
+            AfterpaymentOnGoodsCost = orderWithAllInfo.AfterpaymentOnGoodsCost,
+            OptionsSeat = orderWithAllInfo.OrderNpOptionsSeats.Select(s => s.NpOptionsSeat),
+
+            RecipientAddressNote = orderWithAllInfo.AddressInfo?.RecipientAddressNote,
+            RecipientCityName = orderWithAllInfo.AddressInfo?.RecipientCity,
+            RecipientAddressName = orderWithAllInfo.AddressInfo?.RecipientAddressName,
+            RecipientHouse = orderWithAllInfo.AddressInfo?.RecipientHouse,
+            RecipientFlat = orderWithAllInfo.AddressInfo?.RecipientFlat,
+        };
+
+        return createIntDocRequest;
     }
 }

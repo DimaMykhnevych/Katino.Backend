@@ -31,6 +31,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<OrderRecipient> OrderRecipients { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<OrderAddressInfo> OrderAddressInfo { get; set; }
+    public DbSet<Order> Orders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

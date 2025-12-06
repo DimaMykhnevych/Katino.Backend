@@ -1,6 +1,7 @@
 ﻿using Katino.Domain.Entities;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Infrastructure.Persistance.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Katino.Infrastructure.Persistance.Repositories.OrderRepository;
 
@@ -8,5 +9,22 @@ public class OrderRepository : Repository<Order>, IOrderRepository
 {
     public OrderRepository(KatinoDbContext context) : base(context)
     {
+    }
+
+    public async Task<Order> GetOrderWithInfoForInternetDocCreation(Guid orderId)
+    {
+        return await context.Orders
+            .Include(o => o.OrderNpOptionsSeats)
+                .ThenInclude(o => o.NpOptionsSeat)
+            .Include(o => o.SenderNpWarehouse)
+            .Include(o => o.RecipientNpWarehouse)
+            .Include(o => o.SenderNpCity)
+            .Include(o => o.RecipientNpCity)
+            .Include(o => o.SenderContactPerson)
+            .Include(o => o.OrderRecipient)
+                .ThenInclude(o => o.NpContactPerson)
+            .Include(o => o.AddressInfo)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orderId);
     }
 }
