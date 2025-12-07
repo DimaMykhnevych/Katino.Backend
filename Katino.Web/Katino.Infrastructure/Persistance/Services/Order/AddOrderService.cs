@@ -68,7 +68,7 @@ public class AddOrderService : IAddOrderService
             Guid? recipientNpCityId = null;
             if (order.DeliveryType == DeliveryType.WarehouseOrPost)
             {
-                _logger.LogTrace($"Upserting recipient city {order.SenderNpCity.Present}");
+                _logger.LogTrace($"Upserting recipient city {order.RecipientNpCity.Present}");
                 recipientNpCityId = await _addNpCityService.UpsertNpCityAsync(order.RecipientNpCity);
             }
 
@@ -97,8 +97,8 @@ public class AddOrderService : IAddOrderService
                         FirstName = order.OrderRecipient.NpContactPerson.FirstName,
                         MiddleName = order.OrderRecipient.NpContactPerson.MiddleName,
                         Phones = order.OrderRecipient.NpContactPerson.Phones,
-                        Ref = addedContactPerson.Ref,
-                        CounterpartyRef = addedContactPerson.ContactPerson.Data.First().Ref
+                        Ref = addedContactPerson.ContactPerson.Data.First().Ref,
+                        CounterpartyRef = addedContactPerson.Ref
                     }
                 };
 
@@ -184,8 +184,9 @@ public class AddOrderService : IAddOrderService
                     var response = JsonSerializer.Serialize(internetDocumentCreationResponse);
                     _logger.LogError($"An error occurred while creating internet document for order {order.Id}: {response}");
 
-                    orderWithAllInfo.InternetDocumentCreationAttempted = true;
-                    await _orderRepository.Update(orderWithAllInfo);
+                    insertedOrder.InternetDocumentCreationAttempted = true;
+
+                    // We don't use _orderRepository.Update, because this instance already tracked by _orderRepository.Insert
                     await _orderRepository.Save();
 
                     return new() { OrderAddedSuccessfully = true };
@@ -193,11 +194,11 @@ public class AddOrderService : IAddOrderService
 
                 _logger.LogInformation($"Internet document for order {order.Id} created successfuly");
 
-                orderWithAllInfo.InternetDocumentCreationAttempted = true;
-                orderWithAllInfo.InternetDocumentRef = internetDocumentCreationResponse.Data[0].Ref;
-                orderWithAllInfo.InternetDocumentIntDocNumber = internetDocumentCreationResponse.Data[0].IntDocNumber;
+                insertedOrder.InternetDocumentCreationAttempted = true;
+                insertedOrder.InternetDocumentRef = internetDocumentCreationResponse.Data[0].Ref;
+                insertedOrder.InternetDocumentIntDocNumber = internetDocumentCreationResponse.Data[0].IntDocNumber;
 
-                await _orderRepository.Update(orderWithAllInfo);
+                // We don't use _orderRepository.Update, because this instance already tracked by _orderRepository.Insert
                 await _orderRepository.Save();
 
                 return new() { OrderAddedSuccessfully = true, NpInternetDocCreatedSuccessfully = true };
@@ -205,6 +206,12 @@ public class AddOrderService : IAddOrderService
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred while adding NP internet document for order");
+
+                insertedOrder.InternetDocumentCreationAttempted = true;
+
+                // We don't use _orderRepository.Update, because this instance already tracked by _orderRepository.Insert
+                await _orderRepository.Save();
+
                 return new() { OrderAddedSuccessfully = true };
             }
         }

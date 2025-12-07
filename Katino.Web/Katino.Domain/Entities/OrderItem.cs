@@ -12,6 +12,8 @@ public class OrderItem
     public string Comment { get; set; }
     public int Quantity { get; set; }
 
+    // TODO completed date?
+
     public OrderItemStatus OrderItemStatus { get; set; }
     public int QuantityToProduce { get; set; }
 

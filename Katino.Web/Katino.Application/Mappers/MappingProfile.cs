@@ -2,6 +2,7 @@
 using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
+using Katino.Application.Commands.OrderN.AddOrder;
 using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
@@ -11,9 +12,15 @@ using Katino.Application.DTOs.CrmUserSettings;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.NovaPost;
 using Katino.Application.DTOs.NpCity;
+using Katino.Application.DTOs.NpContactPerson;
+using Katino.Application.DTOs.NpOptionsSeat;
 using Katino.Application.DTOs.NpWarehouse;
 using Katino.Application.DTOs.Order;
 using Katino.Application.DTOs.Order.NovaPost;
+using Katino.Application.DTOs.OrderAddressInfo;
+using Katino.Application.DTOs.OrderItem;
+using Katino.Application.DTOs.OrderNpOptionsSeat;
+using Katino.Application.DTOs.OrderRecipient;
 using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
@@ -62,11 +69,18 @@ public class MappingProfile : Profile
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
         CreateMap<UpdateProductVariantDto, ProductVariant>();
 
-        CreateMap<AddOrderDto, Order>();
-        CreateMap<AddNovaPostInternetDocumentDto, CreateNovaPostInternetDocument>();
+        CreateMap<AddOrderCommand, Order>();
         CreateMap<OrderCreationResult, OrderCreationResultDto>();
+        CreateMap<AddOrderItemDto, OrderItem>();
+        CreateMap<AddNpContactPersonDto, NpContactPerson>();
+        CreateMap<AddOrderRecipientDto, OrderRecipient>();
+        CreateMap<AddNpOptionsSeatDto, NpOptionsSeat>();
+        CreateMap<AddOrderNpOptionsSeatDto, OrderNpOptionsSeat>();
+        CreateMap<AddOrderAddressInfoDto, OrderAddressInfo>();
+
         CreateMap<PayerTypeDto, PayerType>().ReverseMap();
         CreateMap<PaymentMethodDto, PaymentMethod>().ReverseMap();
+        CreateMap<SaleTypeDto, SaleType>().ReverseMap();
         CreateMap<DeliveryTypeDto, DeliveryType>().ReverseMap();
         CreateMap<OptionsSeatDto, OptionsSeat>().ReverseMap();
 

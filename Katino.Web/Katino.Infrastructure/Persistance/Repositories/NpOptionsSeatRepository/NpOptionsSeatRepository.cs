@@ -14,6 +14,7 @@ public class NpOptionsSeatRepository : Repository<NpOptionsSeat>, INpOptionsSeat
     public async Task<NpOptionsSeat> GetBySeatParamsAsync(NpOptionsSeat npOptionsSeat)
     {
         return await context.NpOptionsSeats
+            .AsNoTracking()
             .FirstOrDefaultAsync(f => f.VolumetricWidth == npOptionsSeat.VolumetricWidth &&
                                       f.VolumetricLength == npOptionsSeat.VolumetricLength &&
                                       f.VolumetricHeight == npOptionsSeat.VolumetricHeight &&

@@ -33,8 +33,7 @@ public class AddOrderCommandHandler : IRequestHandler<AddOrderCommand, OrderCrea
 
         try
         {
-            Order order = _mapper.Map<Order>(request.Order);
-            CreateNovaPostInternetDocument npInternetDoc = _mapper.Map<CreateNovaPostInternetDocument>(request.NovaPostInternetDocument);
+            Order order = _mapper.Map<Order>(request);
 
             OrderCreationResult creationResult = await _addOrderService.AddAsync(order).ConfigureAwait(false);
             return _mapper.Map<OrderCreationResultDto>(creationResult);
