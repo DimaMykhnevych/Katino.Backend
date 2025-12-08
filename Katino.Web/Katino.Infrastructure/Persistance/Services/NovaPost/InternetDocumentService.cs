@@ -27,7 +27,6 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
 
     public async Task<NpApiResponse<NpInternetDocumentCreationResponse>> CreateInternetDocumentAsync(CreateNovaPostInternetDocument request)
     {
-        // InternetDocumentCreationAttempted and other ttn related properties update after ttn creation
         // on UI implement 2, 4, 10 sizes dropdown
 
         // TODO start with:

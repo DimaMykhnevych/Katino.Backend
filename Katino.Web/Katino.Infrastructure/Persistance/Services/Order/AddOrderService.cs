@@ -164,12 +164,13 @@ public class AddOrderService : IAddOrderService
             _logger.LogTrace("Updting order product variant quentities");
             await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
 
+            // TODO
             // 7. On Product variant update (quantity in stock) go through all orders that have such order item and update order status and order items, etc.
-            // 7.1 Do following actions when sewer completes their work (update order status and order items).
-            // 7.2 On order delete go through all orders that have such order item and update order status and order items
+            // 7.1 Implement order update (with ttn update if it was successfully created), delete (with ttn deletion), get
+            // 7.2 Do following actions when sewer completes their work (update order status and order items, set order item completed date).
+            // 7.3 On order delete go through all orders that have such order item and update order status and order items
             //     On delete recalculate QuantityInStock for product variants and then analyze existing orders, maybe some orders can be fulfilled, if yes - then reduce product variant amount
             //     Do the same action for order update (order items may be added, removed, quantity changed)
-            // 9. [TODO] Test order creation (add dtos firstly)
 
             try
             {
