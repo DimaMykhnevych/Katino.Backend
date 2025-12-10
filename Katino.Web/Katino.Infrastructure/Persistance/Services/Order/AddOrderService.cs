@@ -165,7 +165,6 @@ public class AddOrderService : IAddOrderService
             await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
 
             // TODO
-            // 7. On Product variant update (quantity in stock) go through all orders that have such order item and update order status and order items, etc.
             // 7.1 Implement order update (with ttn update if it was successfully created), delete (with ttn deletion), get
             // 7.2 Do following actions when sewer completes their work (update order status and order items, set order item completed date).
             // 7.3 On order delete go through all orders that have such order item and update order status and order items
@@ -231,11 +230,11 @@ public class AddOrderService : IAddOrderService
             var productVariant = await _productVariantRepository.Get(orderItem.ProductVariantId);
             if (saleType == SaleType.Retail)
             {
-                productVariant.QuantityRegularSold += 1;
+                productVariant.QuantityRegularSold += orderItem.Quantity;
             }
             else if (saleType == SaleType.Drop || saleType == SaleType.Wholesale)
             {
-                productVariant.QuantityDropSold += 1;
+                productVariant.QuantityDropSold += orderItem.Quantity;
             }
 
             if (orderItem.IsCustomTailoring || productVariant.Status != ProductStatus.InStock)

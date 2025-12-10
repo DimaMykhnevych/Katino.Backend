@@ -1,4 +1,5 @@
 ﻿using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,15 @@ public class OrderRepository : Repository<Order>, IOrderRepository
 {
     public OrderRepository(KatinoDbContext context) : base(context)
     {
+    }
+
+    public async Task<List<Order>> GetActiveOrdersWithSpecificProductVariantAsync(Guid productVariantId)
+    {
+        return await context.Orders
+            .Include(o => o.OrderItems)
+            .AsNoTracking()
+            .Where(o => o.OrderReadinessStatus == OrderReadinessStatus.InProgress && o.OrderItems.Any(i => i.ProductVariantId == productVariantId))
+            .ToListAsync();
     }
 
     public async Task<Order> GetOrderWithInfoForInternetDocCreation(Guid orderId)
