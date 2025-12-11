@@ -3,6 +3,7 @@ using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
 using Katino.Application.Commands.OrderN.AddOrder;
+using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
@@ -70,13 +71,21 @@ public class MappingProfile : Profile
         CreateMap<UpdateProductVariantDto, ProductVariant>();
 
         CreateMap<AddOrderCommand, Order>();
+        CreateMap<UpdateOrderCommand, Order>();
         CreateMap<OrderCreationResult, OrderCreationResultDto>();
+        CreateMap<OrderUpdateResult, OrderUpdateResultDto>();
         CreateMap<AddOrderItemDto, OrderItem>();
+        CreateMap<UpdateOrderItemDto, OrderItem>();
         CreateMap<AddNpContactPersonDto, NpContactPerson>();
+        CreateMap<UpdateNpContactPersonDto, NpContactPerson>();
         CreateMap<AddOrderRecipientDto, OrderRecipient>();
+        CreateMap<UpdateOrderRecipientDto, OrderRecipient>();
         CreateMap<AddNpOptionsSeatDto, NpOptionsSeat>();
+        CreateMap<UpdateNpOptionsSeatDto, NpOptionsSeat>();
         CreateMap<AddOrderNpOptionsSeatDto, OrderNpOptionsSeat>();
+        CreateMap<UpdateOrderNpOptionsSeatDto, OrderNpOptionsSeat>();
         CreateMap<AddOrderAddressInfoDto, OrderAddressInfo>();
+        CreateMap<UpdateOrderAddressInfoDto, OrderAddressInfo>();
 
         CreateMap<PayerTypeDto, PayerType>().ReverseMap();
         CreateMap<PaymentMethodDto, PaymentMethod>().ReverseMap();
@@ -95,6 +104,7 @@ public class MappingProfile : Profile
         CreateMap<NpWarehouse, NpWarehouseDto>();
 
         CreateMap<AddNpCityDto, NpCity>();
+        CreateMap<UpdateNpCityDto, NpCity>();
         CreateMap<NpCity, GetNpCityDto>();
         CreateMap<AddCrmUserSettingsDto, CrmUserSettings>();
         CreateMap<UpdateCrmUserSettingsDto, CrmUserSettings>();

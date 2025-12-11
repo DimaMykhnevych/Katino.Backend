@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
-using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.DTOs.Order;
 using Katino.Domain.Entities;
 using Katino.Domain.Models;
-using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -22,7 +20,7 @@ public class AddOrderCommandHandler : IRequestHandler<AddOrderCommand, OrderCrea
         IMapper mapper)
     {
         _addOrderService = addOrderService;
-        _logger = loggerFactory?.CreateLogger(nameof(AddProductCommandHandler));
+        _logger = loggerFactory?.CreateLogger(nameof(AddOrderCommandHandler));
         _mapper = mapper;
     }
 
