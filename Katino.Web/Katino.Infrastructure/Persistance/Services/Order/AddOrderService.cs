@@ -6,12 +6,12 @@ using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
-using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
+using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Microsoft.Extensions.Logging;
@@ -28,7 +28,7 @@ public class AddOrderService : IAddOrderService
     private readonly IContactPersonService _contactPersonService;
     private readonly IOrderRecipientRepository _orderRecipientRepository;
     private readonly IAddNpOptionsSeatService _addNpOptionsSeatService;
-    private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IOrderRepository _orderRepository;
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
@@ -41,7 +41,7 @@ public class AddOrderService : IAddOrderService
         IContactPersonService contactPersonService,
         IOrderRecipientRepository orderRecipientRepository,
         IAddNpOptionsSeatService addNpOptionsSeatService,
-        IProductVariantRepository productVariantRepository,
+        IOrderItemChangeService orderItemChangeService,
         IOrderRepository orderRepository,
         IKatinoDbContext katinoDbContext,
         ILoggerFactory loggerFactory)
@@ -53,9 +53,9 @@ public class AddOrderService : IAddOrderService
         _contactPersonService = contactPersonService;
         _orderRecipientRepository = orderRecipientRepository;
         _addNpOptionsSeatService = addNpOptionsSeatService;
-        _productVariantRepository = productVariantRepository;
         _orderRepository = orderRepository;
         _katinoDbContext = katinoDbContext;
+        _orderItemChangeService = orderItemChangeService;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -127,7 +127,7 @@ public class AddOrderService : IAddOrderService
 
             // 1. Process orderItems (set quantity to produce + order item statuses)
             _logger.LogTrace("Processing order items statuses");
-            await ProcessNewOrderItems(order.OrderItems);
+            await _orderItemChangeService.ProcessCurrentOrderItemsStatuses(order.OrderItems);
 
             Order orderToAdd = new()
             {
@@ -169,8 +169,8 @@ public class AddOrderService : IAddOrderService
 
                 // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
                 // QuantityRegularSold QuantityDropSold <-- for all product variant items
-                _logger.LogTrace("Updting order product variant quentities");
-                await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
+                _logger.LogTrace("Updting order product variant quentities (handling added order items)");
+                await HandleAddedOrderItems(order.SaleType, order.OrderItems);
                 await transaction.CommitAsync();
             }
             catch(Exception ex)
@@ -239,79 +239,9 @@ public class AddOrderService : IAddOrderService
         }
     }
 
-    public async Task UpdateProductVariantsQuantities(SaleType saleType, List<OrderItem> orderItems)
+    public async Task HandleAddedOrderItems(SaleType saleType, List<OrderItem> orderItems)
     {
-        // Updating QuantityInStock, QuantityRegularSold and QuantityDropSold + ProductVariant status
-        foreach (var orderItem in orderItems)
-        {
-            var productVariant = await _productVariantRepository.Get(orderItem.ProductVariantId);
-            if (saleType == SaleType.Retail)
-            {
-                productVariant.QuantityRegularSold += orderItem.Quantity;
-            }
-            else if (saleType == SaleType.Drop || saleType == SaleType.Wholesale)
-            {
-                productVariant.QuantityDropSold += orderItem.Quantity;
-            }
-
-            if (orderItem.IsCustomTailoring || productVariant.Status != ProductStatus.InStock)
-            {
-                await _productVariantRepository.Update(productVariant);
-                continue;
-            }
-
-            var newQuantityInStock = productVariant.QuantityInStock < orderItem.Quantity
-                ? 0
-                : productVariant.QuantityInStock - orderItem.Quantity;
-
-            productVariant.QuantityInStock = newQuantityInStock;
-            productVariant.Status = newQuantityInStock > 0 ? ProductStatus.InStock : ProductStatus.OnOrder;
-
-            await _productVariantRepository.Update(productVariant);
-        }
-
-        await _productVariantRepository.Save();
-    }
-
-    private async Task ProcessNewOrderItems(List<OrderItem> orderItems)
-    {
-        foreach (var orderItem in orderItems)
-        {
-            if (orderItem.IsCustomTailoring)
-            {
-                orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
-                orderItem.QuantityToProduce = orderItem.Quantity;
-                continue;
-            }
-
-            var productVariant = await _productVariantRepository.Get(orderItem.ProductVariantId);
-            if (productVariant.Status == ProductStatus.OnOrder)
-            {
-                orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
-                orderItem.QuantityToProduce = orderItem.Quantity;
-                continue;
-            }
-
-            if (productVariant.Status == ProductStatus.Discontinued)
-            {
-                continue;
-            }
-
-            if (productVariant.Status == ProductStatus.InStock)
-            {
-                var enoughItemsInStock = productVariant.QuantityInStock - orderItem.Quantity >= 0;
-                if (enoughItemsInStock)
-                {
-                    orderItem.OrderItemStatus = OrderItemStatus.Ready;
-                    orderItem.QuantityToProduce = 0;
-                }
-                else
-                {
-                    orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
-                    orderItem.QuantityToProduce = orderItem.Quantity - productVariant.QuantityInStock;
-                }
-            }
-        }
+        await _orderItemChangeService.HandleAddedOrderItems(saleType, orderItems);
     }
 
     private CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)

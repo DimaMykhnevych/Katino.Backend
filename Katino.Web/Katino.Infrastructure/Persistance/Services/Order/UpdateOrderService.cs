@@ -3,18 +3,16 @@ using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
-using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
-using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
+using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
-using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderN;
@@ -28,10 +26,8 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IContactPersonService _contactPersonService;
     private readonly IOrderRecipientRepository _orderRecipientRepository;
     private readonly IAddNpOptionsSeatService _addNpOptionsSeatService;
-    private readonly IProductVariantRepository _productVariantRepository;
     private readonly IOrderRepository _orderRepository;
-    private readonly IUpdateProductVariantService _updateProductVariantService;
-    private readonly IOrderItemRepository _orderItemRepository;
+    private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
 
@@ -43,11 +39,9 @@ public class UpdateOrderService : IUpdateOrderService
         IContactPersonService contactPersonService,
         IOrderRecipientRepository orderRecipientRepository,
         IAddNpOptionsSeatService addNpOptionsSeatService,
-        IProductVariantRepository productVariantRepository,
         IOrderRepository orderRepository,
-        IUpdateProductVariantService updateProductVariantService,
         IKatinoDbContext katinoDbContext,
-        IOrderItemRepository orderItemRepository,
+        IOrderItemChangeService orderItemChangeService,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -57,11 +51,9 @@ public class UpdateOrderService : IUpdateOrderService
         _contactPersonService = contactPersonService;
         _orderRecipientRepository = orderRecipientRepository;
         _addNpOptionsSeatService = addNpOptionsSeatService;
-        _productVariantRepository = productVariantRepository;
         _orderRepository = orderRepository;
-        _updateProductVariantService = updateProductVariantService;
-        _orderItemRepository = orderItemRepository;
         _katinoDbContext = katinoDbContext;
+        _orderItemChangeService = orderItemChangeService;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
@@ -135,7 +127,7 @@ public class UpdateOrderService : IUpdateOrderService
             }
 
             _logger.LogTrace("Processing current order items statuses");
-            await ProcessCurrentOrderItemsStatuses(order.OrderItems);
+            await _orderItemChangeService.ProcessCurrentOrderItemsStatuses(order.OrderItems);
 
             await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
@@ -179,102 +171,17 @@ public class UpdateOrderService : IUpdateOrderService
             deletedOrderItems.Count);
 
         await HandleDeletedOrderItems(saleType, deletedOrderItems);
-        //await HandleAddedOrderItems(addedItems);
+        await HandleAddedOrderItems(saleType, addedOrderItems);
         //await HandleUpdatedOrderItems(itemsToUpdate, existingOrderItemsFromDb);
+    }
+
+    public async Task HandleAddedOrderItems(SaleType saleType, List<OrderItem> orderItems)
+    {
+        await _orderItemChangeService.HandleAddedOrderItems(saleType, orderItems);
     }
 
     private async Task HandleDeletedOrderItems(SaleType saleType, List<OrderItem> deletedItems)
     {
-        foreach (var orderItem in deletedItems)
-        {
-            var productVariant = await _productVariantRepository.GetAsNoTracking(orderItem.ProductVariantId);
-            if (saleType == SaleType.Retail)
-            {
-                productVariant.QuantityRegularSold -= orderItem.Quantity;
-            }
-            else if (saleType == SaleType.Drop || saleType == SaleType.Wholesale)
-            {
-                productVariant.QuantityDropSold -= orderItem.Quantity;
-            }
-
-            // Ignore custom tailoring in product variant QuantityInStock and Status
-            if (orderItem.IsCustomTailoring)
-            {
-                await _productVariantRepository.Update(productVariant);
-                continue;
-            }
-
-            var oldProductVariantQuantityInStock = productVariant.QuantityInStock;
-
-            if (orderItem.OrderItemStatus == OrderItemStatus.Ready)
-            {
-                productVariant.QuantityInStock += orderItem.Quantity;
-            }
-            else if (orderItem.OrderItemStatus == OrderItemStatus.ForSewing)
-            {
-                var actualAddedQuantity = orderItem.Quantity - orderItem.QuantityToProduce;
-                productVariant.QuantityInStock += actualAddedQuantity;
-            }
-
-            productVariant.Status = productVariant.QuantityInStock > 0 ? ProductStatus.InStock : ProductStatus.OnOrder;
-
-            bool hasQuantityChanged = oldProductVariantQuantityInStock != productVariant.QuantityInStock;
-
-            // TODO currently save in db occurs during "await _orderRepository.Save();" in HandleProductVariantQuantityChange
-            await _productVariantRepository.Update(productVariant);
-
-            if (hasQuantityChanged)
-            {
-                await _updateProductVariantService
-                    .HandleProductVariantQuantityChange(orderItem.ProductVariantId, productVariant.QuantityInStock);
-            }
-
-            _orderItemRepository.Delete(orderItem);
-        }
-
-        await _productVariantRepository.Save();
-        await _orderItemRepository.Save();
-    }
-
-    // TODO the same method is in AddOrderService - ProcessNewOrderItems, move to one place
-    private async Task ProcessCurrentOrderItemsStatuses(List<OrderItem> orderItems)
-    {
-        foreach (var orderItem in orderItems)
-        {
-            if (orderItem.IsCustomTailoring)
-            {
-                orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
-                orderItem.QuantityToProduce = orderItem.Quantity;
-                continue;
-            }
-
-            var productVariant = await _productVariantRepository.Get(orderItem.ProductVariantId);
-            if (productVariant.Status == ProductStatus.OnOrder)
-            {
-                orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
-                orderItem.QuantityToProduce = orderItem.Quantity;
-                continue;
-            }
-
-            if (productVariant.Status == ProductStatus.Discontinued)
-            {
-                continue;
-            }
-
-            if (productVariant.Status == ProductStatus.InStock)
-            {
-                var enoughItemsInStock = productVariant.QuantityInStock - orderItem.Quantity >= 0;
-                if (enoughItemsInStock)
-                {
-                    orderItem.OrderItemStatus = OrderItemStatus.Ready;
-                    orderItem.QuantityToProduce = 0;
-                }
-                else
-                {
-                    orderItem.OrderItemStatus = OrderItemStatus.ForSewing;
-                    orderItem.QuantityToProduce = orderItem.Quantity - productVariant.QuantityInStock;
-                }
-            }
-        }
+        await _orderItemChangeService.HandleDeletedOrderItems(saleType, deletedItems);
     }
 }
