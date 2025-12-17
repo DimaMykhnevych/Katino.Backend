@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Entities;
+﻿using Katino.Domain.Context;
+using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
@@ -29,6 +30,7 @@ public class AddOrderService : IAddOrderService
     private readonly IAddNpOptionsSeatService _addNpOptionsSeatService;
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IOrderRepository _orderRepository;
+    private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
 
     public AddOrderService(
@@ -41,6 +43,7 @@ public class AddOrderService : IAddOrderService
         IAddNpOptionsSeatService addNpOptionsSeatService,
         IProductVariantRepository productVariantRepository,
         IOrderRepository orderRepository,
+        IKatinoDbContext katinoDbContext,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -52,6 +55,7 @@ public class AddOrderService : IAddOrderService
         _addNpOptionsSeatService = addNpOptionsSeatService;
         _productVariantRepository = productVariantRepository;
         _orderRepository = orderRepository;
+        _katinoDbContext = katinoDbContext;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -156,16 +160,29 @@ public class AddOrderService : IAddOrderService
 
             // 3. Save order
             _logger.LogTrace("Saving order in db");
-            var insertedOrder = await _orderRepository.Insert(orderToAdd);
-            await _orderRepository.Save();
+            await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
-            // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
-            // QuantityRegularSold QuantityDropSold <-- for all product variant items
-            _logger.LogTrace("Updting order product variant quentities");
-            await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
+            var insertedOrder = await _orderRepository.Insert(orderToAdd);
+            try
+            {
+                await _orderRepository.Save();
+
+                // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
+                // QuantityRegularSold QuantityDropSold <-- for all product variant items
+                _logger.LogTrace("Updting order product variant quentities");
+                await UpdateProductVariantsQuantities(order.SaleType, order.OrderItems);
+                await transaction.CommitAsync();
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "An error occured during saving order and updating product variant quantities");
+                await transaction.RollbackAsync();
+
+                throw;
+            }
 
             // TODO
-            // 7.1 Implement order update (with ttn update if it was successfully created), delete (with ttn deletion), get
+            // 7.1 Implement order update (with ttn update if it was successfully created), delete (with ttn deletion), get (on get - firstly get actual NP statuses, save in db and then show, also on UI separate control to get actual statuses(for completed NP statuses not calling API again), maybe pagination should be used)
             // 7.2 Do following actions when sewer completes their work (update order status and order items, set order item completed date).
             // 7.3 On order delete go through all orders that have such order item and update order status and order items
             //     On delete recalculate QuantityInStock for product variants and then analyze existing orders, maybe some orders can be fulfilled, if yes - then reduce product variant amount

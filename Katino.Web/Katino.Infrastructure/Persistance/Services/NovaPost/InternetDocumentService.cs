@@ -34,6 +34,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         // 10. On UI on order save city present and DeliveryRef will also be sent in request and will be saved in NpCity table if not exist and the NpCityId will be stored
         //    in Order. On get orders by this NpCityId we can load the requried info. Same should be done in User settings (for cities and warehouses, NpCityId and NpWarehouseID
         //    will be stored in settings and on load all info will be retrieved).
+        // 11. On UI on order update disable sale type selection
 
         ServiceType serviceType;
         switch (request.DeliveryType)

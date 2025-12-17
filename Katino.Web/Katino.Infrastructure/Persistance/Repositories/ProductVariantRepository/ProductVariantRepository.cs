@@ -11,6 +11,13 @@ public class ProductVariantRepository : Repository<ProductVariant>, IProductVari
     {
     }
 
+    public async Task<ProductVariant> GetAsNoTracking(Guid id)
+    {
+        return await context.ProductVariants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
     public async Task<ProductVariant> GetWithMeasurements(Guid id)
     {
         return await context.ProductVariants

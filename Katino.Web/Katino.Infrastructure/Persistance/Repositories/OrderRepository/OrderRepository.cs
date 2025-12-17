@@ -21,6 +21,15 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .ToListAsync();
     }
 
+    public async Task<Order> GetExistingOrderForUpdate(Guid orderId)
+    {
+        return await context.Orders
+            .Include(o => o.SenderContactPerson)
+            .Include(o => o.OrderItems)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
     public async Task<Order> GetOrderWithInfoForInternetDocCreation(Guid orderId)
     {
         return await context.Orders

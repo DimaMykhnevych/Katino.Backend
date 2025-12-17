@@ -119,7 +119,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         }
     }
 
-    private async Task HandleProductVariantQuantityChange(Guid productVariantId, int newQuantity)
+    public async Task HandleProductVariantQuantityChange(Guid productVariantId, int newQuantity)
     {
         var ordersToCheck = await _orderRepository.GetActiveOrdersWithSpecificProductVariantAsync(productVariantId);
         int currentProductVariantQuantity = newQuantity;
