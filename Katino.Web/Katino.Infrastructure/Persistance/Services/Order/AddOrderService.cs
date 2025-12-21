@@ -6,6 +6,7 @@ using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
@@ -30,6 +31,7 @@ public class AddOrderService : IAddOrderService
     private readonly IAddNpOptionsSeatService _addNpOptionsSeatService;
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IOrderRepository _orderRepository;
+    private readonly IProductVariantRepository _productVariantRepository;
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
 
@@ -43,6 +45,7 @@ public class AddOrderService : IAddOrderService
         IAddNpOptionsSeatService addNpOptionsSeatService,
         IOrderItemChangeService orderItemChangeService,
         IOrderRepository orderRepository,
+        IProductVariantRepository productVariantRepository,
         IKatinoDbContext katinoDbContext,
         ILoggerFactory loggerFactory)
     {
@@ -56,6 +59,7 @@ public class AddOrderService : IAddOrderService
         _orderRepository = orderRepository;
         _katinoDbContext = katinoDbContext;
         _orderItemChangeService = orderItemChangeService;
+        _productVariantRepository = productVariantRepository;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -127,7 +131,21 @@ public class AddOrderService : IAddOrderService
 
             // 1. Process orderItems (set quantity to produce + order item statuses)
             _logger.LogTrace("Processing order items statuses");
-            await _orderItemChangeService.ProcessCurrentOrderItemsStatuses(order.OrderItems);
+
+            List<ProductVariant> productVariantsRelatedToCurrentOrder = [];
+            var newProductVariantIds = order.OrderItems
+                .Select(i => i.ProductVariantId)
+                .ToList();
+            foreach (var productVariantId in newProductVariantIds)
+            {
+                var productVariant = await _productVariantRepository.GetAsNoTracking(productVariantId);
+                productVariantsRelatedToCurrentOrder.Add(productVariant);
+            }
+
+            // ProcessNewOrderItemsStatuses should be called before HandleAddedOrderItems, because in
+            // HandleAddedOrderItems product variant quantities are changed and because of that
+            // there may be incorrect statuses, if we call ProcessNewOrderItemsStatuses after HandleAddedOrderItems
+            _orderItemChangeService.ProcessNewOrderItemsStatuses(order.OrderItems, productVariantsRelatedToCurrentOrder);
 
             Order orderToAdd = new()
             {
@@ -170,7 +188,9 @@ public class AddOrderService : IAddOrderService
                 // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
                 // QuantityRegularSold QuantityDropSold <-- for all product variant items
                 _logger.LogTrace("Updting order product variant quentities (handling added order items)");
-                await HandleAddedOrderItems(order.SaleType, order.OrderItems);
+                await _orderItemChangeService.HandleAddedOrderItems(order.SaleType, order.OrderItems, [], productVariantsRelatedToCurrentOrder);
+
+                await _productVariantRepository.Save();
                 await transaction.CommitAsync();
             }
             catch(Exception ex)
@@ -237,11 +257,6 @@ public class AddOrderService : IAddOrderService
             _logger.LogError(ex, $"An error occurred while adding order");
             return new();
         }
-    }
-
-    public async Task HandleAddedOrderItems(SaleType saleType, List<OrderItem> orderItems)
-    {
-        await _orderItemChangeService.HandleAddedOrderItems(saleType, orderItems);
     }
 
     private CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)

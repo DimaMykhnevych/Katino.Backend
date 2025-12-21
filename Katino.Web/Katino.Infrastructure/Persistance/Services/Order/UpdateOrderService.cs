@@ -5,6 +5,7 @@ using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
@@ -13,6 +14,7 @@ using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
+using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderN;
@@ -29,6 +31,8 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IKatinoDbContext _katinoDbContext;
+    private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly ILogger _logger;
 
     public UpdateOrderService(
@@ -42,6 +46,8 @@ public class UpdateOrderService : IUpdateOrderService
         IOrderRepository orderRepository,
         IKatinoDbContext katinoDbContext,
         IOrderItemChangeService orderItemChangeService,
+        IProductVariantRepository productVariantRepository,
+        IUpdateProductVariantService updateProductVariantService,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -54,6 +60,8 @@ public class UpdateOrderService : IUpdateOrderService
         _orderRepository = orderRepository;
         _katinoDbContext = katinoDbContext;
         _orderItemChangeService = orderItemChangeService;
+        _productVariantRepository = productVariantRepository;
+        _updateProductVariantService = updateProductVariantService;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
@@ -127,15 +135,29 @@ public class UpdateOrderService : IUpdateOrderService
             }
 
             _logger.LogTrace("Processing current order items statuses");
-            await _orderItemChangeService.ProcessCurrentOrderItemsStatuses(order.OrderItems);
+
+            Dictionary<Guid, int> currentProductQuantities = [];
+            Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
 
             await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
-            await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType);
+            await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing);
             // TODO add order update (with calculated order status) and wrap transaction with try catch
             // as in the order insert
 
             await transaction.CommitAsync();
+
+            // At the end, after actual order update perform updates of other orders
+            foreach (var currentQuantity in currentProductQuantities)
+            {
+                var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
+                if (updatedQuantity > currentQuantity.Value)
+                {
+                    _logger.LogDebug($"Product variant quantity change detected, product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
+                    await _updateProductVariantService
+                        .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
+                }
+            }
 
             return new();
         }
@@ -149,7 +171,9 @@ public class UpdateOrderService : IUpdateOrderService
     private async Task HandleOrderItemsUpdate(
         List<OrderItem> newOrderItems,
         List<OrderItem> existingOrderItemsFromDb,
-        SaleType saleType)
+        SaleType saleType,
+        Dictionary<Guid, int> currentQuantities,
+        Dictionary<Guid, int> productQuantitiesAfterProcessing)
     {
         _logger.LogTrace("Handling order items update");
         var addedOrderItems = newOrderItems.Where(i => i.Id == Guid.Empty).ToList();
@@ -170,18 +194,37 @@ public class UpdateOrderService : IUpdateOrderService
             existingItemIds.Count,
             deletedOrderItems.Count);
 
-        await HandleDeletedOrderItems(saleType, deletedOrderItems);
-        await HandleAddedOrderItems(saleType, addedOrderItems);
-        //await HandleUpdatedOrderItems(itemsToUpdate, existingOrderItemsFromDb);
-    }
+        var newProductVariantIds = newOrderItems
+            .Select(i => i.ProductVariantId);
+        var existingProductVariantIds = existingOrderItemsFromDb
+            .Select(i => i.ProductVariantId);
+        HashSet<Guid> currentOrderProductVariants = newProductVariantIds
+            .Union(existingProductVariantIds)
+            .ToHashSet();
 
-    public async Task HandleAddedOrderItems(SaleType saleType, List<OrderItem> orderItems)
-    {
-        await _orderItemChangeService.HandleAddedOrderItems(saleType, orderItems);
-    }
+        List<ProductVariant> productVariantsRelatedToCurrentOrder = [];
+        foreach (var productVariantId in currentOrderProductVariants)
+        {
+            var productVariant = await _productVariantRepository.GetAsNoTracking(productVariantId);
+            productVariantsRelatedToCurrentOrder.Add(productVariant);
+            currentQuantities[productVariantId] = productVariant.QuantityInStock;
+            productQuantitiesAfterProcessing[productVariantId] = productVariant.QuantityInStock;
+        }
 
-    private async Task HandleDeletedOrderItems(SaleType saleType, List<OrderItem> deletedItems)
-    {
-        await _orderItemChangeService.HandleDeletedOrderItems(saleType, deletedItems);
+        // The ordering of processing of order items is important!
+        // Firstly - HandleDeletedOrderItems, because some quantities may be added.
+        // Secondly - HandleUpdatedOrderItems, because some quantities may be added or subtracted. Here the existing order item statuses are updated.
+        // Funally - new order items, quantities only can be subtracted
+
+        await _orderItemChangeService.HandleDeletedOrderItems(saleType, deletedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+        await _orderItemChangeService.HandleUpdatedOrderItems(saleType, existingOrderItems, existingOrderItemsFromDb, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+
+        // ProcessNewOrderItemsStatuses should be called before HandleAddedOrderItems, because in
+        // HandleAddedOrderItems product variant quantities are changed and because of that
+        // there may be incorrect statuses, if we call ProcessNewOrderItemsStatuses after HandleAddedOrderItems
+        _orderItemChangeService.ProcessNewOrderItemsStatuses(addedOrderItems, productVariantsRelatedToCurrentOrder);
+        await _orderItemChangeService.HandleAddedOrderItems(saleType, addedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+
+        await _productVariantRepository.Save();
     }
 }

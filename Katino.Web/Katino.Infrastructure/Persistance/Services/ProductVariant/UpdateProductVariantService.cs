@@ -119,10 +119,11 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         }
     }
 
-    public async Task HandleProductVariantQuantityChange(Guid productVariantId, int newQuantity)
+    public async Task HandleProductVariantQuantityChange(Guid productVariantId, int newQuantity, Guid? orderIdToSkipFromProcessing = null)
     {
         var ordersToCheck = await _orderRepository.GetActiveOrdersWithSpecificProductVariantAsync(productVariantId);
         int currentProductVariantQuantity = newQuantity;
+        var pvQuantityChanged = false;
         foreach (var order in ordersToCheck)
         {
             if (currentProductVariantQuantity <= 0)
@@ -130,8 +131,13 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 break;
             }
 
-            var requiredOrderItem = order.OrderItems.First(i => i.ProductVariantId == productVariantId);
-            if (requiredOrderItem.IsCustomTailoring || requiredOrderItem.OrderItemStatus == OrderItemStatus.Ready)
+            if (orderIdToSkipFromProcessing != null && order.Id == orderIdToSkipFromProcessing)
+            {
+                continue;
+            }
+
+            var requiredOrderItem = order.OrderItems.FirstOrDefault(i => i.ProductVariantId == productVariantId && !i.IsCustomTailoring);
+            if (requiredOrderItem == null || requiredOrderItem.OrderItemStatus == OrderItemStatus.Ready)
             {
                 continue;
             }
@@ -161,9 +167,10 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 : currentProductVariantQuantity - previousQuantityToProduce;
 
             currentProductVariantQuantity = newQuantityInStock;
+            pvQuantityChanged = true;
         }
 
-        if (ordersToCheck.Any())
+        if (pvQuantityChanged)
         {
             var productVariantFromDb = await _productVariantRepository.Get(productVariantId);
             productVariantFromDb.QuantityInStock = currentProductVariantQuantity;
