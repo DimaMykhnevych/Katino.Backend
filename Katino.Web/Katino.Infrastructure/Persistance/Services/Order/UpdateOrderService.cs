@@ -3,6 +3,7 @@ using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
+using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -33,6 +34,7 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IUpdateProductVariantService _updateProductVariantService;
+    private readonly IOrderAddressInfoRepository _orderAddressInfoRepository;
     private readonly ILogger _logger;
 
     public UpdateOrderService(
@@ -48,6 +50,7 @@ public class UpdateOrderService : IUpdateOrderService
         IOrderItemChangeService orderItemChangeService,
         IProductVariantRepository productVariantRepository,
         IUpdateProductVariantService updateProductVariantService,
+        IOrderAddressInfoRepository orderAddressInfoRepository,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -62,6 +65,7 @@ public class UpdateOrderService : IUpdateOrderService
         _orderItemChangeService = orderItemChangeService;
         _productVariantRepository = productVariantRepository;
         _updateProductVariantService = updateProductVariantService;
+        _orderAddressInfoRepository = orderAddressInfoRepository;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
@@ -139,24 +143,87 @@ public class UpdateOrderService : IUpdateOrderService
             Dictionary<Guid, int> currentProductQuantities = [];
             Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
 
+            // ---------------------- Order processing and save ----------------------
+
             await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
-            await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing);
-            // TODO add order update (with calculated order status) and wrap transaction with try catch
-            // as in the order insert
+            try
+            {
+                await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing);
 
-            await transaction.CommitAsync();
+                Order updatedOrder = new()
+                {
+                    Id = order.Id,
+                    SenderNpWarehouseId = order.SenderNpWarehouseId,
+                    RecipientNpWarehouseId = order.RecipientNpWarehouseId,
+                    SenderNpCityId = senderNpCityId,
+                    RecipientNpCityId = recipientNpCityId,
+                    SenderContactPersonId = senderContactPersonId,
+                    OrderRecipientId = orderRecipientId.Value,
+                    PayerType = order.PayerType,
+                    PaymentMethod = order.PaymentMethod,
+                    SaleType = currentOrderInDb.SaleType, // SaleType cannot be updated
+                    CreationDateTime = currentOrderInDb.CreationDateTime,
+                    SendUntilDate = order.SendUntilDate,
+                    Weight = order.Weight,
+                    DeliveryType = order.DeliveryType,
+                    SeatsAmount = order.SeatsAmount,
+                    Description = order.Description,
+                    Cost = order.Cost,
+                    AfterpaymentOnGoodsCost = order.AfterpaymentOnGoodsCost,
+                    OrderItems = order.OrderItems,
+                    OrderNpOptionsSeats = npOptionSeats,
+                    AddressInfo = order.AddressInfo,
+                };
+
+                updatedOrder.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
+                    ? OrderReadinessStatus.InProgress
+                    : OrderReadinessStatus.ReadyToShip;
+
+                _logger.LogTrace("Updating order in db");
+                await _orderRepository.Update(updatedOrder);
+
+                // Handle deletion of AddressInfo
+                if (order.AddressInfo == null && currentOrderInDb.AddressInfo != null)
+                {
+                    _orderAddressInfoRepository.Delete(currentOrderInDb.AddressInfo);
+                    await _orderAddressInfoRepository.Save();
+                }
+                else
+                {
+                    await _orderRepository.Save();
+                }
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occured during updating order");
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            // ---------------------- End Order processing and save ----------------------
+
+            // TODO check whether TTN update required and update it if needed.
 
             // At the end, after actual order update perform updates of other orders
-            foreach (var currentQuantity in currentProductQuantities)
+            try
             {
-                var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
-                if (updatedQuantity > currentQuantity.Value)
+                foreach (var currentQuantity in currentProductQuantities)
                 {
-                    _logger.LogDebug($"Product variant quantity change detected, product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
-                    await _updateProductVariantService
-                        .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
+                    var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
+                    if (updatedQuantity > currentQuantity.Value)
+                    {
+                        _logger.LogDebug($"Product variant quantity change detected, product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
+                        await _updateProductVariantService
+                            .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during handling prduct variant quantity change");
             }
 
             return new();
@@ -224,7 +291,5 @@ public class UpdateOrderService : IUpdateOrderService
         // there may be incorrect statuses, if we call ProcessNewOrderItemsStatuses after HandleAddedOrderItems
         _orderItemChangeService.ProcessNewOrderItemsStatuses(addedOrderItems, productVariantsRelatedToCurrentOrder);
         await _orderItemChangeService.HandleAddedOrderItems(saleType, addedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
-
-        await _productVariantRepository.Save();
     }
 }

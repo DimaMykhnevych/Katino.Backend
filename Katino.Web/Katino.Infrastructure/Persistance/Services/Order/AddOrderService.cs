@@ -183,8 +183,6 @@ public class AddOrderService : IAddOrderService
             var insertedOrder = await _orderRepository.Insert(orderToAdd);
             try
             {
-                await _orderRepository.Save();
-
                 // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
                 // QuantityRegularSold QuantityDropSold <-- for all product variant items
                 _logger.LogTrace("Updting order product variant quentities (handling added order items)");

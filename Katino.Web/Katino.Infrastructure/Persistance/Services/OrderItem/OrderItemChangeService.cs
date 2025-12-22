@@ -68,8 +68,6 @@ public class OrderItemChangeService : IOrderItemChangeService
             _orderItemRepository.Delete(orderItem);
         }
 
-        await _orderItemRepository.Save();
-
         _logger.LogDebug("Deleted order items was processed successfully");
     }
 
@@ -80,19 +78,13 @@ public class OrderItemChangeService : IOrderItemChangeService
         Dictionary<Guid, int> productQuantitiesAfterProcessing,
         List<ProductVariant> productVariants)
     {
+        _logger.LogInformation($"Handling updated order items ({itemsToUpdate.Count})");
+
         foreach (var item in itemsToUpdate)
         {
             var existingOrderItem = existingOrderItemsFromDb.FirstOrDefault(i => i.Id == item.Id);
             var productVariantNew = productVariants.First(pv => pv.Id == item.ProductVariantId);
             var productVariantExisting = productVariants.First(pv => pv.Id == existingOrderItem.ProductVariantId);
-            if (item.ProductVariantId == existingOrderItem.ProductVariantId &&
-                item.IsCustomTailoring == existingOrderItem.IsCustomTailoring &&
-                item.Quantity == existingOrderItem.Quantity &&
-                item.Comment == existingOrderItem.Comment)
-            {
-                _logger.LogTrace($"Order item {item.Id} has not changed, skipping it...");
-                continue;
-            }
 
             // In ProcessOrderItemProductVariantDeletion there may be addtion of product variant quantities
             await ProcessOrderItemProductVariantDeletion(productVariantExisting, saleType, existingOrderItem, productQuantitiesAfterProcessing, false);
@@ -102,6 +94,8 @@ public class OrderItemChangeService : IOrderItemChangeService
 
             // Now decreasing quantities
             await ProcessOrderItemProductVariantAddition(productVariantNew, saleType, item, productQuantitiesAfterProcessing);
+
+            _logger.LogDebug("Order items updated successfully");
         }
     }
 

@@ -26,6 +26,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
         return await context.Orders
             .Include(o => o.SenderContactPerson)
             .Include(o => o.OrderItems)
+            .Include(o => o.AddressInfo)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId);
     }
