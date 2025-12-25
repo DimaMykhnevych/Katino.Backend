@@ -2,6 +2,7 @@
 
 public class SaveInternetDocumentRequest
 {
+    public string Ref { get; set; }
     public string SenderWarehouseIndex { get; set; }
     public string RecipientWarehouseIndex { get; set; }
     public string PayerType { get; set; }

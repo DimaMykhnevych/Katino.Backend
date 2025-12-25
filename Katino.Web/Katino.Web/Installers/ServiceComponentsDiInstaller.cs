@@ -13,6 +13,7 @@ using Katino.Domain.Repositories.NpOptionsSeatRepository;
 using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderItemRepository;
+using Katino.Domain.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
@@ -53,6 +54,7 @@ using Katino.Infrastructure.Persistance.Repositories.NpOptionsSeatRepository;
 using Katino.Infrastructure.Persistance.Repositories.NpWarehouseRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderAddressInfoRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderItemRepository;
+using Katino.Infrastructure.Persistance.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRecipientRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
@@ -136,6 +138,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IOrderRepository, OrderRepository>();
         services.AddTransient<IOrderItemRepository, OrderItemRepository>();
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
+        services.AddTransient<IOrderNpOptionsSeatRepository, OrderNpOptionsSeatRepository>();
     }
 }
 

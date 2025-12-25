@@ -210,7 +210,7 @@ public class AddOrderService : IAddOrderService
             {
                 // 5. Save ttn (creating internet document)
                 var orderWithAllInfo = await _orderRepository.GetOrderWithInfoForInternetDocCreation(insertedOrder.Id);
-                CreateNovaPostInternetDocument document = CreateNovaPostInternetDocument(orderWithAllInfo);
+                CreateNovaPostInternetDocument document =_internetDocumentService.CreateNovaPostInternetDocument(orderWithAllInfo);
 
                 _logger.LogTrace($"Creating internet document for order {orderWithAllInfo.Id}");
                 var internetDocumentCreationResponse = await _internetDocumentService.CreateInternetDocumentAsync(document);
@@ -255,46 +255,5 @@ public class AddOrderService : IAddOrderService
             _logger.LogError(ex, $"An error occurred while adding order");
             return new();
         }
-    }
-
-    private CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)
-    {
-        CreateNovaPostInternetDocument createIntDocRequest = new() 
-        {
-            SenderCityRef = orderWithAllInfo.SenderNpCity.DeliveryCity,
-            SenderCounterpartyRef = orderWithAllInfo.SenderContactPerson.CounterpartyRef,
-            SenderContactPersonRef = orderWithAllInfo.SenderContactPerson.Ref,
-            SenderContactPersonPhones = orderWithAllInfo.SenderContactPerson.Phones,
-            SenderWarehouseIndex = orderWithAllInfo.SenderNpWarehouse.WarehouseIndex,
-            SenderWarehouseRef = orderWithAllInfo.SenderNpWarehouse.Ref,
-
-            RecipientCityRef = orderWithAllInfo.RecipientNpCity?.DeliveryCity,
-            RecipientCounterpartyRef = orderWithAllInfo.OrderRecipient.NpContactPerson.CounterpartyRef,
-            RecipientContactPersonRef = orderWithAllInfo.OrderRecipient.NpContactPerson.Ref,
-            RecipientPhone = orderWithAllInfo.OrderRecipient.NpContactPerson.Phones,
-            RecipientWarehouseIndex = orderWithAllInfo.RecipientNpWarehouse?.WarehouseIndex,
-            RecipientWarehouseRef = orderWithAllInfo.RecipientNpWarehouse?.Ref,
-            RecipientFirstName = orderWithAllInfo.OrderRecipient.NpContactPerson.FirstName,
-            RecipientMiddleName = orderWithAllInfo.OrderRecipient.NpContactPerson.MiddleName,
-            RecipientLastName = orderWithAllInfo.OrderRecipient.NpContactPerson.LastName,
-
-            DeliveryType = orderWithAllInfo.DeliveryType,
-            PayerType = orderWithAllInfo.PayerType,
-            PaymentMethod = orderWithAllInfo.PaymentMethod,
-            Weight = orderWithAllInfo.Weight,
-            SeatsAmount = orderWithAllInfo.SeatsAmount,
-            Description = orderWithAllInfo.Description,
-            Cost = orderWithAllInfo.Cost,
-            AfterpaymentOnGoodsCost = orderWithAllInfo.AfterpaymentOnGoodsCost,
-            OptionsSeat = orderWithAllInfo.OrderNpOptionsSeats.Select(s => s.NpOptionsSeat),
-
-            RecipientAddressNote = orderWithAllInfo.AddressInfo?.RecipientAddressNote,
-            RecipientCityName = orderWithAllInfo.AddressInfo?.RecipientCity,
-            RecipientAddressName = orderWithAllInfo.AddressInfo?.RecipientAddressName,
-            RecipientHouse = orderWithAllInfo.AddressInfo?.RecipientHouse,
-            RecipientFlat = orderWithAllInfo.AddressInfo?.RecipientFlat,
-        };
-
-        return createIntDocRequest;
     }
 }

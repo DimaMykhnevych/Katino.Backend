@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Enums.NovaPost;
+﻿using Katino.Domain.Entities;
+using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Exceptions;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Options;
@@ -25,7 +26,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         _logger = loggerFactory?.CreateLogger(nameof(InternetDocumentService));
     }
 
-    public async Task<NpApiResponse<NpInternetDocumentCreationResponse>> CreateInternetDocumentAsync(CreateNovaPostInternetDocument request)
+    public async Task<NpApiResponse<NpInternetDocumentCreationResponse>> CreateInternetDocumentAsync(CreateNovaPostInternetDocument request, string existingDocRef = null)
     {
         // on UI implement 2, 4, 10 sizes dropdown
 
@@ -60,6 +61,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         {
             saveDocumentRequest = new()
             {
+                Ref = existingDocRef,
                 SenderWarehouseIndex = request.SenderWarehouseIndex,
                 RecipientWarehouseIndex = request.RecipientWarehouseIndex,
                 PayerType = request.PayerType.ToString(),
@@ -100,7 +102,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         {
             ApiKey = _novaPostOptions.ApiKey,
             ModelName = "InternetDocumentGeneral",
-            CalledMethod = "save",
+            CalledMethod = string.IsNullOrEmpty(existingDocRef) ? "save" : "update",
             MethodProperties = saveDocumentRequest
         };
 
@@ -117,6 +119,64 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         CheckApiResponse(saveDocumentResponse);
 
         return saveDocumentResponse;
+    }
+
+    public CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)
+    {
+        CreateNovaPostInternetDocument createIntDocRequest = new()
+        {
+            SenderCityRef = orderWithAllInfo.SenderNpCity.DeliveryCity,
+            SenderCounterpartyRef = orderWithAllInfo.SenderContactPerson.CounterpartyRef,
+            SenderContactPersonRef = orderWithAllInfo.SenderContactPerson.Ref,
+            SenderContactPersonPhones = orderWithAllInfo.SenderContactPerson.Phones,
+            SenderWarehouseIndex = orderWithAllInfo.SenderNpWarehouse.WarehouseIndex,
+            SenderWarehouseRef = orderWithAllInfo.SenderNpWarehouse.Ref,
+
+            RecipientCityRef = orderWithAllInfo.RecipientNpCity?.DeliveryCity,
+            RecipientCounterpartyRef = orderWithAllInfo.OrderRecipient.NpContactPerson.CounterpartyRef,
+            RecipientContactPersonRef = orderWithAllInfo.OrderRecipient.NpContactPerson.Ref,
+            RecipientPhone = orderWithAllInfo.OrderRecipient.NpContactPerson.Phones,
+            RecipientWarehouseIndex = orderWithAllInfo.RecipientNpWarehouse?.WarehouseIndex,
+            RecipientWarehouseRef = orderWithAllInfo.RecipientNpWarehouse?.Ref,
+            RecipientFirstName = orderWithAllInfo.OrderRecipient.NpContactPerson.FirstName,
+            RecipientMiddleName = orderWithAllInfo.OrderRecipient.NpContactPerson.MiddleName,
+            RecipientLastName = orderWithAllInfo.OrderRecipient.NpContactPerson.LastName,
+
+            DeliveryType = orderWithAllInfo.DeliveryType,
+            PayerType = orderWithAllInfo.PayerType,
+            PaymentMethod = orderWithAllInfo.PaymentMethod,
+            Weight = orderWithAllInfo.Weight,
+            SeatsAmount = orderWithAllInfo.SeatsAmount,
+            Description = orderWithAllInfo.Description,
+            Cost = orderWithAllInfo.Cost,
+            AfterpaymentOnGoodsCost = orderWithAllInfo.AfterpaymentOnGoodsCost,
+            OptionsSeat = orderWithAllInfo.OrderNpOptionsSeats.Select(s => new NpOptionsSeat()
+            {
+                VolumetricWidth = s.NpOptionsSeat.VolumetricWidth,
+                VolumetricLength = s.NpOptionsSeat.VolumetricLength,
+                VolumetricHeight = s.NpOptionsSeat.VolumetricHeight,
+                Weight = s.NpOptionsSeat.Weight,
+            }),
+
+            RecipientAddressNote = orderWithAllInfo.AddressInfo?.RecipientAddressNote,
+            RecipientCityName = orderWithAllInfo.AddressInfo?.RecipientCity,
+            RecipientAddressName = orderWithAllInfo.AddressInfo?.RecipientAddressName,
+            RecipientHouse = orderWithAllInfo.AddressInfo?.RecipientHouse,
+            RecipientFlat = orderWithAllInfo.AddressInfo?.RecipientFlat,
+        };
+
+        return createIntDocRequest;
+    }
+
+    public UpdateNovaPostInternetDocument CreateUpdateNovaPostInternetDocument(Order orderWithAllInfo)
+    {
+        UpdateNovaPostInternetDocument updateIntDocRequest = new()
+        {
+            Ref = orderWithAllInfo.InternetDocumentRef,
+            CreateNovaPostInternetDocument = CreateNovaPostInternetDocument(orderWithAllInfo)
+        };
+
+        return updateIntDocRequest;
     }
 
     private SaveInternetDocumentRequest GetRequestForAddressDelivery(CreateNovaPostInternetDocument request, ServiceType serviceType)

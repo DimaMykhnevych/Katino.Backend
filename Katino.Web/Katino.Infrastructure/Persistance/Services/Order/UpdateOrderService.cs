@@ -3,7 +3,9 @@ using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
+using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
+using Katino.Domain.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -17,6 +19,7 @@ using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderN;
 
@@ -35,6 +38,7 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly IOrderAddressInfoRepository _orderAddressInfoRepository;
+    private readonly IOrderNpOptionsSeatRepository _orderNpOptionsSeatRepository;
     private readonly ILogger _logger;
 
     public UpdateOrderService(
@@ -51,6 +55,7 @@ public class UpdateOrderService : IUpdateOrderService
         IProductVariantRepository productVariantRepository,
         IUpdateProductVariantService updateProductVariantService,
         IOrderAddressInfoRepository orderAddressInfoRepository,
+        IOrderNpOptionsSeatRepository orderNpOptionsSeatRepository,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -66,6 +71,7 @@ public class UpdateOrderService : IUpdateOrderService
         _productVariantRepository = productVariantRepository;
         _updateProductVariantService = updateProductVariantService;
         _orderAddressInfoRepository = orderAddressInfoRepository;
+        _orderNpOptionsSeatRepository = orderNpOptionsSeatRepository;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
@@ -75,6 +81,14 @@ public class UpdateOrderService : IUpdateOrderService
         try
         {
             var currentOrderInDb = await _orderRepository.GetExistingOrderForUpdate(order.Id);
+
+            // We are doing this because in HandleDeletedOrderItems there is a call of _orderItemRepository.Delete(orderItem);.
+            // Later in this method we call await _orderRepository.Update(updatedOrder); ant the error thrown:
+            // the entity with the same Id is already tracked. To reslove it we need to reset order properties of each order item.
+            foreach (var item in currentOrderInDb.OrderItems)
+            {
+                item.Order = null;
+            }
 
             _logger.LogTrace($"Upserting sender city {order.SenderNpCity.Present}");
             var senderNpCityId = await _addNpCityService.UpsertNpCityAsync(order.SenderNpCity);
@@ -138,6 +152,12 @@ public class UpdateOrderService : IUpdateOrderService
                 npOptionSeats.Add(new() { NpOptionsSeatId = oprionsSeatId });
             }
 
+            foreach (var orderOptionsSeat in currentOrderInDb.OrderNpOptionsSeats)
+            {
+                orderOptionsSeat.Order = null;
+                _orderNpOptionsSeatRepository.Delete(orderOptionsSeat);
+            }
+
             _logger.LogTrace("Processing current order items statuses");
 
             Dictionary<Guid, int> currentProductQuantities = [];
@@ -147,11 +167,12 @@ public class UpdateOrderService : IUpdateOrderService
 
             await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
+            Order updatedOrder;
             try
             {
                 await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing);
 
-                Order updatedOrder = new()
+                updatedOrder = new()
                 {
                     Id = order.Id,
                     SenderNpWarehouseId = order.SenderNpWarehouseId,
@@ -174,6 +195,9 @@ public class UpdateOrderService : IUpdateOrderService
                     OrderItems = order.OrderItems,
                     OrderNpOptionsSeats = npOptionSeats,
                     AddressInfo = order.AddressInfo,
+                    InternetDocumentCreationAttempted = currentOrderInDb.InternetDocumentCreationAttempted,
+                    InternetDocumentRef = currentOrderInDb.InternetDocumentRef,
+                    InternetDocumentIntDocNumber = currentOrderInDb.InternetDocumentIntDocNumber
                 };
 
                 updatedOrder.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
@@ -205,7 +229,7 @@ public class UpdateOrderService : IUpdateOrderService
 
             // ---------------------- End Order processing and save ----------------------
 
-            // TODO check whether TTN update required and update it if needed.
+            var npInternetDocUpdatedSuccessfully = await UpdateInternetDocument(updatedOrder, currentOrderInDb);
 
             // At the end, after actual order update perform updates of other orders
             try
@@ -221,17 +245,100 @@ public class UpdateOrderService : IUpdateOrderService
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during handling prduct variant quantity change");
             }
 
-            return new();
+            return new() { OrderUpdatedSuccessfully = true, NpInternetDocUpdatedSuccessfully = npInternetDocUpdatedSuccessfully };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"An error occurred while updating order");
             return new();
+        }
+    }
+
+    private async Task<bool> UpdateInternetDocument(Order updatedOrder, Order currentOrderInDb)
+    {
+        try
+        {
+            var orderWithAllInfo = await _orderRepository.GetOrderWithInfoForInternetDocCreation(updatedOrder.Id);
+            CreateNovaPostInternetDocument updatedDocument = _internetDocumentService.CreateNovaPostInternetDocument(orderWithAllInfo);
+            if (string.IsNullOrEmpty(orderWithAllInfo.InternetDocumentIntDocNumber))
+            {
+                _logger.LogTrace($"Creating internet document for order {orderWithAllInfo.Id}, because it wasn't previously created");
+                var internetDocumentCreationResponse = await _internetDocumentService.CreateInternetDocumentAsync(updatedDocument);
+
+                if (!internetDocumentCreationResponse.Success)
+                {
+                    var response = JsonConvert.SerializeObject(internetDocumentCreationResponse);
+                    _logger.LogError($"An error occurred while creating internet document for order {updatedOrder.Id}: {response}");
+
+                    updatedOrder.InternetDocumentCreationAttempted = true;
+
+                    await _orderRepository.Save();
+
+                    return false;
+                }
+
+                _logger.LogInformation($"Internet document for order {updatedOrder.Id} created successfuly");
+
+                updatedOrder.InternetDocumentCreationAttempted = true;
+                updatedOrder.InternetDocumentRef = internetDocumentCreationResponse.Data[0].Ref;
+                updatedOrder.InternetDocumentIntDocNumber = internetDocumentCreationResponse.Data[0].IntDocNumber;
+
+                await _orderRepository.Save();
+
+                return true;
+            }
+            else
+            {
+                if (IntDocUpdateRequired(updatedDocument, currentOrderInDb))
+                {
+                    _logger.LogTrace($"Updating internet document for order {orderWithAllInfo.Id}");
+                    UpdateNovaPostInternetDocument documentToUpdate = _internetDocumentService.CreateUpdateNovaPostInternetDocument(orderWithAllInfo);
+
+                    var internetDocumentCreationResponse = await _internetDocumentService
+                        .CreateInternetDocumentAsync(documentToUpdate.CreateNovaPostInternetDocument, documentToUpdate.Ref);
+
+                    if (!internetDocumentCreationResponse.Success)
+                    {
+                        var response = JsonConvert.SerializeObject(internetDocumentCreationResponse);
+                        _logger.LogError($"An error occurred while updating internet document for order {updatedOrder.Id}: {response}");
+
+                        updatedOrder.InternetDocumentCreationAttempted = true;
+
+                        await _orderRepository.Save();
+
+                        return false;
+                    }
+
+                    _logger.LogInformation($"Internet document for order {updatedOrder.Id} updated successfuly");
+
+                    updatedOrder.InternetDocumentCreationAttempted = true;
+                    updatedOrder.InternetDocumentRef = internetDocumentCreationResponse.Data[0].Ref;
+                    updatedOrder.InternetDocumentIntDocNumber = internetDocumentCreationResponse.Data[0].IntDocNumber;
+
+                    await _orderRepository.Save();
+
+                    return true;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"An error occurred while adding/updating NP internet document for order");
+
+            updatedOrder.InternetDocumentCreationAttempted = true;
+
+            await _orderRepository.Save();
+
+            return false;
         }
     }
 
@@ -291,5 +398,16 @@ public class UpdateOrderService : IUpdateOrderService
         // there may be incorrect statuses, if we call ProcessNewOrderItemsStatuses after HandleAddedOrderItems
         _orderItemChangeService.ProcessNewOrderItemsStatuses(addedOrderItems, productVariantsRelatedToCurrentOrder);
         await _orderItemChangeService.HandleAddedOrderItems(saleType, addedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+    }
+
+    private bool IntDocUpdateRequired(CreateNovaPostInternetDocument updatedDocument, Order previousOrder)
+    {
+        CreateNovaPostInternetDocument previousDocument = _internetDocumentService.CreateNovaPostInternetDocument(previousOrder);
+
+        var serializationSettings = new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
+        return JsonConvert.SerializeObject(updatedDocument, Formatting.None, serializationSettings) != JsonConvert.SerializeObject(previousDocument, Formatting.None, serializationSettings);
     }
 }

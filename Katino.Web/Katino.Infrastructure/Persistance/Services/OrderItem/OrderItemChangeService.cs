@@ -306,7 +306,7 @@ public class OrderItemChangeService : IOrderItemChangeService
 
         productQuantitiesAfterProcessing[productVariant.Id] = productVariant.QuantityInStock;
 
-        // TODO should be disabled for update
+        // Should be disabled for update
         if (hasQuantityChanged && updateOtherOrdersIfProductQuantityChanged)
         {
             _logger.LogDebug($"Product variant quantity change detected, product variant id: {orderItem.ProductVariantId}, quantity: {productVariant.QuantityInStock}");

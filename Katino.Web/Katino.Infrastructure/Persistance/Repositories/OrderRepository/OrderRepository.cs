@@ -24,8 +24,16 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     public async Task<Order> GetExistingOrderForUpdate(Guid orderId)
     {
         return await context.Orders
+            .Include(o => o.OrderNpOptionsSeats)
+                .ThenInclude(o => o.NpOptionsSeat)
+            .Include(o => o.SenderNpWarehouse)
+            .Include(o => o.RecipientNpWarehouse)
+            .Include(o => o.SenderNpCity)
+            .Include(o => o.RecipientNpCity)
             .Include(o => o.SenderContactPerson)
             .Include(o => o.OrderItems)
+            .Include(o => o.OrderRecipient)
+                .ThenInclude(o => o.NpContactPerson)
             .Include(o => o.AddressInfo)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId);
