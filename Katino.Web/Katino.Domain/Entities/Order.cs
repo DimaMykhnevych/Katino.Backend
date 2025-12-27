@@ -3,6 +3,7 @@ using Katino.Domain.Enums.NovaPost;
 
 namespace Katino.Domain.Entities;
 
+// ON ADDING NEW PROPERTIES ALSO ADD THEM IN UPDATEORDERSERVICE
 public class Order
 {
     public Guid Id { get; set; }

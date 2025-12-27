@@ -121,6 +121,32 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         return saveDocumentResponse;
     }
 
+    public async Task<bool> DeleteInternetDocumentAsync(string existingDocRef)
+    {
+        var npRequest = new NpApiRequest<object>()
+        {
+            ApiKey = _novaPostOptions.ApiKey,
+            ModelName = "InternetDocumentGeneral",
+            CalledMethod = "delete",
+            MethodProperties = new
+            {
+                DocumentRefs = existingDocRef
+            }
+        };
+
+        var responseString = await GetProcessedStringResponse(npRequest);
+        var saveDocumentResponse = JsonConvert.DeserializeObject<NpApiResponse<object>>(responseString);
+
+        _logger.LogDebug("DeleteInternetDocumentAsync response: {Response}", responseString);
+        if (saveDocumentResponse == null || !saveDocumentResponse.Success)
+        {
+            _logger.LogError($"An error occurred while deleting internet document: {saveDocumentResponse.Errors.FirstOrDefault()}");
+            return false;
+        }
+
+        return true;
+    }
+
     public CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)
     {
         CreateNovaPostInternetDocument createIntDocRequest = new()

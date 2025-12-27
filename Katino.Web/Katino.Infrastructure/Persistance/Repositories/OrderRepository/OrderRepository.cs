@@ -18,6 +18,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Include(o => o.OrderItems)
             .AsNoTracking()
             .Where(o => o.OrderReadinessStatus == OrderReadinessStatus.InProgress && o.OrderItems.Any(i => i.ProductVariantId == productVariantId))
+            .OrderBy(o => o.SendUntilDate)
             .ToListAsync();
     }
 
@@ -34,6 +35,15 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Include(o => o.OrderItems)
             .Include(o => o.OrderRecipient)
                 .ThenInclude(o => o.NpContactPerson)
+            .Include(o => o.AddressInfo)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<Order> GetExistingOrderForDelete(Guid orderId)
+    {
+        return await context.Orders
+            .Include(o => o.OrderItems)
             .Include(o => o.AddressInfo)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId);

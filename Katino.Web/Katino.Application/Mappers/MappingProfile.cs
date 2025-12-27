@@ -72,8 +72,11 @@ public class MappingProfile : Profile
 
         CreateMap<AddOrderCommand, Order>();
         CreateMap<UpdateOrderCommand, Order>();
+
         CreateMap<OrderCreationResult, OrderCreationResultDto>();
         CreateMap<OrderUpdateResult, OrderUpdateResultDto>();
+        CreateMap<OrderDeleteResult, OrderDeleteResultDto>();
+
         CreateMap<AddOrderItemDto, OrderItem>();
         CreateMap<UpdateOrderItemDto, OrderItem>();
         CreateMap<AddNpContactPersonDto, NpContactPerson>();

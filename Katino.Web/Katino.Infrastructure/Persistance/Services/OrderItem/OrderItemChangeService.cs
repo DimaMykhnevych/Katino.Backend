@@ -3,7 +3,6 @@ using Katino.Domain.Enums;
 using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
-using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderItemN;
@@ -12,18 +11,15 @@ public class OrderItemChangeService : IOrderItemChangeService
 {
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IOrderItemRepository _orderItemRepository;
-    private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly ILogger _logger;
 
     public OrderItemChangeService(
         IProductVariantRepository productVariantRepository,
         IOrderItemRepository orderItemRepository,
-        IUpdateProductVariantService updateProductVariantService,
         ILoggerFactory loggerFactory)
     {
         _productVariantRepository = productVariantRepository;
         _orderItemRepository = orderItemRepository;
-        _updateProductVariantService = updateProductVariantService;
         _logger = loggerFactory?.CreateLogger(nameof(OrderItemChangeService));
     }
 
@@ -63,7 +59,7 @@ public class OrderItemChangeService : IOrderItemChangeService
             _logger.LogTrace($"Processing deleted order item ({orderItem.Id}). Order id: {orderItem.OrderId}");
 
             var productVariant = productVariants.First(pv => pv.Id == orderItem.ProductVariantId);
-            await ProcessOrderItemProductVariantDeletion(productVariant, saleType, orderItem, productQuantitiesAfterProcessing, false);
+            await ProcessOrderItemProductVariantDeletion(productVariant, saleType, orderItem, productQuantitiesAfterProcessing);
 
             _orderItemRepository.Delete(orderItem);
         }
@@ -87,7 +83,7 @@ public class OrderItemChangeService : IOrderItemChangeService
             var productVariantExisting = productVariants.First(pv => pv.Id == existingOrderItem.ProductVariantId);
 
             // In ProcessOrderItemProductVariantDeletion there may be addtion of product variant quantities
-            await ProcessOrderItemProductVariantDeletion(productVariantExisting, saleType, existingOrderItem, productQuantitiesAfterProcessing, false);
+            await ProcessOrderItemProductVariantDeletion(productVariantExisting, saleType, existingOrderItem, productQuantitiesAfterProcessing);
 
             // We calculate the status considering added quantities
             ProcessExistingOrderItemsStatus(item, existingOrderItem, productVariantNew);
@@ -265,8 +261,7 @@ public class OrderItemChangeService : IOrderItemChangeService
         ProductVariant productVariant,
         SaleType saleType,
         OrderItem orderItem,
-        Dictionary<Guid, int> productQuantitiesAfterProcessing,
-        bool updateOtherOrdersIfProductQuantityChanged = true)
+        Dictionary<Guid, int> productQuantitiesAfterProcessing)
     {
         if (saleType == SaleType.Retail)
         {
@@ -298,20 +293,8 @@ public class OrderItemChangeService : IOrderItemChangeService
         }
 
         productVariant.Status = productVariant.QuantityInStock > 0 ? ProductStatus.InStock : ProductStatus.OnOrder;
-
-        bool hasQuantityChanged = oldProductVariantQuantityInStock != productVariant.QuantityInStock;
-
-        // TODO currently save in db occurs during "await _orderRepository.Save();" in HandleProductVariantQuantityChange
         await _productVariantRepository.Update(productVariant);
 
         productQuantitiesAfterProcessing[productVariant.Id] = productVariant.QuantityInStock;
-
-        // Should be disabled for update
-        if (hasQuantityChanged && updateOtherOrdersIfProductQuantityChanged)
-        {
-            _logger.LogDebug($"Product variant quantity change detected, product variant id: {orderItem.ProductVariantId}, quantity: {productVariant.QuantityInStock}");
-            await _updateProductVariantService
-                .HandleProductVariantQuantityChange(orderItem.ProductVariantId, productVariant.QuantityInStock, orderItem.OrderId);
-        }
     }
 }

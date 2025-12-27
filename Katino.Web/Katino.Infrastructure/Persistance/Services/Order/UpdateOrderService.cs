@@ -172,6 +172,7 @@ public class UpdateOrderService : IUpdateOrderService
             {
                 await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing);
 
+                // TODO all properties should be copied on update
                 updatedOrder = new()
                 {
                     Id = order.Id,

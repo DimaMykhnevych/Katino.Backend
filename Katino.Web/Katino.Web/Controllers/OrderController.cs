@@ -1,4 +1,5 @@
 ﻿using Katino.Application.Commands.OrderN.AddOrder;
+using Katino.Application.Commands.OrderN.DeleteOrder;
 using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.DTOs.Order;
 using Katino.Domain.Constants;
@@ -33,5 +34,14 @@ public class OrderController : ControllerBase
     {
         OrderUpdateResultDto result = await _mediator.Send(updateOrderCommand);
         return result.OrderUpdatedSuccessfully ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpDelete("{orderId}")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Delete(Guid orderId)
+    {
+        DeleteOrderCommand command = new() { Id = orderId };
+        var result = await _mediator.Send(command);
+        return result.OrderDeletedSuccessfully ? Ok(result) : BadRequest(result);
     }
 }

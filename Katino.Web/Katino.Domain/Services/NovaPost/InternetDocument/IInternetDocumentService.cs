@@ -6,6 +6,7 @@ namespace Katino.Domain.Services.NovaPost.InternetDocument;
 public interface IInternetDocumentService
 {
     Task<NpApiResponse<NpInternetDocumentCreationResponse>> CreateInternetDocumentAsync(CreateNovaPostInternetDocument request, string existingDocRef = null);
+    Task<bool> DeleteInternetDocumentAsync(string existingDocRef);
     CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo);
     UpdateNovaPostInternetDocument CreateUpdateNovaPostInternetDocument(Order orderWithAllInfo);
 }

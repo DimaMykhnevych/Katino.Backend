@@ -37,6 +37,7 @@ using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.AddOrderService;
+using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
@@ -97,6 +98,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IAzureStorageService, AzureStorageService>();
         services.AddTransient<IAddOrderService, AddOrderService>();
         services.AddTransient<IUpdateOrderService, UpdateOrderService>();
+        services.AddTransient<IDeleteOrderService, DeleteOrderService>();
         services.AddTransient<INovaPoshtaSyncService, NovaPoshtaSyncService>();
         services.AddTransient<INovaPoshtaSyncStatusService, NovaPoshtaSyncStatusService>();
         services.AddTransient<IAddNpCityService, AddNpCityService>();
