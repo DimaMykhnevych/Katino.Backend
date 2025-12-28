@@ -198,7 +198,9 @@ public class UpdateOrderService : IUpdateOrderService
                     AddressInfo = order.AddressInfo,
                     InternetDocumentCreationAttempted = currentOrderInDb.InternetDocumentCreationAttempted,
                     InternetDocumentRef = currentOrderInDb.InternetDocumentRef,
-                    InternetDocumentIntDocNumber = currentOrderInDb.InternetDocumentIntDocNumber
+                    InternetDocumentIntDocNumber = currentOrderInDb.InternetDocumentIntDocNumber,
+                    OrderInternetDocStatus = currentOrderInDb.OrderInternetDocStatus,
+                    OrderManualStatus = currentOrderInDb.OrderManualStatus,
                 };
 
                 updatedOrder.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)

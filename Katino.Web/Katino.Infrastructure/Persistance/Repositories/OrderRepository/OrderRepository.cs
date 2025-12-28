@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Entities;
+﻿using Katino.Domain.Context;
+using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Infrastructure.Persistance.Context;
@@ -64,5 +65,12 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Include(o => o.AddressInfo)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    public async Task<List<Order>> GetOrdersForNpStatusUpdateAsync(OrderInternetDocStatus[] statusesToExclude)
+    {
+        return await context.Orders
+            .Where(o => !statusesToExclude.Contains(o.OrderInternetDocStatus) && !string.IsNullOrEmpty(o.InternetDocumentIntDocNumber))
+            .ToListAsync();
     }
 }

@@ -169,6 +169,8 @@ public class AddOrderService : IAddOrderService
                 OrderItems = order.OrderItems,
                 OrderNpOptionsSeats = npOptionSeats,
                 AddressInfo = order.AddressInfo,
+                OrderInternetDocStatus = OrderInternetDocStatus.NotProcessed,
+                OrderManualStatus = OrderManualStatus.None,
             };
 
             // 2.Calculate Order status and add it to order

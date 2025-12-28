@@ -7,6 +7,7 @@ using Katino.Domain.Services.NovaPost.InternetDocument;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Katino.Infrastructure.Persistance.Services.NovaPost;
 
@@ -135,16 +136,47 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         };
 
         var responseString = await GetProcessedStringResponse(npRequest);
-        var saveDocumentResponse = JsonConvert.DeserializeObject<NpApiResponse<object>>(responseString);
+        var deleteDocumentResponse = JsonConvert.DeserializeObject<NpApiResponse<object>>(responseString);
 
         _logger.LogDebug("DeleteInternetDocumentAsync response: {Response}", responseString);
-        if (saveDocumentResponse == null || !saveDocumentResponse.Success)
+        if (deleteDocumentResponse == null || !deleteDocumentResponse.Success)
         {
-            _logger.LogError($"An error occurred while deleting internet document: {saveDocumentResponse.Errors.FirstOrDefault()}");
+            _logger.LogError($"An error occurred while deleting internet document: {deleteDocumentResponse.Errors.FirstOrDefault()}");
             return false;
         }
 
         return true;
+    }
+
+    public async Task<JArray> GetIntDocStatuses(List<string> documentNumbers)
+    {
+        var bodyProperties = documentNumbers.Select(i => new
+        {
+            DocumentNumber = i,
+        });
+
+        var npRequest = new NpApiRequest<object>()
+        {
+            ApiKey = _novaPostOptions.ApiKey,
+            ModelName = "TrackingDocumentGeneral",
+            CalledMethod = "getStatusDocuments",
+            MethodProperties = new
+            {
+                Documents = bodyProperties
+            }
+        };
+
+        var responseString = await GetProcessedStringResponse(npRequest);
+        var getIntDocStatusResponse = JsonConvert.DeserializeObject<NpApiReducedResponse<JObject>>(responseString);
+
+        _logger.LogDebug("GetIntDocStatuses response: {Response}", responseString);
+        if (getIntDocStatusResponse == null || !getIntDocStatusResponse.Success)
+        {
+            _logger.LogError($"An error occurred while getting internet doc statuses: {getIntDocStatusResponse.Errors.FirstOrDefault()}");
+            return null;
+        }
+
+        return new JArray(getIntDocStatusResponse.Data);
     }
 
     public CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo)

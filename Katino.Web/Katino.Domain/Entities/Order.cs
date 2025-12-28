@@ -32,6 +32,8 @@ public class Order
 
     // Internally calculated fields
     public OrderReadinessStatus OrderReadinessStatus { get; set; }
+    public OrderInternetDocStatus OrderInternetDocStatus { get; set; }
+    public OrderManualStatus OrderManualStatus { get; set; }
 
 
     public List<OrderItem> OrderItems { get; set; } = [];
