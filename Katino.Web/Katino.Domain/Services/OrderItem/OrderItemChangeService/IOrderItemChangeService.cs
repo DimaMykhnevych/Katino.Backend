@@ -9,7 +9,8 @@ public interface IOrderItemChangeService
         SaleType saleType,
         List<OrderItem> deletedItems,
         Dictionary<Guid, int> productQuantitiesAfterProcessing,
-        List<ProductVariant> productVariants);
+        List<ProductVariant> productVariants,
+        bool deleteOrderItems = true);
     Task HandleAddedOrderItems(
         SaleType saleType,
         List<OrderItem> orderItems,

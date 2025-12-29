@@ -45,7 +45,8 @@ public class OrderItemChangeService : IOrderItemChangeService
         SaleType saleType,
         List<OrderItem> deletedItems,
         Dictionary<Guid, int> productQuantitiesAfterProcessing,
-        List<ProductVariant> productVariants)
+        List<ProductVariant> productVariants, 
+        bool deleteOrderItems = true)
     {
         if (!deletedItems.Any())
         {
@@ -61,7 +62,10 @@ public class OrderItemChangeService : IOrderItemChangeService
             var productVariant = productVariants.First(pv => pv.Id == orderItem.ProductVariantId);
             await ProcessOrderItemProductVariantDeletion(productVariant, saleType, orderItem, productQuantitiesAfterProcessing);
 
-            _orderItemRepository.Delete(orderItem);
+            if (deleteOrderItems)
+            {
+                _orderItemRepository.Delete(orderItem);
+            }
         }
 
         _logger.LogDebug("Deleted order items was processed successfully");

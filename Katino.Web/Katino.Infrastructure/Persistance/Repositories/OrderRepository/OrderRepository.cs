@@ -70,6 +70,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     public async Task<List<Order>> GetOrdersForNpStatusUpdateAsync(OrderInternetDocStatus[] statusesToExclude)
     {
         return await context.Orders
+            .Include(o => o.OrderItems)
             .Where(o => !statusesToExclude.Contains(o.OrderInternetDocStatus) && !string.IsNullOrEmpty(o.InternetDocumentIntDocNumber))
             .ToListAsync();
     }
