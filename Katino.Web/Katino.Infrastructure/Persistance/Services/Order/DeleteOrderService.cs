@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Entities;
+﻿using Katino.Domain.Constants;
+using Katino.Domain.Entities;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderRepository;
@@ -57,6 +58,27 @@ public class DeleteOrderService : IDeleteOrderService
             foreach (var item in existingOrder.OrderItems)
             {
                 item.Order = null;
+            }
+
+            // Product variant statuses and possible other orders are updated during function app processing
+            if (InternetDocumentConstants.RejectedStatuses.Contains(existingOrder.OrderInternetDocStatus) ||
+                InternetDocumentConstants.ReceivedStatuses.Contains(existingOrder.OrderInternetDocStatus))
+            {
+                _logger.LogInformation($"Order {id} is rejected/received, deleting only order and internet document");
+
+                if (existingOrder.AddressInfo != null)
+                {
+                    _logger.LogDebug($"Deleting order address info");
+                    _orderAddressInfoRepository.Delete(existingOrder.AddressInfo);
+                }
+
+                _orderRepository.Delete(existingOrder);
+                await _orderRepository.Save();
+
+                // Internet doc deletion
+                var docDeletionResult = await DeleteInternetDocument(existingOrder);
+
+                return new() { OrderDeletedSuccessfully = true, NpInternetDocDeletedSuccessfully = docDeletionResult };
             }
 
             Dictionary<Guid, int> currentProductQuantities = [];

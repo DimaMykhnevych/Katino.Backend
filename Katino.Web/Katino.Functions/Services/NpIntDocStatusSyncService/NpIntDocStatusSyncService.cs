@@ -80,24 +80,17 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         _logger.LogDebug($"Processing order {order.Id}");
         try
         {
-            //foreach (var item in order.OrderItems)
-            //{
-            //    item.Order = null;
-            //}
-
             var orderStatusString = statusesDict[order.InternetDocumentIntDocNumber];
             var orderInternalDocStatus = (OrderInternetDocStatus)int.Parse(orderStatusString);
 
-            // TODO remove----
-            // TODO deal with entity with the same id is already tracked !!!
-            //if(order.Id == Guid.Parse("08de45e9-822a-4f79-8ecb-321e72fe468c"))
+            // TODO remove (for testing purposes)----
+            //if (order.Id == Guid.Parse("08de47e5-5001-43f4-851d-2f2ce348f934"))
             //{
             //    orderInternalDocStatus = OrderInternetDocStatus.Rejection;
             //}
             // ----
 
-            order.OrderInternetDocStatus = orderInternalDocStatus;
-            await _orderRepository.Update(order);
+            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternalDocStatus);
 
             // Handle rejected status
             if (InternetDocumentConstants.RejectedStatuses.Contains(orderInternalDocStatus))
@@ -121,10 +114,6 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
                             .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
                     }
                 }
-            }
-            else
-            {
-                await _orderRepository.Save();
             }
         }
         catch (Exception ex)

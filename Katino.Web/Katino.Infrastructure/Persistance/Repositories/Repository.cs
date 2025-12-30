@@ -52,4 +52,6 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
     {
         await context.SaveChangesAsync();
     }
+
+    public void ClearTracking() => context.ChangeTracker.Clear();
 }

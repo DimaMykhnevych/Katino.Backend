@@ -70,8 +70,17 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     public async Task<List<Order>> GetOrdersForNpStatusUpdateAsync(OrderInternetDocStatus[] statusesToExclude)
     {
         return await context.Orders
+            .AsNoTracking()
             .Include(o => o.OrderItems)
             .Where(o => !statusesToExclude.Contains(o.OrderInternetDocStatus) && !string.IsNullOrEmpty(o.InternetDocumentIntDocNumber))
             .ToListAsync();
+    }
+
+    public Task UpdateInternetDocStatusAsync(Guid orderId, OrderInternetDocStatus status)
+    {
+        return context.Orders
+            .Where(o => o.Id == orderId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.OrderInternetDocStatus, status));
     }
 }

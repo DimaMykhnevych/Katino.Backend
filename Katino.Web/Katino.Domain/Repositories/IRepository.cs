@@ -9,4 +9,5 @@ public interface IRepository<TEntity> where TEntity : class
     Task DeleteById(Guid id);
     Task Update(TEntity entity);
     Task Save();
+    void ClearTracking();
 }
