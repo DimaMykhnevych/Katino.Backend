@@ -17,7 +17,6 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     {
         return await context.Orders
             .Include(o => o.OrderItems)
-            .AsNoTracking()
             .Where(o => o.OrderReadinessStatus == OrderReadinessStatus.InProgress && o.OrderItems.Any(i => i.ProductVariantId == productVariantId))
             .OrderBy(o => o.SendUntilDate)
             .ToListAsync();

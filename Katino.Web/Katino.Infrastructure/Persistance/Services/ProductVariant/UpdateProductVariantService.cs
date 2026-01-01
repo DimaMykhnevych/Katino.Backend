@@ -159,7 +159,6 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 ? OrderReadinessStatus.InProgress
                 : OrderReadinessStatus.ReadyToShip;
 
-            await _orderRepository.Update(order);
             await _orderRepository.Save();
 
             var newQuantityInStock = currentProductVariantQuantity < previousQuantityToProduce

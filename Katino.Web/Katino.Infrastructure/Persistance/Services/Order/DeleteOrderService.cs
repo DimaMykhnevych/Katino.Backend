@@ -61,6 +61,7 @@ public class DeleteOrderService : IDeleteOrderService
             }
 
             // Product variant statuses and possible other orders are updated during function app processing
+            // TODO also handle manual status
             if (InternetDocumentConstants.RejectedStatuses.Contains(existingOrder.OrderInternetDocStatus) ||
                 InternetDocumentConstants.ReceivedStatuses.Contains(existingOrder.OrderInternetDocStatus))
             {
