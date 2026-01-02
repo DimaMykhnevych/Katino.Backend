@@ -1,6 +1,7 @@
 using Azure.Storage.Blobs;
 using Katino.Domain.Constants;
 using Katino.Domain.Options;
+using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
@@ -9,9 +10,11 @@ using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
+using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Functions.Services.NpIntDocStatusSyncService;
 using Katino.Infrastructure.Persistance.Context;
+using Katino.Infrastructure.Persistance.Repositories.OrderAddressInfoRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderItemRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
@@ -20,6 +23,7 @@ using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
 using Katino.Infrastructure.Persistance.Services.AzureStorage;
 using Katino.Infrastructure.Persistance.Services.NovaPost;
 using Katino.Infrastructure.Persistance.Services.OrderItemN;
+using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
@@ -57,6 +61,7 @@ var host = new HostBuilder()
         services.AddTransient<IOrderItemChangeService, OrderItemChangeService>();
         services.AddTransient<IUpdateProductVariantService, UpdateProductVariantService>();
         services.AddTransient<IAzureStorageService, AzureStorageService>();
+        services.AddTransient<IDeleteOrderService, DeleteOrderService>();
 
         string connectionString = context.Configuration[ConfigurationKeys.DefaultConnectionString];
         services.AddDbContext<KatinoDbContext>(opt =>
@@ -71,6 +76,7 @@ var host = new HostBuilder()
         services.AddTransient<IOrderItemRepository, OrderItemRepository>();
         services.AddTransient<IProductVariantMeasurementRepository, ProductVariantMeasurementRepository>();
         services.AddTransient<IProductPhotoRepository, ProductPhotoRepository>();
+        services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
     })
     .Build();
 

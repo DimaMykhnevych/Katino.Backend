@@ -1,5 +1,6 @@
 ﻿using Katino.Domain.Constants;
 using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderRepository;
@@ -141,6 +142,29 @@ public class DeleteOrderService : IDeleteOrderService
         {
             _logger.LogError(ex, $"An error occurred while deleting order {id}");
             return new();
+        }
+    }
+
+    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus orderInternalDocStatus)
+    {
+        _logger.LogInformation($"Order {order.Id} was rejected with status {orderInternalDocStatus}, making return...");
+
+        Dictionary<Guid, int> currentProductQuantities = [];
+        Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
+
+        await _orderItemChangeService.HandleOrderItemsReturn(order, currentProductQuantities, productQuantitiesAfterProcessing);
+
+        await _orderRepository.Save();
+
+        foreach (var currentQuantity in currentProductQuantities)
+        {
+            var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
+            if (updatedQuantity > currentQuantity.Value)
+            {
+                _logger.LogDebug($"Product variant quantity change detected (due to order rejection), product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
+                await _updateProductVariantService
+                    .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
+            }
         }
     }
 

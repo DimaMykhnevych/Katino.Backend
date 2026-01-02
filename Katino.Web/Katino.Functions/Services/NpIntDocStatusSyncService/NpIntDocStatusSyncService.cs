@@ -5,6 +5,7 @@ using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
+using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IUpdateProductVariantService _updateProductVariantService;
+    private readonly IDeleteOrderService _deleteOrderService;
     private readonly ILogger _logger;
 
     public NpIntDocStatusSyncService(
@@ -27,6 +29,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         IProductVariantRepository productVariantRepository,
         IOrderItemChangeService orderItemChangeService,
         IUpdateProductVariantService updateProductVariantService,
+        IDeleteOrderService deleteOrderService,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -34,6 +37,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         _productVariantRepository = productVariantRepository;
         _orderItemChangeService = orderItemChangeService;
         _updateProductVariantService = updateProductVariantService;
+        _deleteOrderService = deleteOrderService;
         _logger = loggerFactory?.CreateLogger(nameof(NpIntDocStatusSyncService));
     }
 
@@ -81,62 +85,24 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         try
         {
             var orderStatusString = statusesDict[order.InternetDocumentIntDocNumber];
-            var orderInternalDocStatus = (OrderInternetDocStatus)int.Parse(orderStatusString);
+            var orderInternetDocStatus = (OrderInternetDocStatus)int.Parse(orderStatusString);
 
-            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternalDocStatus);
+            if(order.Id == Guid.Parse("08de49ee-111d-483d-887c-fc6c3d837baf"))
+            {
+                orderInternetDocStatus = OrderInternetDocStatus.Rejection;
+            }
+
+            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus);
 
             // Handle rejected status
-            if (InternetDocumentConstants.RejectedStatuses.Contains(orderInternalDocStatus))
+            if (InternetDocumentConstants.RejectedStatuses.Contains(orderInternetDocStatus))
             {
-                _logger.LogInformation($"Order {order.Id} was rejected with status {orderInternalDocStatus}, making return...");
-
-                Dictionary<Guid, int> currentProductQuantities = [];
-                Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
-
-                await ProcessOrderItemsReturn(order, currentProductQuantities, productQuantitiesAfterProcessing);
-
-                await _orderRepository.Save();
-
-                foreach (var currentQuantity in currentProductQuantities)
-                {
-                    var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
-                    if (updatedQuantity > currentQuantity.Value)
-                    {
-                        _logger.LogDebug($"Product variant quantity change detected (due to order rejection), product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
-                        await _updateProductVariantService
-                            .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
-                    }
-                }
+                await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"An error occurred during processing of order {order.Id}");
         }
-    }
-
-    private async Task ProcessOrderItemsReturn(
-        Order order,
-        Dictionary<Guid, int> currentProductQuantities,
-        Dictionary<Guid, int> productQuantitiesAfterProcessing)
-    {
-        HashSet<Guid> currentOrderProductVariants = order.OrderItems
-            .Select(x => x.ProductVariantId)
-            .ToHashSet();
-
-        _logger.LogDebug($"Getting product variants of order to reject");
-
-        List<ProductVariant> productVariantsRelatedToCurrentOrder = [];
-        foreach (var productVariantId in currentOrderProductVariants)
-        {
-            var productVariant = await _productVariantRepository.GetAsNoTracking(productVariantId);
-            productVariantsRelatedToCurrentOrder.Add(productVariant);
-            currentProductQuantities[productVariantId] = productVariant.QuantityInStock;
-            productQuantitiesAfterProcessing[productVariantId] = productVariant.QuantityInStock;
-        }
-
-        _logger.LogDebug($"Handling rejected order items");
-        await _orderItemChangeService
-            .HandleDeletedOrderItems(order.SaleType, order.OrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder, false);
     }
 }

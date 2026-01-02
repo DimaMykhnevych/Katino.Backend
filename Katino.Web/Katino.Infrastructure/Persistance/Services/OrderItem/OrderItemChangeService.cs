@@ -99,6 +99,30 @@ public class OrderItemChangeService : IOrderItemChangeService
         }
     }
 
+    public async Task HandleOrderItemsReturn(
+        Order order,
+        Dictionary<Guid, int> currentProductQuantities,
+        Dictionary<Guid, int> productQuantitiesAfterProcessing)
+    {
+        HashSet<Guid> currentOrderProductVariants = order.OrderItems
+            .Select(x => x.ProductVariantId)
+            .ToHashSet();
+
+        _logger.LogDebug($"Getting product variants of order to reject");
+
+        List<ProductVariant> productVariantsRelatedToCurrentOrder = [];
+        foreach (var productVariantId in currentOrderProductVariants)
+        {
+            var productVariant = await _productVariantRepository.GetAsNoTracking(productVariantId);
+            productVariantsRelatedToCurrentOrder.Add(productVariant);
+            currentProductQuantities[productVariantId] = productVariant.QuantityInStock;
+            productQuantitiesAfterProcessing[productVariantId] = productVariant.QuantityInStock;
+        }
+
+        _logger.LogDebug($"Handling rejected order items");
+        await HandleDeletedOrderItems(order.SaleType, order.OrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder, false);
+    }
+
     public void ProcessExistingOrderItemsStatus(
         OrderItem orderItem,
         OrderItem previouslyExistedOrderItem,

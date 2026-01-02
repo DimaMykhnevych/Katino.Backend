@@ -22,5 +22,9 @@ public interface IOrderItemChangeService
         List<OrderItem> existingOrderItemsFromDb,
         Dictionary<Guid, int> productQuantitiesAfterProcessing,
         List<ProductVariant> productVariants);
+    Task HandleOrderItemsReturn(
+        Order order,
+        Dictionary<Guid, int> currentProductQuantities,
+        Dictionary<Guid, int> productQuantitiesAfterProcessing);
     void ProcessNewOrderItemsStatuses(List<OrderItem> orderItems, List<ProductVariant> relatedProductVariants);
 }
