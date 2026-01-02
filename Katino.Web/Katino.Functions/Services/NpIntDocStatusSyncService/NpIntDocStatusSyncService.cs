@@ -87,11 +87,6 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
             var orderStatusString = statusesDict[order.InternetDocumentIntDocNumber];
             var orderInternetDocStatus = (OrderInternetDocStatus)int.Parse(orderStatusString);
 
-            if(order.Id == Guid.Parse("08de49ee-111d-483d-887c-fc6c3d837baf"))
-            {
-                orderInternetDocStatus = OrderInternetDocStatus.Rejection;
-            }
-
             await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus);
 
             // Handle rejected status
