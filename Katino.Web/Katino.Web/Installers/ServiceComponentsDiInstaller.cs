@@ -38,6 +38,7 @@ using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
+using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
@@ -108,6 +109,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IAddOrderRecipientService, AddOrderRecipientService>();
         services.AddTransient<IAddNpOptionsSeatService, AddNpOptionsSeatService>();
         services.AddTransient<IOrderItemChangeService, OrderItemChangeService>();
+        services.AddTransient<ISetOrderManualStatusService, SetOrderManualStatusService>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();

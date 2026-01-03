@@ -100,6 +100,7 @@ public class MappingProfile : Profile
         CreateMap<SyncTypeDto, SyncType>().ReverseMap();
 
         CreateMap<NovaPoshtaSyncStatus, SyncRecordDto>();
+        CreateMap<OrderManualStatusDto, OrderManualStatus>().ReverseMap();
 
         CreateMap<CityResponse, NpCityResponseDto>();
         CreateMap<GetCitiesResponse, GetNpCitiesResponseDto>();

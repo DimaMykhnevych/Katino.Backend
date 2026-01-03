@@ -1,5 +1,6 @@
 ﻿using Katino.Application.Commands.OrderN.AddOrder;
 using Katino.Application.Commands.OrderN.DeleteOrder;
+using Katino.Application.Commands.OrderN.SetOrderManualStatus;
 using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.DTOs.Order;
 using Katino.Domain.Constants;
@@ -43,5 +44,13 @@ public class OrderController : ControllerBase
         DeleteOrderCommand command = new() { Id = orderId };
         var result = await _mediator.Send(command);
         return result.OrderDeletedSuccessfully ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("manual-status/set")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> SetManualStatus([FromBody] SetOrderManualStatusCommand setOrderManualStatusCommand)
+    {
+        bool result = await _mediator.Send(setOrderManualStatusCommand);
+        return result ? Ok(result) : BadRequest();
     }
 }

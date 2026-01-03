@@ -7,5 +7,5 @@ namespace Katino.Domain.Services.OrderN.DeleteOrderService;
 public interface IDeleteOrderService
 {
     Task<OrderDeleteResult> DeleteAsync(Guid id);
-    Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus orderInternalDocStatus);
+    Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus? orderInternalDocStatus);
 }

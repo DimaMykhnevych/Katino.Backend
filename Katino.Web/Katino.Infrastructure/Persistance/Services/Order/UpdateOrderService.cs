@@ -404,8 +404,15 @@ public class UpdateOrderService : IUpdateOrderService
         await _orderItemChangeService.HandleAddedOrderItems(saleType, addedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
     }
 
-    private bool IntDocUpdateRequired(CreateNovaPostInternetDocument updatedDocument, Order previousOrder)
+    private bool IntDocUpdateRequired(
+        CreateNovaPostInternetDocument updatedDocument,
+        Order previousOrder)
     {
+        if (InternetDocumentConstants.ReceivedStatuses.Contains(previousOrder.OrderInternetDocStatus))
+        {
+            return false;
+        }
+
         CreateNovaPostInternetDocument previousDocument = _internetDocumentService.CreateNovaPostInternetDocument(previousOrder);
 
         var serializationSettings = new JsonSerializerSettings()

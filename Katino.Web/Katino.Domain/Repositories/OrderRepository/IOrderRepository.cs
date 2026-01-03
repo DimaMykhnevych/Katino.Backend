@@ -11,4 +11,5 @@ public interface IOrderRepository : IRepository<Order>
     Task<List<Order>> GetActiveOrdersWithSpecificProductVariantAsync(Guid productVariantId);
     Task<List<Order>> GetOrdersForNpStatusUpdateAsync(OrderInternetDocStatus[] statusesToExclude);
     Task UpdateInternetDocStatusAsync(Guid orderId, OrderInternetDocStatus status);
+    Task<Order> GetOrderWithOrderItemsAsync(Guid orderId);
 }

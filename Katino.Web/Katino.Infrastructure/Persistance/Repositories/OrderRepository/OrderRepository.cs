@@ -1,5 +1,4 @@
-﻿using Katino.Domain.Context;
-using Katino.Domain.Entities;
+﻿using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Infrastructure.Persistance.Context;
@@ -81,5 +80,12 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Where(o => o.Id == orderId)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(o => o.OrderInternetDocStatus, status));
+    }
+
+    public async Task<Order> GetOrderWithOrderItemsAsync(Guid orderId)
+    {
+        return await context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
     }
 }

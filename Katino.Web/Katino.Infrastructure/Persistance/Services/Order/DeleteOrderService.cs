@@ -61,8 +61,10 @@ public class DeleteOrderService : IDeleteOrderService
                 item.Order = null;
             }
 
-            // Product variant statuses and possible other orders are updated during function app processing
-            // TODO also handle manual status
+            // Product variant statuses and possible other orders are updated during function app processing (or manual status change).
+            // We don't need to separatly consider manual status, because manual status can only be set for
+            // rejected or received int doc statuses, and if they have such statuses, it means that required
+            // actions were already performed during function app processing (or manual status change).
             if (InternetDocumentConstants.RejectedStatuses.Contains(existingOrder.OrderInternetDocStatus) ||
                 InternetDocumentConstants.ReceivedStatuses.Contains(existingOrder.OrderInternetDocStatus))
             {
@@ -145,9 +147,16 @@ public class DeleteOrderService : IDeleteOrderService
         }
     }
 
-    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus orderInternalDocStatus)
+    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus? orderInternalDocStatus)
     {
-        _logger.LogInformation($"Order {order.Id} was rejected with status {orderInternalDocStatus}, making return...");
+        if (orderInternalDocStatus != null)
+        {
+            _logger.LogInformation($"Order {order.Id} was rejected with status {orderInternalDocStatus}, making return...");
+        }
+        else
+        {
+            _logger.LogInformation($"Order {order.Id} was manually rejected, making return...");
+        }
 
         Dictionary<Guid, int> currentProductQuantities = [];
         Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
