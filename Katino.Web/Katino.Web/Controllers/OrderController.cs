@@ -3,6 +3,7 @@ using Katino.Application.Commands.OrderN.DeleteOrder;
 using Katino.Application.Commands.OrderN.SetOrderManualStatus;
 using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.DTOs.Order;
+using Katino.Application.Queries.OrderN.GetOrder;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,14 @@ public class OrderController : ControllerBase
     public OrderController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> Add([FromQuery] GetOrderQuery getOrderQuery)
+    {
+        var result = await _mediator.Send(getOrderQuery);
+        return Ok(result);
     }
 
     [HttpPost]

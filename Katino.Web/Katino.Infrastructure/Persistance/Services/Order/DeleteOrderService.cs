@@ -72,7 +72,7 @@ public class DeleteOrderService : IDeleteOrderService
 
                 if (existingOrder.AddressInfo != null)
                 {
-                    _logger.LogDebug($"Deleting order address info");
+                    _logger.LogDebug("Deleting order address info");
                     _orderAddressInfoRepository.Delete(existingOrder.AddressInfo);
                 }
 

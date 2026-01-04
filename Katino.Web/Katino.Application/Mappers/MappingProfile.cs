@@ -53,6 +53,7 @@ public class MappingProfile : Profile
 
         CreateMap<Category, CategoryDto>().ReverseMap();
         CreateMap<Product, ProductDto>();
+        CreateMap<Product, ProductForOrderDto>();
 
         CreateMap<SizeType, SizeTypeDto>();
         CreateMap<Size, SizeDto>();
@@ -65,13 +66,21 @@ public class MappingProfile : Profile
 
         CreateMap<ProductVariantMeasurement, GetProductVariantMeasurementDto>();
         CreateMap<ProductVariant, ProductVariantDto>();
+        CreateMap<ProductVariant, ProductVariantForOrderDto>();
         CreateMap<AddProductVariantDto, ProductVariant>()
             .ForMember(pv => pv.Photos, m => m.Ignore());
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
         CreateMap<UpdateProductVariantDto, ProductVariant>();
 
+        CreateMap<Order, OrderDto>();
         CreateMap<AddOrderCommand, Order>();
         CreateMap<UpdateOrderCommand, Order>();
+
+        CreateMap<OrderItem, OrderItemDto>();
+
+        CreateMap<OrderReadinessStatus, OrderReadinessStatusDto>();
+        CreateMap<OrderInternetDocStatus, OrderInternetDocStatusDto>();
+        CreateMap<OrderItemStatus, OrderItemStatusDto>();
 
         CreateMap<OrderCreationResult, OrderCreationResultDto>();
         CreateMap<OrderUpdateResult, OrderUpdateResultDto>();
@@ -87,8 +96,19 @@ public class MappingProfile : Profile
         CreateMap<UpdateNpOptionsSeatDto, NpOptionsSeat>();
         CreateMap<AddOrderNpOptionsSeatDto, OrderNpOptionsSeat>();
         CreateMap<UpdateOrderNpOptionsSeatDto, OrderNpOptionsSeat>();
+
+        CreateMap<NpContactPerson, NpContactPersonDto>();
+        CreateMap<OrderRecipient, OrderRecipientDto>();
+
+        CreateMap<OrderNpOptionsSeat, OrderNpOptionsSeatDto>()
+            .ForMember(s => s.VolumetricWidth, m => m.MapFrom(s => s.NpOptionsSeat.VolumetricWidth))
+            .ForMember(s => s.VolumetricLength, m => m.MapFrom(s => s.NpOptionsSeat.VolumetricLength))
+            .ForMember(s => s.VolumetricHeight, m => m.MapFrom(s => s.NpOptionsSeat.VolumetricHeight))
+            .ForMember(s => s.Weight, m => m.MapFrom(s => s.NpOptionsSeat.Weight));
+
         CreateMap<AddOrderAddressInfoDto, OrderAddressInfo>();
         CreateMap<UpdateOrderAddressInfoDto, OrderAddressInfo>();
+        CreateMap<OrderAddressInfo, OrderAddressInfoDto>();
 
         CreateMap<PayerTypeDto, PayerType>().ReverseMap();
         CreateMap<PaymentMethodDto, PaymentMethod>().ReverseMap();
