@@ -24,7 +24,7 @@ public class OrderController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = Role.Admin)]
-    public async Task<IActionResult> Add([FromQuery] GetOrderQuery getOrderQuery)
+    public async Task<IActionResult> Get([FromQuery] GetOrderQuery getOrderQuery)
     {
         var result = await _mediator.Send(getOrderQuery);
         return Ok(result);

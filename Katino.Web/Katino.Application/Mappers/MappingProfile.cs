@@ -132,6 +132,8 @@ public class MappingProfile : Profile
         CreateMap<NpCity, GetNpCityDto>();
         CreateMap<AddCrmUserSettingsDto, CrmUserSettings>();
         CreateMap<UpdateCrmUserSettingsDto, CrmUserSettings>();
+
+        CreateMap<SewingQueueItem, SewingQueueItemDto>();
     }
 }
 
