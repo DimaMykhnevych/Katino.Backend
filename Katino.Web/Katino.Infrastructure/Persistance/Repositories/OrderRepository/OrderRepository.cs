@@ -88,4 +88,12 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Include(o => o.OrderItems)
             .FirstOrDefaultAsync(o => o.Id == orderId);
     }
+
+    public Task<OrderItem> GetOrderItemWithOrderAsync(Guid orderItemId)
+    {
+        return context.OrderItems
+            .Include(oi => oi.Order)
+                .ThenInclude(o => o.OrderItems)
+            .FirstAsync(oi => oi.Id == orderItemId);
+    }
 }
