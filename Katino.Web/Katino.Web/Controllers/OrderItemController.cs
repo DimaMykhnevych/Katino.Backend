@@ -1,4 +1,5 @@
-﻿using Katino.Application.Queries.OrderItemN.GetSewingQueue;
+﻿using Katino.Application.Commands.OrderItemN.SubmitSewedReport;
+using Katino.Application.Queries.OrderItemN.GetSewingQueue;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -24,5 +25,14 @@ public class OrderItemController : ControllerBase
     {
         var result = await _mediator.Send(new GetSewingQueueQuery());
         return Ok(result);
+    }
+
+    // TODO add role for sewer
+    [HttpPost("sewing-report")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> SubmitSewingReport([FromBody] SubmitSewedReportCommand submitSewedReportCommand)
+    {
+        var result = await _mediator.Send(submitSewedReportCommand);
+        return result ? Ok(result) : BadRequest();
     }
 }

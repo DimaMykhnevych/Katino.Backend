@@ -2,6 +2,7 @@
 using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
+using Katino.Application.Commands.OrderItemN.SubmitSewedReport;
 using Katino.Application.Commands.OrderN.AddOrder;
 using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.Commands.ProductN.AddProduct;
@@ -134,6 +135,7 @@ public class MappingProfile : Profile
         CreateMap<UpdateCrmUserSettingsDto, CrmUserSettings>();
 
         CreateMap<SewingQueueItem, SewingQueueItemDto>();
+        CreateMap<SubmitSewedReportCommand, SewedReport>();
     }
 }
 
