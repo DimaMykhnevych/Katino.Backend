@@ -32,6 +32,9 @@ public class OrderItemController : ControllerBase
     [Authorize(Roles = Role.Admin)]
     public async Task<IActionResult> SubmitSewingReport([FromBody] SubmitSewedReportCommand submitSewedReportCommand)
     {
+        var userIdString = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
+        submitSewedReportCommand.SubmittedBy = Guid.Parse(userIdString);
+
         var result = await _mediator.Send(submitSewedReportCommand);
         return result ? Ok(result) : BadRequest();
     }

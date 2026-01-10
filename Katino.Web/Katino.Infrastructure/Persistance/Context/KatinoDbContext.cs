@@ -32,6 +32,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<OrderAddressInfo> OrderAddressInfo { get; set; }
     public DbSet<Order> Orders { get; set; }
+    public DbSet<SewingHistory> SewingHistory { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -210,6 +211,18 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
                   .HasForeignKey<OrderAddressInfo>(d => d.Id)
                   .IsRequired(false);
         });
+
+        builder.Entity<SewingHistory>()
+            .HasOne(x => x.ProductVariant)
+            .WithMany()
+            .HasForeignKey(x => x.ProductVariantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<SewingHistory>()
+            .HasOne(x => x.SewedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.SewedBy)
+            .OnDelete(DeleteBehavior.Restrict);
 
         base.OnModelCreating(builder);
     }

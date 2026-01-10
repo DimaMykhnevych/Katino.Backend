@@ -20,6 +20,7 @@ using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
+using Katino.Domain.Repositories.SewingHistoryRepository;
 using Katino.Domain.Repositories.SizeRepository;
 using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
@@ -65,6 +66,7 @@ using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
+using Katino.Infrastructure.Persistance.Repositories.SewingHistoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.SizeRepository;
 using Katino.Infrastructure.Persistance.Services.AppLogs;
 using Katino.Infrastructure.Persistance.Services.Article;
@@ -148,6 +150,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IOrderItemRepository, OrderItemRepository>();
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
         services.AddTransient<IOrderNpOptionsSeatRepository, OrderNpOptionsSeatRepository>();
+        services.AddTransient<ISewingHistoryRepository, SewingHistoryRepository>();
     }
 }
 

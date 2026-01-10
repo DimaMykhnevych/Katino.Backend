@@ -30,7 +30,7 @@ public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReport
         try
         {
             SewedReport report = _mapper.Map<SewedReport>(request);
-             await _sewingProductionReportService.ApplySewedAsync(report).ConfigureAwait(false);
+             await _sewingProductionReportService.ApplySewedAsync(report, request.SubmittedBy).ConfigureAwait(false);
             return true;
         }
         catch (Exception ex)
