@@ -30,8 +30,13 @@ public class GetCrmUserSettingsQueryHandler : IRequestHandler<GetCrmUserSettings
         ArgumentNullException.ThrowIfNull(request);
 
         var settings = await _crmUserSettingsRepository.GetAppUserSettingsWithFullInfo(request.AppUserId);
-        var cityInfo = _mapper.Map<GetNpCityDto>(settings.NpCity);
-        var warehouse = _mapper.Map<NpWarehouseDto>(settings.NpWarehouse);
+        if (settings == null)
+        {
+            return new();
+        }
+
+        var cityInfo = settings.NpCity == null ? null : _mapper.Map<GetNpCityDto>(settings.NpCity);
+        var warehouse = settings.NpWarehouse == null ? null : _mapper.Map<NpWarehouseDto>(settings.NpWarehouse);
 
         return new() { Id = settings.Id, NpCity = cityInfo, NpWarehouse = warehouse };
     }
