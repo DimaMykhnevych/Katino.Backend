@@ -4,4 +4,5 @@ public interface INovaPoshtaSyncService
 {
     Task<bool> IsSyncCompletedAsync();
     Task SyncAllDataAsync(Guid triggeredBy);
+    Task SyncWarehousesAsync(Guid syncStatusId);
 }

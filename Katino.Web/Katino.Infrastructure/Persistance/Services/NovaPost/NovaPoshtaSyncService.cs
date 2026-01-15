@@ -4,7 +4,6 @@ using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.NpWarehouseRepository;
 using Katino.Domain.Services.NovaPost.Sync;
 using Katino.Domain.Services.NovaPost.Warehouse;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.NovaPost;
@@ -53,7 +52,7 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
 
             _logger.LogInformation("Starting Nova Poshta data synchronization...");
 
-            var totalRecordsInserted = await SyncWarehousesAsync(syncStatus.Id);
+            var totalRecordsInserted = await SyncWarehousesAsyncInternal(syncStatus.Id);
 
             await _syncStatusService.CompleteSyncAsync(syncStatus.Id, totalRecordsInserted);
 
@@ -72,7 +71,28 @@ public class NovaPoshtaSyncService : INovaPoshtaSyncService
         }
     }
 
-    private async Task<int> SyncWarehousesAsync(Guid syncId)
+    public async Task SyncWarehousesAsync(Guid syncStatusId)
+    {
+        try
+        {
+            _logger.LogInformation("Starting Nova Poshta warehouses sync. SyncId: {SyncId}", syncStatusId);
+
+            var totalRecordsInserted = await SyncWarehousesAsyncInternal(syncStatusId);
+
+            await _syncStatusService.CompleteSyncAsync(syncStatusId, totalRecordsInserted);
+
+            _logger.LogInformation("Sync completed successfully. SyncId: {SyncId}", syncStatusId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during sync. SyncId: {SyncId}", syncStatusId);
+            await _syncStatusService.FailSyncAsync(syncStatusId, ex.Message);
+            throw;
+        }
+    }
+
+
+    private async Task<int> SyncWarehousesAsyncInternal(Guid syncId)
     {
         _logger.LogInformation("Syncing warehouses...");
 

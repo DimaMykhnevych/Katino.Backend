@@ -34,31 +34,35 @@ public class TriggerSyncCommandHandler : IRequestHandler<TriggerSyncCommand, boo
         try
         {
             var syncType = _mapper.Map<SyncType>(request.SyncType);
-            if (await _novaPoshtaSyncStatusService.IsSyncInProgressAsync(syncType))
-            {
-                return false;
-            }
+            var syncStatus = await _novaPoshtaSyncStatusService.StartSyncAsync(syncType, request.TriggeredBy);
 
             _ = Task.Run(async () =>
             {
                 using var scope = _scopeFactory.CreateScope();
-
                 var syncService = scope.ServiceProvider.GetRequiredService<INovaPoshtaSyncService>();
                 var logger = scope.ServiceProvider.GetService<ILogger<TriggerSyncCommandHandler>>();
 
                 try
                 {
-                    logger.LogInformation("Starting background sync");
-                    await syncService.SyncAllDataAsync(request.TriggeredBy);
-                    logger.LogInformation("Background sync completed");
+                    logger?.LogInformation("Starting background sync, SyncId: {SyncId}", syncStatus.Id);
+
+                    await syncService.SyncWarehousesAsync(syncStatus.Id);
+
+                    logger?.LogInformation("Background sync completed, SyncId: {SyncId}", syncStatus.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in manual sync");
+                    logger?.LogError(ex, "Error in background sync, SyncId: {SyncId}", syncStatus.Id);
+                    var statusService = scope.ServiceProvider.GetRequiredService<INovaPoshtaSyncStatusService>();
+                    await statusService.FailSyncAsync(syncStatus.Id, ex.Message);
                 }
             });
 
             return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
         }
         catch (Exception ex)
         {
@@ -66,5 +70,6 @@ public class TriggerSyncCommandHandler : IRequestHandler<TriggerSyncCommand, boo
             return false;
         }
     }
+
 }
 
