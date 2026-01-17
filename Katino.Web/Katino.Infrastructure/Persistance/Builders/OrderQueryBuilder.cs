@@ -53,6 +53,16 @@ public class OrderQueryBuilder : IOrderQueryBuilder
         return this;
     }
 
+    public IOrderQueryBuilder SetBaseOrderInfoForToatalCount()
+    {
+        _query = _dbContext.Orders
+            .AsNoTracking()
+            .Include(o => o.OrderRecipient)
+                .ThenInclude(r => r.NpContactPerson);
+
+        return this;
+    }
+
     public IOrderQueryBuilder ApplyPaging(int page, int pageSize)
     {
         EnsureQuery();

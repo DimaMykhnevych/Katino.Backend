@@ -34,6 +34,12 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, GetOrderDto>
             .ApplyPaging(request.Page, request.PageSize)
             .Build();
 
+        var ordersCount = await _orderQueryBuilder
+            .SetBaseOrderInfoForToatalCount()
+            .ApplySearch(request.Search)
+            .Build()
+            .CountAsync(cancellationToken);
+
         var resultOrders = await orders.ToListAsync(cancellationToken);
 
         List<OrderDto> orderDtos =
@@ -43,7 +49,7 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, GetOrderDto>
         return new GetOrderDto
         {
             Orders = orderDtos,
-            ResultsAmount = orderDtos.Count
+            ResultsAmount = ordersCount
         };
     }
 }
