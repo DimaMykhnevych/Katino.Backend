@@ -31,9 +31,8 @@ public class Order
     public string InternetDocumentIntDocNumber { get; set; }
 
     // Internally calculated fields
-    public OrderReadinessStatus OrderReadinessStatus { get; set; }
+    public OrderStatus OrderStatus { get; set; }
     public OrderInternetDocStatus OrderInternetDocStatus { get; set; }
-    public OrderManualStatus OrderManualStatus { get; set; }
 
 
     public List<OrderItem> OrderItems { get; set; } = [];

@@ -1,5 +1,6 @@
 ﻿using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -104,9 +105,11 @@ public class SewingProductionReportService : ISewingProductionReportService
             : OrderItemStatus.Ready;
 
         var order = orderItem.Order;
-        order.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
-            ? OrderReadinessStatus.InProgress
-            : OrderReadinessStatus.ReadyToShip;
+        var newOrderStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
+            ? OrderStatus.InProgress
+            : OrderStatus.ReadyToShip;
+
+        OrderStatusHelper.SetOrderStatus(order, newOrderStatus, false);
 
         await _orderRepository.Save();
     }

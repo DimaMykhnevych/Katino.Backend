@@ -10,7 +10,10 @@ public interface IOrderRepository : IRepository<Order>
     Task<Order> GetExistingOrderForDelete(Guid orderId);
     Task<List<Order>> GetActiveOrdersWithSpecificProductVariantAsync(Guid productVariantId);
     Task<List<Order>> GetOrdersForNpStatusUpdateAsync(OrderInternetDocStatus[] statusesToExclude);
-    Task UpdateInternetDocStatusAsync(Guid orderId, OrderInternetDocStatus status);
+    Task UpdateInternetDocStatusAsync(Guid orderId,
+        OrderInternetDocStatus status,
+        OrderStatus orderStatus,
+        bool shouldUpdateOrderStatus);
     Task<Order> GetOrderWithOrderItemsAsync(Guid orderId);
     Task<OrderItem> GetOrderItemWithOrderAsync(Guid orderItemId);
 }

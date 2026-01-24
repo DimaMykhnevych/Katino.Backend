@@ -18,7 +18,7 @@ public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
             .AsNoTracking()
             .AsSplitQuery()
             .Where(oi =>
-                oi.Order.OrderReadinessStatus == OrderReadinessStatus.InProgress &&
+                oi.Order.OrderStatus == OrderStatus.InProgress &&
                 oi.OrderItemStatus == OrderItemStatus.ForSewing)
             .Include(oi => oi.ProductVariant)
                 .ThenInclude(pv => pv.Product)

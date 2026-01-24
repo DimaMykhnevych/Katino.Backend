@@ -1,5 +1,6 @@
 ﻿using Katino.Domain.Constants;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
@@ -23,22 +24,49 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
         _logger = loggerFactory?.CreateLogger(nameof(SetOrderManualStatusService));
     }
 
-    public async Task<bool> SetOrderManualStatusAsync(Guid orderId, OrderManualStatus orderManualStatus)
+    public OrderStatus[] GetNextOrderStatuses(OrderStatus orderStatusCurrent)
     {
-        _logger.LogInformation($"Handling manual status change for oder {orderId}");
+        if (orderStatusCurrent == OrderStatus.ReadyToShip)
+        {
+            return [OrderStatus.Packed];
+        }
+
+        if (orderStatusCurrent == OrderStatus.Packed)
+        {
+            return [OrderStatus.ReadyToShip];
+        }
+
+        if (InternetDocumentConstants.OrderReceivedStatuses.Contains(orderStatusCurrent))
+        {
+            return [OrderStatus.Refusal, OrderStatus.Exchange];
+        }
+
+        if (InternetDocumentConstants.OrderRejectedStatuses.Contains(orderStatusCurrent))
+        {
+            return [OrderStatus.Exchange];
+        }
+
+        return [];
+    }
+
+    public async Task<bool> SetOrderManualStatusAsync(Guid orderId, OrderStatus orderStatus)
+    {
+        _logger.LogInformation($"Handling manual status change for oder {orderId}: {orderStatus}");
+        OrderStatusHelper.ValidateManualOrderStatus(orderStatus);
+
         try
         {
             var order = await _orderRepository.GetOrderWithOrderItemsAsync(orderId);
-            _logger.LogDebug($"Previous order manual status: {order.OrderManualStatus}, new status: {orderManualStatus}");
+            _logger.LogDebug($"Previous order status: {order.OrderStatus}, new status: {orderStatus}");
 
-            if (order.OrderManualStatus == OrderManualStatus.None && orderManualStatus == OrderManualStatus.Refusal)
+            if (orderStatus == OrderStatus.Refusal)
             {
-                if (!InternetDocumentConstants.ReceivedStatuses.Contains(order.OrderInternetDocStatus))
+                if (!InternetDocumentConstants.OrderReceivedStatuses.Contains(order.OrderStatus))
                 {
                     throw new ArgumentException("Not yet received orders cannot be manually rejected");
                 }
 
-                order.OrderManualStatus = orderManualStatus;
+                order.OrderStatus = orderStatus;
 
                 // Status updated here
                 await _deleteOrderService.HandleOrderRejectionAsync(order, null);
@@ -46,19 +74,19 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 return true;
             }
 
-            if (order.OrderManualStatus == OrderManualStatus.None && orderManualStatus == OrderManualStatus.Exchange)
+            if (orderStatus == OrderStatus.Exchange)
             {
-                if (InternetDocumentConstants.RejectedStatuses.Contains(order.OrderInternetDocStatus))
+                if (InternetDocumentConstants.OrderRejectedStatuses.Contains(order.OrderStatus))
                 {
-                    order.OrderManualStatus = orderManualStatus;
+                    order.OrderStatus = orderStatus;
 
                     await _orderRepository.Save();
 
                     return true;
                 }
-                else if (InternetDocumentConstants.ReceivedStatuses.Contains(order.OrderInternetDocStatus))
+                else if (InternetDocumentConstants.OrderReceivedStatuses.Contains(order.OrderStatus))
                 {
-                    order.OrderManualStatus = orderManualStatus;
+                    order.OrderStatus = orderStatus;
 
                     // Status updated here
                     await _deleteOrderService.HandleOrderRejectionAsync(order, null);
@@ -69,6 +97,34 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 {
                     throw new ArgumentException("Exchange can be set only for received or rejected statuses");
                 }
+            }
+
+            if (orderStatus == OrderStatus.Packed)
+            {
+                if (order.OrderStatus != OrderStatus.ReadyToShip)
+                {
+                    throw new ArgumentException("Orders that are not ready to ship cannot be Packed");
+                }
+
+                order.OrderStatus = orderStatus;
+
+                await _orderRepository.Save();
+
+                return true;
+            }
+
+            if (orderStatus == OrderStatus.ReadyToShip)
+            {
+                if (order.OrderStatus != OrderStatus.Packed)
+                {
+                    throw new ArgumentException("ReadyToShip statuses can be set only for Packed orders");
+                }
+
+                order.OrderStatus = orderStatus;
+
+                await _orderRepository.Save();
+
+                return true;
             }
 
             _logger.LogInformation($"Manual status for order {orderId} was previously changed, it cannot be updated again");

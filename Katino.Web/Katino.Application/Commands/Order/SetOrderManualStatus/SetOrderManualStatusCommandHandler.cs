@@ -29,7 +29,7 @@ public class SetOrderManualStatusCommandHandler : IRequestHandler<SetOrderManual
 
         try
         {
-            OrderManualStatus orderManualStatus = _mapper.Map<OrderManualStatus>(request.OrderManualStatus);
+            OrderStatus orderManualStatus = _mapper.Map<OrderStatus>(request.OrderManualStatus);
             return await _setOrderManualStatusService.SetOrderManualStatusAsync(request.OrderId, orderManualStatus);
         }
         catch (Exception ex)

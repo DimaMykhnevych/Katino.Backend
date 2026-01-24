@@ -3,6 +3,7 @@ using Katino.Domain.Context;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
+using Katino.Domain.Helpers;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
@@ -201,12 +202,15 @@ public class UpdateOrderService : IUpdateOrderService
                     InternetDocumentRef = currentOrderInDb.InternetDocumentRef,
                     InternetDocumentIntDocNumber = currentOrderInDb.InternetDocumentIntDocNumber,
                     OrderInternetDocStatus = currentOrderInDb.OrderInternetDocStatus,
-                    OrderManualStatus = currentOrderInDb.OrderManualStatus,
+                    OrderStatus = currentOrderInDb.OrderStatus,
                 };
 
-                updatedOrder.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
-                    ? OrderReadinessStatus.InProgress
-                    : OrderReadinessStatus.ReadyToShip;
+                var newOrderStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
+                    ? OrderStatus.InProgress
+                    : OrderStatus.ReadyToShip;
+
+                var orderItemsChanged = OrderItemsChanged(currentOrderInDb.OrderItems, order.OrderItems);
+                OrderStatusHelper.SetOrderStatus(updatedOrder, newOrderStatus, orderItemsChanged);
 
                 _logger.LogTrace("Updating order in db");
                 await _orderRepository.Update(updatedOrder);
@@ -408,7 +412,7 @@ public class UpdateOrderService : IUpdateOrderService
         CreateNovaPostInternetDocument updatedDocument,
         Order previousOrder)
     {
-        if (InternetDocumentConstants.ReceivedStatuses.Contains(previousOrder.OrderInternetDocStatus))
+        if (InternetDocumentConstants.OrderReceivedStatuses.Contains(previousOrder.OrderStatus))
         {
             return false;
         }
@@ -420,5 +424,32 @@ public class UpdateOrderService : IUpdateOrderService
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
         return JsonConvert.SerializeObject(updatedDocument, Formatting.None, serializationSettings) != JsonConvert.SerializeObject(previousDocument, Formatting.None, serializationSettings);
+    }
+
+    private bool OrderItemsChanged(List<OrderItem> existingOrderItems, List<OrderItem> newOrderItems)
+    {
+        if (existingOrderItems.Count != newOrderItems.Count || newOrderItems.Any(o => o.Id == Guid.Empty))
+        {
+            return true;
+        }
+
+        foreach (var existingOrderItem in existingOrderItems)
+        {
+            var correspondingNewOrderItem = newOrderItems.FirstOrDefault(i => i.Id == existingOrderItem.Id);
+            if (correspondingNewOrderItem == null)
+            {
+                return true;
+            }
+
+            if (existingOrderItem.IsCustomTailoring != correspondingNewOrderItem.IsCustomTailoring ||
+                existingOrderItem.Comment != correspondingNewOrderItem.Comment ||
+                existingOrderItem.Quantity != correspondingNewOrderItem.Quantity ||
+                existingOrderItem.ProductVariantId != correspondingNewOrderItem.ProductVariantId)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

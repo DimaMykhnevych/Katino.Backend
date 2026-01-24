@@ -1,5 +1,6 @@
 ﻿using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
@@ -155,9 +156,11 @@ public class UpdateProductVariantService : IUpdateProductVariantService
             requiredOrderItem.QuantityToProduce = newOderItemQuantityToProduce;
             requiredOrderItem.OrderItemStatus = newOrderItemStatus;
 
-            order.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
-                ? OrderReadinessStatus.InProgress
-                : OrderReadinessStatus.ReadyToShip;
+            var newOrderStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
+                ? OrderStatus.InProgress
+                : OrderStatus.ReadyToShip;
+
+            OrderStatusHelper.SetOrderStatus(order, newOrderStatus, false);
 
             await _orderRepository.Save();
 

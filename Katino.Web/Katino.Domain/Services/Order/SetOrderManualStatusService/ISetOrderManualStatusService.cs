@@ -4,5 +4,6 @@ namespace Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 
 public interface ISetOrderManualStatusService
 {
-    Task<bool> SetOrderManualStatusAsync(Guid orderId, OrderManualStatus orderManualStatus);
+    OrderStatus[] GetNextOrderStatuses(OrderStatus orderStatusCurrent);
+    Task<bool> SetOrderManualStatusAsync(Guid orderId, OrderStatus orderStatus);
 }

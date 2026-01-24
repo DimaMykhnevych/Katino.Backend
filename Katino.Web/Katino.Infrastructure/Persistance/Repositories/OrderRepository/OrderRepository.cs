@@ -16,7 +16,7 @@ public class OrderRepository : Repository<Order>, IOrderRepository
     {
         return await context.Orders
             .Include(o => o.OrderItems)
-            .Where(o => o.OrderReadinessStatus == OrderReadinessStatus.InProgress && o.OrderItems.Any(i => i.ProductVariantId == productVariantId))
+            .Where(o => o.OrderStatus == OrderStatus.InProgress && o.OrderItems.Any(i => i.ProductVariantId == productVariantId))
             .OrderBy(o => o.SendUntilDate)
             .ToListAsync();
     }
@@ -74,12 +74,27 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .ToListAsync();
     }
 
-    public Task UpdateInternetDocStatusAsync(Guid orderId, OrderInternetDocStatus status)
+    public Task UpdateInternetDocStatusAsync(
+        Guid orderId,
+        OrderInternetDocStatus status,
+        OrderStatus orderStatus,
+        bool shouldUpdateOrderStatus)
     {
-        return context.Orders
-            .Where(o => o.Id == orderId)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(o => o.OrderInternetDocStatus, status));
+        if (!shouldUpdateOrderStatus)
+        {
+            return context.Orders
+                .Where(o => o.Id == orderId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(o => o.OrderInternetDocStatus, status));
+        }
+        else
+        {
+            return context.Orders
+                .Where(o => o.Id == orderId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(o => o.OrderInternetDocStatus, status)
+                    .SetProperty(o => o.OrderStatus, orderStatus));
+        }
     }
 
     public async Task<Order> GetOrderWithOrderItemsAsync(Guid orderId)

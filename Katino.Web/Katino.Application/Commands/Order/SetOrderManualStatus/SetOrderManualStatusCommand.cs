@@ -6,5 +6,5 @@ namespace Katino.Application.Commands.OrderN.SetOrderManualStatus;
 public class SetOrderManualStatusCommand : IRequest<bool>
 {
     public Guid OrderId { get; set; }
-    public OrderManualStatusDto OrderManualStatus { get; set; }
+    public OrderStatusDto OrderManualStatus { get; set; }
 }

@@ -1,6 +1,6 @@
-﻿using Katino.Domain.Constants;
-using Katino.Domain.Entities;
+﻿using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.InternetDocument;
@@ -14,6 +14,18 @@ namespace Katino.Functions.Services.NpIntDocStatusSyncService;
 public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
 {
     private const int OrderBatchSize = 10;
+
+    private static readonly OrderInternetDocStatus[] ReceivedStatuses = [
+        OrderInternetDocStatus.Received // 9
+    ];
+
+    private static readonly OrderInternetDocStatus[] RejectedStatuses = [
+        OrderInternetDocStatus.RejectionBySender,           // 102
+        OrderInternetDocStatus.Rejection,                   // 103
+        OrderInternetDocStatus.StorageStopped,              // 105
+        OrderInternetDocStatus.ReceivedAndReturnCreated,    // 106
+        OrderInternetDocStatus.ReceiverNotAnswering         // 111
+    ];
 
     private readonly IInternetDocumentService _internetDocumentService;
     private readonly IOrderRepository _orderRepository;
@@ -44,8 +56,8 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
     public async Task RunSync()
     {
         List<OrderInternetDocStatus> excludedStatuses = [];
-        excludedStatuses.AddRange(InternetDocumentConstants.ReceivedStatuses);
-        excludedStatuses.AddRange(InternetDocumentConstants.RejectedStatuses);
+        excludedStatuses.AddRange(ReceivedStatuses);
+        excludedStatuses.AddRange(RejectedStatuses);
         var ordersToCheck = await _orderRepository.GetOrdersForNpStatusUpdateAsync(excludedStatuses.ToArray());
 
         var batches = ordersToCheck.Chunk(OrderBatchSize);
@@ -85,12 +97,21 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         try
         {
             var orderStatusString = statusesDict[order.InternetDocumentIntDocNumber];
-            var orderInternetDocStatus = (OrderInternetDocStatus)int.Parse(orderStatusString);
+            var orderStatusNumber = int.Parse(orderStatusString);
 
-            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus);
+            if (!Enum.IsDefined(typeof(OrderInternetDocStatus), orderStatusNumber))
+            {
+                throw new ArgumentException($"Unknown NovaPost internet document status: {orderStatusNumber}", nameof(orderStatusNumber));
+            }
+
+            var orderInternetDocStatus = (OrderInternetDocStatus)orderStatusNumber;
+            var orderStatus = GetOrderStatusFromIntDocStatus(orderInternetDocStatus);
+            bool shouldUpdateOrderStatus = OrderStatusHelper.ShouldUpdateToNpRelatedStatus(order.OrderStatus, orderStatus);
+
+            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus, orderStatus, shouldUpdateOrderStatus);
 
             // Handle rejected status
-            if (InternetDocumentConstants.RejectedStatuses.Contains(orderInternetDocStatus))
+            if (RejectedStatuses.Contains(orderInternetDocStatus))
             {
                 await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus);
             }
@@ -99,5 +120,34 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         {
             _logger.LogError(ex, $"An error occurred during processing of order {order.Id}");
         }
+    }
+
+    private OrderStatus GetOrderStatusFromIntDocStatus(OrderInternetDocStatus docStatus)
+    {
+        return docStatus switch
+        {
+            OrderInternetDocStatus.Created => OrderStatus.Created,
+            OrderInternetDocStatus.Deleted => OrderStatus.Deleted,
+            OrderInternetDocStatus.NotFound => OrderStatus.NotFound,
+            OrderInternetDocStatus.InTheCityInterregional => OrderStatus.InTheCityInterregional,
+            OrderInternetDocStatus.OnTheWayToCity => OrderStatus.OnTheWayToCity,
+            OrderInternetDocStatus.OnTheWayToDepartment => OrderStatus.OnTheWayToDepartment,
+            OrderInternetDocStatus.Arrived => OrderStatus.Arrived,
+            OrderInternetDocStatus.ArrivedPostomat => OrderStatus.ArrivedPostomat,
+            OrderInternetDocStatus.Received => OrderStatus.Received,
+            OrderInternetDocStatus.ReceivedRemittancePending => OrderStatus.ReceivedRemittancePending,
+            OrderInternetDocStatus.ReceivedRemittanceCompleted => OrderStatus.ReceivedRemittanceCompleted,
+            OrderInternetDocStatus.NpCompletingOrder => OrderStatus.NpCompletingOrder,
+            OrderInternetDocStatus.InTheCityWithinTheCity => OrderStatus.InTheCityWithinTheCity,
+            OrderInternetDocStatus.OnTheWayToReceiver => OrderStatus.OnTheWayToReceiver,
+            OrderInternetDocStatus.RejectionBySender => OrderStatus.RejectionBySender,
+            OrderInternetDocStatus.Rejection => OrderStatus.Rejection,
+            OrderInternetDocStatus.AddressChanged => OrderStatus.AddressChanged,
+            OrderInternetDocStatus.StorageStopped => OrderStatus.StorageStopped,
+            OrderInternetDocStatus.ReceivedAndReturnCreated => OrderStatus.ReceivedAndReturnCreated,
+            OrderInternetDocStatus.ReceiverNotAnswering => OrderStatus.ReceiverNotAnswering,
+            OrderInternetDocStatus.DeliveryDateChangedByReceiver => OrderStatus.DeliveryDateChangedByReceiver,
+            _ => throw new ArgumentException($"Unknown internet doc status: {docStatus}", nameof(docStatus))
+        };
     }
 }

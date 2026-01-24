@@ -65,8 +65,9 @@ public class DeleteOrderService : IDeleteOrderService
             // We don't need to separatly consider manual status, because manual status can only be set for
             // rejected or received int doc statuses, and if they have such statuses, it means that required
             // actions were already performed during function app processing (or manual status change).
-            if (InternetDocumentConstants.RejectedStatuses.Contains(existingOrder.OrderInternetDocStatus) ||
-                InternetDocumentConstants.ReceivedStatuses.Contains(existingOrder.OrderInternetDocStatus))
+            if (InternetDocumentConstants.OrderRejectedStatuses.Contains(existingOrder.OrderStatus) ||
+                InternetDocumentConstants.OrderReceivedStatuses.Contains(existingOrder.OrderStatus) ||
+                existingOrder.OrderStatus == OrderStatus.Refusal || existingOrder.OrderStatus == OrderStatus.Exchange)
             {
                 _logger.LogInformation($"Order {id} is rejected/received, deleting only order and internet document");
 
@@ -147,11 +148,11 @@ public class DeleteOrderService : IDeleteOrderService
         }
     }
 
-    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus? orderInternalDocStatus)
+    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus? orderInternetDocStatus)
     {
-        if (orderInternalDocStatus != null)
+        if (orderInternetDocStatus != null)
         {
-            _logger.LogInformation($"Order {order.Id} was rejected with status {orderInternalDocStatus}, making return...");
+            _logger.LogInformation($"Order {order.Id} was rejected with status {orderInternetDocStatus}, making return...");
         }
         else
         {

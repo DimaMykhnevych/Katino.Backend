@@ -79,7 +79,6 @@ public class MappingProfile : Profile
 
         CreateMap<OrderItem, OrderItemDto>();
 
-        CreateMap<OrderReadinessStatus, OrderReadinessStatusDto>();
         CreateMap<OrderInternetDocStatus, OrderInternetDocStatusDto>();
         CreateMap<OrderItemStatus, OrderItemStatusDto>();
 
@@ -121,7 +120,7 @@ public class MappingProfile : Profile
         CreateMap<SyncTypeDto, SyncType>().ReverseMap();
 
         CreateMap<NovaPoshtaSyncStatus, SyncRecordDto>();
-        CreateMap<OrderManualStatusDto, OrderManualStatus>().ReverseMap();
+        CreateMap<OrderStatusDto, OrderStatus>().ReverseMap();
 
         CreateMap<CityResponse, NpCityResponseDto>();
         CreateMap<GetCitiesResponse, GetNpCitiesResponseDto>();

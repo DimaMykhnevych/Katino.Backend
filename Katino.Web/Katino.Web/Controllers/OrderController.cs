@@ -3,6 +3,7 @@ using Katino.Application.Commands.OrderN.DeleteOrder;
 using Katino.Application.Commands.OrderN.SetOrderManualStatus;
 using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.DTOs.Order;
+using Katino.Application.Queries.OrderN.GetNextOrderStatus;
 using Katino.Application.Queries.OrderN.GetOrder;
 using Katino.Domain.Constants;
 using MediatR;
@@ -53,6 +54,14 @@ public class OrderController : ControllerBase
         DeleteOrderCommand command = new() { Id = orderId };
         var result = await _mediator.Send(command);
         return result.OrderDeletedSuccessfully ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("manual-status/get-next")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<IActionResult> GetNextManualStatus([FromQuery] GetNextOrderStatusQuery getNextOrderStatusQuery)
+    {
+        OrderStatusDto[] result = await _mediator.Send(getNextOrderStatusQuery);
+        return Ok(result);
     }
 
     [HttpPost("manual-status/set")]

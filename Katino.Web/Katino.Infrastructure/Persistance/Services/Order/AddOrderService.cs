@@ -2,6 +2,7 @@
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
+using Katino.Domain.Helpers;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Repositories.OrderRecipientRepository;
@@ -170,13 +171,14 @@ public class AddOrderService : IAddOrderService
                 OrderNpOptionsSeats = npOptionSeats,
                 AddressInfo = order.AddressInfo,
                 OrderInternetDocStatus = OrderInternetDocStatus.NotProcessed,
-                OrderManualStatus = OrderManualStatus.None,
+                OrderStatus = OrderStatus.None
             };
 
             // 2.Calculate Order status and add it to order
-            orderToAdd.OrderReadinessStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
-                ? OrderReadinessStatus.InProgress
-                : OrderReadinessStatus.ReadyToShip;
+            var newOrderStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
+                ? OrderStatus.InProgress
+                : OrderStatus.ReadyToShip;
+            OrderStatusHelper.SetOrderStatus(orderToAdd, newOrderStatus, false);
 
             // 3. Save order
             _logger.LogTrace("Saving order in db");
