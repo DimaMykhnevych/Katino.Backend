@@ -8,4 +8,5 @@ public class GetOrderQuery : IRequest<GetOrderDto>
     public string Search { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }
+    public IList<OrderStatusDto> OrderStatuses { get; set; } = [];
 }

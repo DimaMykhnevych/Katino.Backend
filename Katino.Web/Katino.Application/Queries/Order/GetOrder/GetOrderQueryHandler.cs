@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Katino.Application.DTOs.Order;
 using Katino.Domain.Builders;
+using Katino.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -28,15 +29,19 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, GetOrderDto>
         _logger.LogInformation("Handling get orders");
         ArgumentNullException.ThrowIfNull(request);
 
+        var orderStatuses = _mapper.Map<List<OrderStatus>>(request.OrderStatuses);
+
         var orders = _orderQueryBuilder
             .SetBaseOrderInfo()
             .ApplySearch(request.Search)
+            .ApplyOrderStatusFilter(orderStatuses)
             .ApplyPaging(request.Page, request.PageSize)
             .Build();
 
         var ordersCount = await _orderQueryBuilder
             .SetBaseOrderInfoForToatalCount()
             .ApplySearch(request.Search)
+            .ApplyOrderStatusFilter(orderStatuses)
             .Build()
             .CountAsync(cancellationToken);
 

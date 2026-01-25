@@ -1,5 +1,6 @@
 ﻿using Katino.Domain.Builders;
 using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 
@@ -121,6 +122,17 @@ public class OrderQueryBuilder : IOrderQueryBuilder
              ))
         );
 
+        return this;
+    }
+
+    public IOrderQueryBuilder ApplyOrderStatusFilter(IList<OrderStatus> orderStatuses)
+    {
+        if (orderStatuses == null || !orderStatuses.Any())
+        {
+            return this;
+        }
+
+        _query = _query.Where(o => orderStatuses.Contains(o.OrderStatus));
         return this;
     }
 
