@@ -1,5 +1,6 @@
 ﻿using Katino.Application.DTOs.NovaPost;
 using Katino.Application.Queries.NovaPost.GetNpCities;
+using Katino.Application.Queries.NovaPost.GetNpContactPerson;
 using Katino.Application.Queries.NovaPost.GetNpSenderContactPersons;
 using Katino.Domain.Constants;
 using Katino.Domain.Entities;
@@ -25,6 +26,13 @@ public class NovaPostController : ControllerBase
     {
         GetNpCitiesResponseDto cities = await _mediator.Send(new GetNpCitiesQuery() { CityName = cityName });
         return Ok(cities);
+    }
+
+    [HttpGet("contact-persons")]
+    public async Task<ActionResult<List<NovaPoshtaSyncStatus>>> GetContactPersons([FromQuery] string phone)
+    {
+        var persons = await _mediator.Send(new GetNpContactPersonQuery() { Phone = phone });
+        return Ok(persons);
     }
 
     [HttpGet("sender/contact-persons")]
