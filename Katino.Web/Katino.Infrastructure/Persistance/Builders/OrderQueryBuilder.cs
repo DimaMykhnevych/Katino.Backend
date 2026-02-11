@@ -49,7 +49,7 @@ public class OrderQueryBuilder : IOrderQueryBuilder
             .Include(o => o.OrderRecipient)
                 .ThenInclude(r => r.NpContactPerson)
             .Include(o => o.AddressInfo)
-            .OrderBy(o => o.SendUntilDate);
+            .OrderByDescending(o => o.CreationDateTime);
 
         return this;
     }
