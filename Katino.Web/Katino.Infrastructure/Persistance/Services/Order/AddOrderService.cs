@@ -203,10 +203,6 @@ public class AddOrderService : IAddOrderService
                 throw;
             }
 
-            // TODO
-            // 7.1 Implement order get (pagination should be used)
-            // 7.2 Do following actions when sewer completes their work (update order status and order items, set order item completed date).
-
             try
             {
                 // 5. Save ttn (creating internet document)
