@@ -21,7 +21,7 @@ public class OrderDto
     public PayerTypeDto PayerType { get; set; }
     public PaymentMethodDto PaymentMethod { get; set; }
     public SaleTypeDto SaleType { get; set; }
-    public DateTime CreationDateTime { get; set; }
+    public DateTimeOffset CreationDateTime { get; set; }
     public DateTime SendUntilDate { get; set; }
     public double Weight { get; set; }
     public DeliveryTypeDto DeliveryType { get; set; }

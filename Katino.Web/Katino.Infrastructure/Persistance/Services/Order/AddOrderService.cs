@@ -159,7 +159,7 @@ public class AddOrderService : IAddOrderService
                 PayerType = order.PayerType,
                 PaymentMethod = order.PaymentMethod,
                 SaleType = order.SaleType,
-                CreationDateTime = DateTime.UtcNow,
+                CreationDateTime = DateTimeOffset.UtcNow,
                 SendUntilDate = order.SendUntilDate,
                 Weight = order.Weight,
                 DeliveryType = order.DeliveryType,
