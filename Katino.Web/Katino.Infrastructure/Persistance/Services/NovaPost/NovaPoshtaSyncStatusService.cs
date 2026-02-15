@@ -34,7 +34,7 @@ public class NovaPoshtaSyncStatusService : INovaPoshtaSyncStatusService
             return false;
         }
 
-        var timeoutThreshold = DateTime.UtcNow.AddMinutes(-SyncStuckMinutes);
+        var timeoutThreshold = DateTimeOffset.UtcNow.AddMinutes(-SyncStuckMinutes);
         if (activeSync.StartedAt < timeoutThreshold)
         {
             _logger.LogWarning(
@@ -59,7 +59,7 @@ public class NovaPoshtaSyncStatusService : INovaPoshtaSyncStatusService
         {
             SyncType = syncType,
             Status = SyncStatus.InProgress,
-            StartedAt = DateTime.UtcNow,
+            StartedAt = DateTimeOffset.UtcNow,
             TriggeredBy = triggeredBy,
             ApiRequestedRecords = 0,
             DbInsertedRecords = 0
@@ -102,7 +102,7 @@ public class NovaPoshtaSyncStatusService : INovaPoshtaSyncStatusService
         }
 
         syncStatus.Status = SyncStatus.Completed;
-        syncStatus.CompletedAt = DateTime.UtcNow;
+        syncStatus.CompletedAt = DateTimeOffset.UtcNow;
         syncStatus.DbInsertedRecords = dbInsertedRecords;
 
         await _novaPoshtaSyncStatusRepository.Update(syncStatus);
@@ -125,7 +125,7 @@ public class NovaPoshtaSyncStatusService : INovaPoshtaSyncStatusService
         }
 
         syncStatus.Status = SyncStatus.Failed;
-        syncStatus.CompletedAt = DateTime.UtcNow;
+        syncStatus.CompletedAt = DateTimeOffset.UtcNow;
         syncStatus.ErrorMessage = errorMessage;
 
         await _novaPoshtaSyncStatusRepository.Update(syncStatus);

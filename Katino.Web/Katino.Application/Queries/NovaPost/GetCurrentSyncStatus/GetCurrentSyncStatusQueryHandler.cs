@@ -80,7 +80,7 @@ public class GetCurrentSyncStatusQueryHandler : IRequestHandler<GetCurrentSyncSt
 
         if (currentSync.StartedAt.HasValue)
         {
-            var endTime = currentSync.CompletedAt ?? DateTime.UtcNow;
+            var endTime = currentSync.CompletedAt ?? DateTimeOffset.UtcNow;
             dto.DurationSeconds = (int)(endTime - currentSync.StartedAt.Value).TotalSeconds;
         }
 
