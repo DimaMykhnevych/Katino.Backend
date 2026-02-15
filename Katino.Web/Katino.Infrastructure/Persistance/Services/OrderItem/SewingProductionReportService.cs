@@ -57,7 +57,7 @@ public class SewingProductionReportService : ISewingProductionReportService
             SewedBy = submittedBy,
             SewedQuantity = report.ActualSewedQuantity,
             IsCustomTailoring = report.OrderItemId is not null,
-            SewedDate = DateTime.UtcNow
+            SewedDate = DateTimeOffset.UtcNow
         });
 
         await _sewingHistoryRepository.Save();

@@ -19,7 +19,7 @@ public class SewingHistory
     public bool IsCustomTailoring { get; set; }
 
     [Required]
-    public DateTime SewedDate { get; set; }
+    public DateTimeOffset SewedDate { get; set; }
 
     public ProductVariant ProductVariant { get; set; }
     public AppUser SewedByUser { get; set; }
