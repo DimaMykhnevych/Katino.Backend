@@ -18,18 +18,16 @@ public class OrderItemController : ControllerBase
         _mediator = mediator;
     }
 
-    // TODO add role for sewer
     [HttpGet("sewing-queue")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer}")]
     public async Task<IActionResult> GetSewingQueue()
     {
         var result = await _mediator.Send(new GetSewingQueueQuery());
         return Ok(result);
     }
 
-    // TODO add role for sewer
     [HttpPost("sewing-report")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer}")]
     public async Task<IActionResult> SubmitSewingReport([FromBody] SubmitSewedReportCommand submitSewedReportCommand)
     {
         var userIdString = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
