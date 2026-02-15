@@ -1,4 +1,5 @@
 ﻿using Katino.Application.Commands.OrderItemN.SubmitSewedReport;
+using Katino.Application.Queries.OrderItemN.GetGroupedSewingQueue;
 using Katino.Application.Queries.OrderItemN.GetSewingQueue;
 using Katino.Domain.Constants;
 using MediatR;
@@ -23,6 +24,14 @@ public class OrderItemController : ControllerBase
     public async Task<IActionResult> GetSewingQueue()
     {
         var result = await _mediator.Send(new GetSewingQueueQuery());
+        return Ok(result);
+    }
+
+    [HttpGet("sewing-queue-grouped")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer}")]
+    public async Task<IActionResult> GetSewingQueueGrouped()
+    {
+        var result = await _mediator.Send(new GetGroupedSewingQueueQuery());
         return Ok(result);
     }
 

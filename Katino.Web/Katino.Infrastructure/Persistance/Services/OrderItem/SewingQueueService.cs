@@ -61,4 +61,19 @@ public class SewingQueueService : ISewingQueueService
             .Concat(custom.OrderBy(x => x.ProductVariant.Article))
             .ToList();
     }
+
+    public async Task<Dictionary<DateTime, List<SewingQueueItem>>> GetSewingQueueGroupedByDateAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting sewing queue grouped by date");
+        var items = await _orderItemRepository.GetOrderItemsForSewingGroupedByDateAsync(ct);
+        return items.ToDictionary(x => x.Key, x => x.Value.Select(oi => new SewingQueueItem
+        {
+            ProductVariantId = oi.ProductVariantId,
+            ProductVariant = oi.ProductVariant,
+            QuantityToProduce = oi.QuantityToProduce,
+            IsCustomTailoring = oi.IsCustomTailoring,
+            Comment = oi.Comment,
+            OrderItemId = oi.Id
+        }).ToList());
+    }
 }
