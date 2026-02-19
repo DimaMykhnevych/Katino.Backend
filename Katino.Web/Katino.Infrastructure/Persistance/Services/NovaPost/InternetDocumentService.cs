@@ -58,7 +58,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
                 RecipientWarehouseIndex = request.RecipientWarehouseIndex,
                 PayerType = request.PayerType.ToString(),
                 PaymentMethod = request.PaymentMethod.ToString(),
-                DateTime = DateTime.Now.ToString("dd.MM.yyyy"),
+                DateTime = GetCurrentUkrainianDateTime(),
                 CargoType = "Cargo",
                 Weight = request.Weight.ToString(),
                 ServiceType = serviceType.ToString(),
@@ -234,7 +234,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
         {
             PayerType = request.PayerType.ToString(),
             PaymentMethod = request.PaymentMethod.ToString(),
-            DateTime = DateTime.Now.ToString("dd.MM.yyyy"),
+            DateTime = GetCurrentUkrainianDateTime(),
             CargoType = "Cargo",
             Weight = request.Weight.ToString(),
             ServiceType = serviceType.ToString(),
@@ -289,5 +289,16 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
                     ", RecipientHouse, RecipientFlat,RecipientName, RecipientMiddleName are required for DeliveryType = Address");
             }
         }
+    }
+
+    private string GetCurrentUkrainianDateTime()
+    {
+        var kyivTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv");
+        var kyivNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, kyivTimeZone);
+        var currentDateTime = kyivNow.ToString("dd.MM.yyyy");
+
+        _logger.LogInformation("Current Kyiv date: {DateTime}", currentDateTime);
+
+        return currentDateTime;
     }
 }
