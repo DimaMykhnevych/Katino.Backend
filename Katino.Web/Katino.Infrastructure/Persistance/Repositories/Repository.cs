@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Repositories;
+﻿using Katino.Domain.Entities;
+using Katino.Domain.Repositories;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,8 +32,17 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
 
     public void Delete(TEntity entity)
     {
-        context.Set<TEntity>().Remove(entity);
+        if (entity is ISoftDeletable softDeletable)
+        {
+            softDeletable.DeletedAt = DateTime.UtcNow;
+            context.Set<TEntity>().Update(entity);
+        }
+        else
+        {
+            context.Set<TEntity>().Remove(entity);
+        }
     }
+
 
     public async Task DeleteById(Guid id)
     {

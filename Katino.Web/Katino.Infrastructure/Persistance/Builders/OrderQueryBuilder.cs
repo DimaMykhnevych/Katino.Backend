@@ -49,6 +49,7 @@ public class OrderQueryBuilder : IOrderQueryBuilder
             .Include(o => o.OrderRecipient)
                 .ThenInclude(r => r.NpContactPerson)
             .Include(o => o.AddressInfo)
+            .IgnoreQueryFilters()
             .OrderByDescending(o => o.CreationDateTime);
 
         return this;

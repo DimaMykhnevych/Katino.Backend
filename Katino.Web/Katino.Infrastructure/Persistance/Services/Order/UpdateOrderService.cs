@@ -388,6 +388,11 @@ public class UpdateOrderService : IUpdateOrderService
         foreach (var productVariantId in currentOrderProductVariants)
         {
             var productVariant = await _productVariantRepository.GetAsNoTracking(productVariantId);
+            if (productVariant == null)
+            {
+                throw new ArgumentException($"Product variant with Id is deleted: {productVariantId}");
+            }
+
             productVariantsRelatedToCurrentOrder.Add(productVariant);
             currentQuantities[productVariantId] = productVariant.QuantityInStock;
             productQuantitiesAfterProcessing[productVariantId] = productVariant.QuantityInStock;

@@ -80,6 +80,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<ProductVariant>().HasQueryFilter(pv => pv.DeletedAt == null);
+
         // Size configuration
         builder.Entity<Size>(entity =>
         {

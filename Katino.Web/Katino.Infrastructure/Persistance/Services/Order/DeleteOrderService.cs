@@ -99,6 +99,11 @@ public class DeleteOrderService : IDeleteOrderService
             foreach (var productVariantId in currentOrderProductVariants)
             {
                 var productVariant = await _productVariantRepository.GetAsNoTracking(productVariantId);
+                if (productVariant == null)
+                {
+                    continue;
+                }
+
                 productVariantsRelatedToCurrentOrder.Add(productVariant);
                 currentProductQuantities[productVariantId] = productVariant.QuantityInStock;
                 productQuantitiesAfterProcessing[productVariantId] = productVariant.QuantityInStock;

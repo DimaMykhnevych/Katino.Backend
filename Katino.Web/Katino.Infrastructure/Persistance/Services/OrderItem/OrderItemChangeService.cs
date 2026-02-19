@@ -59,7 +59,13 @@ public class OrderItemChangeService : IOrderItemChangeService
         {
             _logger.LogTrace($"Processing deleted order item ({orderItem.Id}). Order id: {orderItem.OrderId}");
 
-            var productVariant = productVariants.First(pv => pv.Id == orderItem.ProductVariantId);
+            var productVariant = productVariants.FirstOrDefault(pv => pv.Id == orderItem.ProductVariantId);
+            if (productVariant == null)
+            {
+                _logger.LogWarning($"Product variant is deleted: {orderItem.ProductVariantId}");
+                continue;
+            }
+
             await ProcessOrderItemProductVariantDeletion(productVariant, saleType, orderItem, productQuantitiesAfterProcessing);
 
             if (deleteOrderItems)

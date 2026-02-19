@@ -2,7 +2,7 @@
 
 namespace Katino.Domain.Entities;
 
-public class ProductVariant
+public class ProductVariant : ISoftDeletable
 {
     public Guid Id { get; set; }
     public Guid ProductId { get; set; }
@@ -16,6 +16,7 @@ public class ProductVariant
     public string Article { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public DateTimeOffset? DeletedAt { get; set; }
 
 
     // Navigation properties

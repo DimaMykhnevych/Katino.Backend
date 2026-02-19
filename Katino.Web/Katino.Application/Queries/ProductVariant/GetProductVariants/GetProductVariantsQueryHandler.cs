@@ -42,7 +42,8 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
             .AsNoTracking()
             .Include(pv => pv.Measurements)
             .ThenInclude(pvm => pvm.MeasurementType)
-            .AsNoTracking();
+            .AsNoTracking()
+            .OrderByDescending(p => p.CreatedAt);
 
         if (!string.IsNullOrWhiteSpace(request.ProductName))
         {
