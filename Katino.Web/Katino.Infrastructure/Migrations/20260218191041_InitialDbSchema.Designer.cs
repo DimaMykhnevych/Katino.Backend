@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Katino.Infrastructure.Migrations
 {
     [DbContext(typeof(KatinoDbContext))]
-    [Migration("20251228191150_AddedAdditionalOrderStatuses")]
-    partial class AddedAdditionalOrderStatuses
+    [Migration("20260218191041_InitialDbSchema")]
+    partial class InitialDbSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -198,7 +198,7 @@ namespace Katino.Infrastructure.Migrations
                     b.Property<int?>("ApiRequestedRecords")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("CompletedAt")
+                    b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int?>("DbInsertedRecords")
@@ -207,7 +207,7 @@ namespace Katino.Infrastructure.Migrations
                     b.Property<string>("ErrorMessage")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime?>("StartedAt")
+                    b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Status")
@@ -360,7 +360,7 @@ namespace Katino.Infrastructure.Migrations
                     b.Property<double>("Cost")
                         .HasColumnType("double");
 
-                    b.Property<DateTime>("CreationDateTime")
+                    b.Property<DateTimeOffset>("CreationDateTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("DeliveryType")
@@ -381,14 +381,11 @@ namespace Katino.Infrastructure.Migrations
                     b.Property<int>("OrderInternetDocStatus")
                         .HasColumnType("int");
 
-                    b.Property<int>("OrderManualStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrderReadinessStatus")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("OrderRecipientId")
                         .HasColumnType("char(36)");
+
+                    b.Property<int>("OrderStatus")
+                        .HasColumnType("int");
 
                     b.Property<int>("PayerType")
                         .HasColumnType("int");
@@ -707,6 +704,36 @@ namespace Katino.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ProductVariantMeasurements");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.SewingHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsCustomTailoring")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("ProductVariantId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("SewedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTimeOffset>("SewedDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("SewedQuantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.HasIndex("SewedBy");
+
+                    b.ToTable("SewingHistory");
                 });
 
             modelBuilder.Entity("Katino.Domain.Entities.Size", b =>
@@ -1064,6 +1091,25 @@ namespace Katino.Infrastructure.Migrations
                     b.Navigation("MeasurementType");
 
                     b.Navigation("ProductVariant");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.SewingHistory", b =>
+                {
+                    b.HasOne("Katino.Domain.Entities.ProductVariant", "ProductVariant")
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Katino.Domain.Entities.AppUser", "SewedByUser")
+                        .WithMany()
+                        .HasForeignKey("SewedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductVariant");
+
+                    b.Navigation("SewedByUser");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

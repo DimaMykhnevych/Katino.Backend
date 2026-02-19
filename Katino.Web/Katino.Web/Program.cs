@@ -13,7 +13,7 @@ var app = builder.Build();
 SwaggerOptions swaggerOptions = new();
 builder.Configuration.GetSection(nameof(SwaggerOptions)).Bind(swaggerOptions);
 
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
 {
     app.UseSwagger(option => option.RouteTemplate = swaggerOptions.JsonRoute);
     app.UseSwaggerUI(option =>
