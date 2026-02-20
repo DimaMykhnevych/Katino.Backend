@@ -161,13 +161,13 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
 
         builder.Entity<CrmUserSettings>()
             .HasOne(x => x.NpCity)
-            .WithOne()
-            .HasForeignKey<CrmUserSettings>(x => x.NpCityId);
+            .WithMany()
+            .HasForeignKey(x => x.NpCityId);
 
         builder.Entity<CrmUserSettings>()
             .HasOne(x => x.NpWarehouse)
-            .WithOne()
-            .HasForeignKey<CrmUserSettings>(x => x.NpWarehouseId);
+            .WithMany()
+            .HasForeignKey(x => x.NpWarehouseId);
 
         builder.Entity<OrderRecipient>()
             .HasOne(x => x.NpContactPerson)
