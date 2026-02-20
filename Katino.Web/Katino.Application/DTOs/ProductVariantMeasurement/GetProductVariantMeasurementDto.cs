@@ -6,6 +6,6 @@ public class GetProductVariantMeasurementDto
 {
     public Guid Id { get; set; }
     public Guid MeasurementTypeId { get; set; }
-    public decimal Value { get; set; }
+    public string Value { get; set; }
     public MeasurementTypeDto MeasurementType { get; set; }
 }

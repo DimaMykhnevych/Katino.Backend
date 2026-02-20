@@ -5,7 +5,7 @@ public class ProductVariantMeasurement
     public Guid Id { get; set; }
     public Guid ProductVariantId { get; set; }
     public Guid MeasurementTypeId { get; set; }
-    public decimal Value { get; set; }
+    public string Value { get; set; }
 
     // Navigation properties
     public ProductVariant ProductVariant { get; set; }

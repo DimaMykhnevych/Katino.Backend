@@ -126,7 +126,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
         builder.Entity<ProductVariantMeasurement>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Value).HasColumnType("decimal(5,2)");
+            entity.Property(e => e.Value).HasMaxLength(512);
 
             // Unique constraint
             entity.HasIndex(e => new { e.ProductVariantId, e.MeasurementTypeId }).IsUnique();
