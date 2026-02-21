@@ -1,5 +1,8 @@
+using Katino.Domain.Constants;
 using Katino.Web.Extensions;
 using Katino.Web.Options;
+
+CreateLogsFolder();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,3 +38,27 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static void CreateLogsFolder()
+{
+    var logDir = Environment.GetEnvironmentVariable(EnvVariables.LogsDir);
+
+    if (string.IsNullOrWhiteSpace(logDir))
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Katino",
+                "logs");
+        }
+        else
+        {
+            logDir = "/home/LogFiles/Katino";
+        }
+
+        Environment.SetEnvironmentVariable(EnvVariables.LogsDir, logDir);
+    }
+
+    Directory.CreateDirectory(logDir);
+}

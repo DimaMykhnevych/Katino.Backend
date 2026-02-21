@@ -1,13 +1,18 @@
-﻿using Katino.Domain.Services.AppLogs.GetLogs;
+﻿using Katino.Domain.Constants;
+using Katino.Domain.Services.AppLogs.GetLogs;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.AppLogs;
 
 public class GetLogsService : IGetLogsService
 {
-    private readonly string _fullLogsPath = Path.Combine(
-        @$"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}",
-           @"Katino\logs");
+    private readonly string _fullLogsPath =
+        Environment.GetEnvironmentVariable(EnvVariables.LogsDir)
+        ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Katino",
+            "logs");
+
     private readonly ILogger _logger;
 
     public GetLogsService(ILoggerFactory loggerFactory)
@@ -33,6 +38,11 @@ public class GetLogsService : IGetLogsService
         if (!Directory.Exists(_fullLogsPath))
         {
             Directory.CreateDirectory(_fullLogsPath);
+        }
+
+        if (date == DateTime.MinValue)
+        {
+            date = DateTime.UtcNow;
         }
 
         string[] fileEntries = Directory.GetFiles(_fullLogsPath);
