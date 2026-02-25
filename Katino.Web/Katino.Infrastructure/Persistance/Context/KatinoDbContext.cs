@@ -33,6 +33,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<OrderAddressInfo> OrderAddressInfo { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<SewingHistory> SewingHistory { get; set; }
+    public DbSet<FinanceCategory> FinanceCategories { get; set; }
+    public DbSet<FinanceEntry> FinanceEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -225,6 +227,59 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             .WithMany()
             .HasForeignKey(x => x.SewedBy)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<FinanceCategory>(b =>
+        {
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Type).IsRequired();
+            b.Property(x => x.IsActive).IsRequired();
+            b.Property(x => x.SortOrder).IsRequired();
+
+            b.HasMany(x => x.Entries)
+                .WithOne(x => x.Category)
+                .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => new { x.Type, x.IsActive });
+        });
+
+        builder.Entity<FinanceEntry>(b =>
+        {
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Amount)
+                .HasPrecision(18, 2)
+                .IsRequired();
+
+            b.Property(x => x.SourceType).IsRequired();
+            b.Property(x => x.IsLocked).IsRequired();
+
+            b.Property(x => x.Comment).HasMaxLength(2000);
+
+            b.Property(x => x.CreatedAtUtc).IsRequired();
+            b.Property(x => x.UpdatedAtUtc).IsRequired();
+
+            b.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.HasOne(x => x.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.HasOne(x => x.ReversedEntry)
+                .WithMany()
+                .HasForeignKey(x => x.ReversedEntryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.HasIndex(x => x.EntryDate);
+            b.HasIndex(x => new { x.CategoryId, x.EntryDate });
+            b.HasIndex(x => x.OrderId);
+        });
 
         base.OnModelCreating(builder);
     }
