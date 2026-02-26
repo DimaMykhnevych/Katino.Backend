@@ -1,4 +1,5 @@
 using Katino.Domain.Constants;
+using Katino.Infrastructure.Persistance.DbSeeding;
 using Katino.Web.Extensions;
 using Katino.Web.Options;
 
@@ -11,6 +12,8 @@ builder.Services.InstallServices(builder.Configuration);
 builder.Services.AddMemoryCache();
 
 var app = builder.Build();
+
+await DbSeeder.SeedAsync(app.Services);
 
 // Configure the HTTP request pipeline.
 SwaggerOptions swaggerOptions = new();

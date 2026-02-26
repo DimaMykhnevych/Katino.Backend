@@ -1,10 +1,13 @@
-﻿using Katino.Domain.Context;
+﻿using Katino.Domain.Constants;
+using Katino.Domain.Context;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Helpers;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
+using Katino.Domain.Repositories.FinanceCategoryRepository;
+using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -33,6 +36,8 @@ public class AddOrderService : IAddOrderService
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IOrderRepository _orderRepository;
     private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IFinanceEntryRepository _financeEntryRepository;
+    private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
 
@@ -47,6 +52,8 @@ public class AddOrderService : IAddOrderService
         IOrderItemChangeService orderItemChangeService,
         IOrderRepository orderRepository,
         IProductVariantRepository productVariantRepository,
+        IFinanceEntryRepository financeEntryRepository,
+        IFinanceCategoryRepository financeCategoryRepository,
         IKatinoDbContext katinoDbContext,
         ILoggerFactory loggerFactory)
     {
@@ -61,6 +68,8 @@ public class AddOrderService : IAddOrderService
         _katinoDbContext = katinoDbContext;
         _orderItemChangeService = orderItemChangeService;
         _productVariantRepository = productVariantRepository;
+        _financeEntryRepository = financeEntryRepository;
+        _financeCategoryRepository = financeCategoryRepository;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -185,6 +194,7 @@ public class AddOrderService : IAddOrderService
             await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
             var insertedOrder = await _orderRepository.Insert(orderToAdd);
+            await InsertFinanceEntry(orderToAdd, insertedOrder.Id).ConfigureAwait(false);
             try
             {
                 // 4. Update QuantityInStock (+ ProductVariantStatus InStock or OnOrder) <- only for product variants in order items with status ProductStatus.InStock.
@@ -230,6 +240,13 @@ public class AddOrderService : IAddOrderService
                 insertedOrder.InternetDocumentRef = internetDocumentCreationResponse.Data[0].Ref;
                 insertedOrder.InternetDocumentIntDocNumber = internetDocumentCreationResponse.Data[0].IntDocNumber;
 
+                var revenue = await _financeEntryRepository.GetOrderRevenueEntryAsync(insertedOrder.Id);
+                if (revenue != null)
+                {
+                    revenue.InternetDocumentIntDocNumber = insertedOrder.InternetDocumentIntDocNumber;
+                    revenue.UpdatedAtUtc = DateTime.UtcNow;
+                }
+
                 // We don't use _orderRepository.Update, because this instance already tracked by _orderRepository.Insert
                 await _orderRepository.Save();
 
@@ -252,5 +269,39 @@ public class AddOrderService : IAddOrderService
             _logger.LogError(ex, $"An error occurred while adding order");
             return new();
         }
+    }
+
+    private async Task InsertFinanceEntry(Order orderToAdd, Guid insertedOrderId)
+    {
+        var revenueCategoryId = await GetRevenueCategoryIdAsync();
+
+        var kyivToday = DateTimeHelper.GetCurrentKyivDateTime().Date;
+
+        var revenueEntry = new FinanceEntry
+        {
+            EntryDate = kyivToday,
+            Amount = Convert.ToDecimal(orderToAdd.Cost),
+            Comment = null,
+            SourceType = FinanceEntrySourceType.Order,
+            Reason = FinanceEntryReason.None,
+            SaleType = orderToAdd.SaleType,
+            IsLocked = true,
+            InternetDocumentIntDocNumber = null,
+            CategoryId = revenueCategoryId,
+            OrderId = insertedOrderId,
+            CreatedBy = null,
+            ReversedEntryId = null,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        await _financeEntryRepository.Insert(revenueEntry);
+    }
+
+    private async Task<Guid> GetRevenueCategoryIdAsync()
+    {
+        var existing = await _financeCategoryRepository
+            .GetByTypeAndNameAsync(FinanceCategoryType.Income, FinanceCategoryNames.Revenue);
+        return existing.Id;
     }
 }
