@@ -34,4 +34,12 @@ public class FinanceEntryRepository : Repository<FinanceEntry>, IFinanceEntryRep
             .Where(x => x.OrderId == orderId)
             .ToListAsync();
     }
+
+    public async Task<string> GetAnyTtnByOrderIdAsync(Guid orderId)
+    {
+        return await context.FinanceEntries
+            .Where(x => x.OrderId == orderId && x.InternetDocumentIntDocNumber != null)
+            .Select(x => x.InternetDocumentIntDocNumber)
+            .FirstOrDefaultAsync();
+    }
 }

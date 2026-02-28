@@ -113,7 +113,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
             // Handle rejected status
             if (RejectedStatuses.Contains(orderInternetDocStatus))
             {
-                await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus);
+                await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus, false);
             }
         }
         catch (Exception ex)

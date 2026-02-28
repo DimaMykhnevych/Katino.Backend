@@ -69,7 +69,7 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 order.OrderStatus = orderStatus;
 
                 // Status updated here
-                await _deleteOrderService.HandleOrderRejectionAsync(order, null);
+                await _deleteOrderService.HandleOrderRejectionAsync(order, null, false);
 
                 return true;
             }
@@ -89,7 +89,7 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                     order.OrderStatus = orderStatus;
 
                     // Status updated here
-                    await _deleteOrderService.HandleOrderRejectionAsync(order, null);
+                    await _deleteOrderService.HandleOrderRejectionAsync(order, null, true);
 
                     return true;
                 }
