@@ -6,6 +6,8 @@ using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Helpers;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
+using Katino.Domain.Repositories.FinanceCategoryRepository;
+using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
@@ -41,6 +43,8 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly IOrderAddressInfoRepository _orderAddressInfoRepository;
     private readonly IOrderNpOptionsSeatRepository _orderNpOptionsSeatRepository;
+    private readonly IFinanceEntryRepository _financeEntryRepository;
+    private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly ILogger _logger;
 
     public UpdateOrderService(
@@ -58,6 +62,8 @@ public class UpdateOrderService : IUpdateOrderService
         IUpdateProductVariantService updateProductVariantService,
         IOrderAddressInfoRepository orderAddressInfoRepository,
         IOrderNpOptionsSeatRepository orderNpOptionsSeatRepository,
+        IFinanceEntryRepository financeEntryRepository,
+        IFinanceCategoryRepository financeCategoryRepository,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -74,6 +80,8 @@ public class UpdateOrderService : IUpdateOrderService
         _updateProductVariantService = updateProductVariantService;
         _orderAddressInfoRepository = orderAddressInfoRepository;
         _orderNpOptionsSeatRepository = orderNpOptionsSeatRepository;
+        _financeEntryRepository = financeEntryRepository;
+        _financeCategoryRepository = financeCategoryRepository;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
@@ -215,6 +223,8 @@ public class UpdateOrderService : IUpdateOrderService
                 _logger.LogTrace("Updating order in db");
                 await _orderRepository.Update(updatedOrder);
 
+                await ApplyOrderRevenueDeltaAsync(updatedOrder);
+
                 // Handle deletion of AddressInfo
                 if (order.AddressInfo == null && currentOrderInDb.AddressInfo != null)
                 {
@@ -238,6 +248,7 @@ public class UpdateOrderService : IUpdateOrderService
             // ---------------------- End Order processing and save ----------------------
 
             var npInternetDocUpdatedSuccessfully = await UpdateInternetDocument(updatedOrder, currentOrderInDb);
+            await UpdateFinanceEntriesTtnAsync(updatedOrder.Id, updatedOrder.InternetDocumentIntDocNumber);
 
             // At the end, after actual order update perform updates of other orders
             try
@@ -411,6 +422,87 @@ public class UpdateOrderService : IUpdateOrderService
         // there may be incorrect statuses, if we call ProcessNewOrderItemsStatuses after HandleAddedOrderItems
         _orderItemChangeService.ProcessNewOrderItemsStatuses(addedOrderItems, productVariantsRelatedToCurrentOrder);
         await _orderItemChangeService.HandleAddedOrderItems(saleType, addedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+    }
+
+    private async Task ApplyOrderRevenueDeltaAsync(Order updatedOrder)
+    {
+        var desiredTotal = Convert.ToDecimal(updatedOrder.Cost);
+        var existingTotal = await _financeEntryRepository.GetOrderFinanceTotalAsync(updatedOrder.Id);
+
+        var delta = desiredTotal - existingTotal;
+        if (delta == 0m)
+        {
+            return;
+        }
+
+        var revenueCategory = await GetRevenueCategoryAsync();
+        var hasAny = await _financeEntryRepository.AnyByOrderIdAsync(updatedOrder.Id);
+
+        var entry = new FinanceEntry
+        {
+            Id = Guid.NewGuid(),
+            EntryDate = DateTimeHelper.GetCurrentKyivDateTime().Date,
+            Amount = delta,
+            Comment = null,
+
+            SourceType = hasAny ? FinanceEntrySourceType.Adjustment : FinanceEntrySourceType.Order,
+            Reason = FinanceEntryReason.None,
+
+            SaleType = updatedOrder.SaleType,
+            IsLocked = true,
+            InternetDocumentIntDocNumber = updatedOrder.InternetDocumentIntDocNumber,
+
+            CategoryId = revenueCategory.Id,
+
+            OrderId = updatedOrder.Id,
+
+            CreatedBy = null,
+            ReversedEntryId = null,
+
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        await _financeEntryRepository.Insert(entry);
+    }
+
+    private async Task<FinanceCategory> GetRevenueCategoryAsync()
+    {
+        var category = await _financeCategoryRepository
+            .GetByTypeAndNameAsync(FinanceCategoryType.Income, FinanceCategoryNames.Revenue);
+
+        if (category == null)
+        {
+            throw new InvalidOperationException("FinanceCategory 'Revenue' (Income) not found. Seed it or create it before using finance.");
+        }
+
+        return category;
+    }
+
+    private async Task UpdateFinanceEntriesTtnAsync(Guid orderId, string? ttn)
+    {
+        if (string.IsNullOrWhiteSpace(ttn))
+        {
+            return;
+        }
+
+        var entries = await _financeEntryRepository.GetByOrderIdAsync(orderId);
+        var changed = false;
+
+        foreach (var e in entries)
+        {
+            if (e.InternetDocumentIntDocNumber != ttn)
+            {
+                e.InternetDocumentIntDocNumber = ttn;
+                e.UpdatedAtUtc = DateTime.UtcNow;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await _financeEntryRepository.Save();
+        }
     }
 
     private bool IntDocUpdateRequired(
