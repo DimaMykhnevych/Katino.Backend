@@ -11,6 +11,7 @@ using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.CrmUserSettings;
+using Katino.Application.DTOs.FinanceCategory;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.NovaPost;
 using Katino.Application.DTOs.NpCity;
@@ -135,6 +136,9 @@ public class MappingProfile : Profile
 
         CreateMap<SewingQueueItem, SewingQueueItemDto>();
         CreateMap<SubmitSewedReportCommand, SewedReport>();
+
+        CreateMap<FinanceCategoryType, FinanceCategoryTypeDto>().ReverseMap();
+        CreateMap<FinanceCategory, FinanceCategoryDto>();
     }
 }
 
