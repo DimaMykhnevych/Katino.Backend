@@ -1,6 +1,8 @@
 using Azure.Storage.Blobs;
 using Katino.Domain.Constants;
 using Katino.Domain.Options;
+using Katino.Domain.Repositories.FinanceCategoryRepository;
+using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.OrderRepository;
@@ -14,6 +16,8 @@ using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Functions.Services.NpIntDocStatusSyncService;
 using Katino.Infrastructure.Persistance.Context;
+using Katino.Infrastructure.Persistance.Repositories.FinanceCategoryRepository;
+using Katino.Infrastructure.Persistance.Repositories.FinanceEntryRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderAddressInfoRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderItemRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRepository;
@@ -77,6 +81,8 @@ var host = new HostBuilder()
         services.AddTransient<IProductVariantMeasurementRepository, ProductVariantMeasurementRepository>();
         services.AddTransient<IProductPhotoRepository, ProductPhotoRepository>();
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
+        services.AddTransient<IFinanceEntryRepository, FinanceEntryRepository>();
+        services.AddTransient<IFinanceCategoryRepository, FinanceCategoryRepository>();
     })
     .Build();
 
