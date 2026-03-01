@@ -1,6 +1,7 @@
 ﻿using Katino.Domain.Entities;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Exceptions;
+using Katino.Domain.Helpers;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Options;
 using Katino.Domain.Services.NovaPost.InternetDocument;
@@ -293,8 +294,7 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
 
     private string GetCurrentUkrainianDateTime()
     {
-        var kyivTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv");
-        var kyivNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, kyivTimeZone);
+        var kyivNow = DateTimeHelper.GetCurrentKyivDateTime();
         var currentDateTime = kyivNow.ToString("dd.MM.yyyy");
 
         _logger.LogInformation("Current Kyiv date: {DateTime}", currentDateTime);

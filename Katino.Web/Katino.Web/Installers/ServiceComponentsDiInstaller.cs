@@ -5,6 +5,8 @@ using Katino.Domain.Context;
 using Katino.Domain.Repositories.CategoryRepository;
 using Katino.Domain.Repositories.ColorRepository;
 using Katino.Domain.Repositories.CrmUserSettingsRepository;
+using Katino.Domain.Repositories.FinanceCategoryRepository;
+using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.MeasurementTypeRepository;
 using Katino.Domain.Repositories.NovaPoshtaSyncStatusRepository;
 using Katino.Domain.Repositories.NpCityRepository;
@@ -51,6 +53,8 @@ using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.CategoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.ColorRepository;
 using Katino.Infrastructure.Persistance.Repositories.CrmUserSettingsRepository;
+using Katino.Infrastructure.Persistance.Repositories.FinanceCategoryRepository;
+using Katino.Infrastructure.Persistance.Repositories.FinanceEntryRepository;
 using Katino.Infrastructure.Persistance.Repositories.MeasurementTypeRepository;
 using Katino.Infrastructure.Persistance.Repositories.NovaPoshtaSyncStatusRepository;
 using Katino.Infrastructure.Persistance.Repositories.NpCityRepository;
@@ -151,6 +155,8 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
         services.AddTransient<IOrderNpOptionsSeatRepository, OrderNpOptionsSeatRepository>();
         services.AddTransient<ISewingHistoryRepository, SewingHistoryRepository>();
+        services.AddTransient<IFinanceEntryRepository, FinanceEntryRepository>();
+        services.AddTransient<IFinanceCategoryRepository, FinanceCategoryRepository>();
     }
 }
 

@@ -29,4 +29,7 @@ public interface IKatinoDbContext
     DbSet<OrderItem> OrderItems { get; set; }
     DbSet<OrderAddressInfo> OrderAddressInfo { get; set; }
     DbSet<Order> Orders { get; set; }
+    DbSet<SewingHistory> SewingHistory { get; set; }
+    DbSet<FinanceCategory> FinanceCategories { get; set; }
+    DbSet<FinanceEntry> FinanceEntries { get; set; }
 }

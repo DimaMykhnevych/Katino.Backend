@@ -1,7 +1,10 @@
 ﻿using Katino.Domain.Constants;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using Katino.Domain.Models;
+using Katino.Domain.Repositories.FinanceCategoryRepository;
+using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -18,6 +21,8 @@ public class DeleteOrderService : IDeleteOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderAddressInfoRepository _orderAddressInfoRepository;
     private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IFinanceEntryRepository _financeEntryRepository;
+    private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IInternetDocumentService _internetDocumentService;
@@ -27,6 +32,8 @@ public class DeleteOrderService : IDeleteOrderService
         IOrderRepository orderRepository,
         IOrderAddressInfoRepository orderAddressInfoRepository,
         IProductVariantRepository productVariantRepository,
+        IFinanceEntryRepository financeEntryRepository,
+        IFinanceCategoryRepository financeCategoryRepository,
         IUpdateProductVariantService updateProductVariantService,
         IOrderItemChangeService orderItemChangeService,
         IInternetDocumentService internetDocumentService,
@@ -35,6 +42,8 @@ public class DeleteOrderService : IDeleteOrderService
         _orderRepository = orderRepository;
         _orderAddressInfoRepository = orderAddressInfoRepository;
         _productVariantRepository = productVariantRepository;
+        _financeEntryRepository = financeEntryRepository;
+        _financeCategoryRepository = financeCategoryRepository;
         _updateProductVariantService = updateProductVariantService;
         _orderItemChangeService = orderItemChangeService;
         _internetDocumentService = internetDocumentService;
@@ -75,6 +84,17 @@ public class DeleteOrderService : IDeleteOrderService
                 {
                     _logger.LogDebug("Deleting order address info");
                     _orderAddressInfoRepository.Delete(existingOrder.AddressInfo);
+                }
+
+                // We don't need to subtract revenue during deletion of received orders.
+                // In other cases the revenue should be already subtracted, it's just the double check,
+                // because in TryReverseOrderFinanceAsync method there is appropriate check.
+                if (!InternetDocumentConstants.OrderReceivedStatuses.Contains(existingOrder.OrderStatus))
+                {
+                    await TryReverseOrderFinanceAsync(
+                        existingOrder,
+                        FinanceEntryReason.OrderDeleted,
+                        "Order deleted");
                 }
 
                 _orderRepository.Delete(existingOrder);
@@ -119,6 +139,11 @@ public class DeleteOrderService : IDeleteOrderService
                 _orderAddressInfoRepository.Delete(existingOrder.AddressInfo);
             }
 
+            await TryReverseOrderFinanceAsync(
+                existingOrder,
+                FinanceEntryReason.OrderDeleted,
+                "Order deleted");
+
             _orderRepository.Delete(existingOrder);
             await _orderRepository.Save();
 
@@ -153,7 +178,7 @@ public class DeleteOrderService : IDeleteOrderService
         }
     }
 
-    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus? orderInternetDocStatus)
+    public async Task HandleOrderRejectionAsync(Order order, OrderInternetDocStatus? orderInternetDocStatus, bool isManualExchange)
     {
         if (orderInternetDocStatus != null)
         {
@@ -168,6 +193,16 @@ public class DeleteOrderService : IDeleteOrderService
         Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
 
         await _orderItemChangeService.HandleOrderItemsReturn(order, currentProductQuantities, productQuantitiesAfterProcessing);
+
+        var commentText = isManualExchange
+            ? "Manual exchnage of already received order"
+            : orderInternetDocStatus != null
+            ? $"Rejected by NP: {orderInternetDocStatus}"
+            : "Rejected manually";
+        await TryReverseOrderFinanceAsync(
+            order,
+            FinanceEntryReason.OrderRefunded,
+            commentText);
 
         await _orderRepository.Save();
 
@@ -202,5 +237,65 @@ public class DeleteOrderService : IDeleteOrderService
             _logger.LogError(ex, $"An error occurred while deleting NP internet document for order");
             return false;
         }
+    }
+
+    private async Task<bool> TryReverseOrderFinanceAsync(
+        Order order,
+        FinanceEntryReason reason,
+        string comment = null)
+    {
+        var currentTotal = await _financeEntryRepository.GetOrderFinanceTotalAsync(order.Id);
+
+        if (currentTotal == 0m)
+        {
+            return false;
+        }
+
+        var revenueCategory = await GetRevenueCategoryAsync();
+
+        var ttn = !string.IsNullOrWhiteSpace(order.InternetDocumentIntDocNumber)
+            ? order.InternetDocumentIntDocNumber
+            : await _financeEntryRepository.GetAnyTtnByOrderIdAsync(order.Id);
+
+        var reversal = new FinanceEntry
+        {
+            Id = Guid.NewGuid(),
+            EntryDate = DateTimeHelper.GetCurrentKyivDateTime().Date,
+            Amount = -currentTotal,
+            Comment = comment,
+
+            SourceType = FinanceEntrySourceType.Reversal,
+            Reason = reason,
+
+            SaleType = order.SaleType,
+            IsLocked = true,
+            InternetDocumentIntDocNumber = ttn,
+
+            CategoryId = revenueCategory.Id,
+            OrderId = order.Id,
+
+            CreatedBy = null,
+            ReversedEntryId = null,
+
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        await _financeEntryRepository.Insert(reversal);
+
+        return true;
+    }
+
+    private async Task<FinanceCategory> GetRevenueCategoryAsync()
+    {
+        var category = await _financeCategoryRepository
+            .GetByTypeAndNameAsync(FinanceCategoryType.Income, FinanceCategoryNames.Revenue);
+
+        if (category == null)
+        {
+            throw new InvalidOperationException("FinanceCategory 'Revenue' (Income) not found. Seed it or create it before using finance.");
+        }
+
+        return category;
     }
 }
