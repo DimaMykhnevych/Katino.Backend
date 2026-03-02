@@ -56,9 +56,11 @@ public class SewingQueueService : ISewingQueueService
             })
             .ToList();
 
-        return grouped
-            .OrderByDescending(x => x.QuantityToProduce)
-            .Concat(custom.OrderBy(x => x.ProductVariant.Article))
+        var combined = grouped.Concat(custom).ToList();
+        return combined
+            .OrderBy(i => i.ProductVariant.Product.Name)
+            .ThenBy(i => i.ProductVariant.Color.Name)
+            .ThenBy(i => i.ProductVariant.Size.Name)
             .ToList();
     }
 
