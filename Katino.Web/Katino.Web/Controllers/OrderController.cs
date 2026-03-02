@@ -24,7 +24,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> Get([FromQuery] GetOrderQuery getOrderQuery)
     {
         var result = await _mediator.Send(getOrderQuery);
@@ -32,7 +32,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> Add([FromBody] AddOrderCommand addOrderCommand)
     {
         OrderCreationResultDto result = await _mediator.Send(addOrderCommand);
@@ -40,7 +40,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> Update([FromBody] UpdateOrderCommand updateOrderCommand)
     {
         OrderUpdateResultDto result = await _mediator.Send(updateOrderCommand);
@@ -48,7 +48,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpDelete("{orderId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> Delete(Guid orderId)
     {
         DeleteOrderCommand command = new() { Id = orderId };
@@ -57,7 +57,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("manual-status/get-next")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> GetNextManualStatus([FromQuery] GetNextOrderStatusQuery getNextOrderStatusQuery)
     {
         OrderStatusDto[] result = await _mediator.Send(getNextOrderStatusQuery);
@@ -65,7 +65,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("manual-status/set")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> SetManualStatus([FromBody] SetOrderManualStatusCommand setOrderManualStatusCommand)
     {
         bool result = await _mediator.Send(setOrderManualStatusCommand);

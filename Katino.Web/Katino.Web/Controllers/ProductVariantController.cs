@@ -23,7 +23,7 @@ public class ProductVariantController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
     public async Task<IActionResult> Get([FromQuery] GetProductVariantsQuery getProductVariantsQuery)
     {
         GetProductVariantDto productVariants = await _mediator.Send(getProductVariantsQuery);
