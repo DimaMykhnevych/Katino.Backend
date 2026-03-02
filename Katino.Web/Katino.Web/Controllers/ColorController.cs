@@ -29,7 +29,7 @@ public class ColorController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromBody] AddColorCommand addColorCommand)
     {
         ColorDto result = await _mediator.Send(addColorCommand);
@@ -37,7 +37,7 @@ public class ColorController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromBody] UpdateColorCommand updateColorCommand)
     {
         ColorDto result = await _mediator.Send(updateColorCommand);
@@ -45,7 +45,7 @@ public class ColorController : ControllerBase
     }
 
     [HttpDelete("{colorId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid colorId)
     {
         DeleteColorCommand command = new() { Id = colorId };

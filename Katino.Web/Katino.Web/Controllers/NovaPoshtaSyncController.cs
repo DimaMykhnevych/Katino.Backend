@@ -22,7 +22,7 @@ public class NovaPoshtaSyncController : ControllerBase
     }
 
     [HttpGet("status")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> GetSyncStatus()
     {
         GetCurrentSyncStatusDto result = await _mediator.Send(new GetCurrentSyncStatusQuery() { SyncType = SyncTypeDto.Warehouses });
@@ -30,7 +30,7 @@ public class NovaPoshtaSyncController : ControllerBase
     }
 
     [HttpPost("trigger")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> TriggerSync()
     {
         var user = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
@@ -39,7 +39,7 @@ public class NovaPoshtaSyncController : ControllerBase
     }
 
     [HttpGet("history")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<ActionResult<List<NovaPoshtaSyncStatus>>> GetSyncHistory([FromQuery] int limit = 20)
     {
         GetSyncRecordDto history = await _mediator.Send(new GetSyncHistoryQuery() { Limit = limit, SyncType = SyncTypeDto.Warehouses });

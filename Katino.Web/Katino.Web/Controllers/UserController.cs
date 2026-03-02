@@ -21,7 +21,7 @@ public class UserController(IMediator mediator) : ControllerBase
     private readonly IMediator _mediator = mediator;
 
     [HttpGet]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     [SwaggerOperation(Summary = "Gets a filtered list of users", Description = "All parameters should be passed within the URI as a query parameters")]
     [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(IEnumerable<UserAuthInfoDto>))]
     [SwaggerResponse((int)HttpStatusCode.Unauthorized, Description = "User was not authorized")]
@@ -87,7 +87,7 @@ public class UserController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     [SwaggerOperation(Summary = "Deletes app user by Id",
         Description = "Available only for administrators")]
     [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(bool))]

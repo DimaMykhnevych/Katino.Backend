@@ -36,7 +36,7 @@ public class NovaPostController : ControllerBase
     }
 
     [HttpGet("sender/contact-persons")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner},{Role.DirectManager}")]
     public async Task<IActionResult> GetSenderContactPersons()
     {
         var senderContactPersons = await _mediator.Send(new GetNpSenderContactPersonsQuery());

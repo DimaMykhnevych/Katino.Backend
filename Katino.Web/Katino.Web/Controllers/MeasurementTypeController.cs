@@ -29,7 +29,7 @@ public class MeasurementTypeController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromBody] AddMeasurementTypeCommand addMeasurementTypeCommand)
     {
         bool result = await _mediator.Send(addMeasurementTypeCommand);
@@ -37,7 +37,7 @@ public class MeasurementTypeController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromBody] UpdateMeasurementTypeCommand updateMeasurementTypeCommand)
     {
         bool result = await _mediator.Send(updateMeasurementTypeCommand);
@@ -45,7 +45,7 @@ public class MeasurementTypeController : ControllerBase
     }
 
     [HttpDelete("{measurementTypeId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid measurementTypeId)
     {
         DeleteMeasurementTypeCommand command = new() { Id = measurementTypeId };

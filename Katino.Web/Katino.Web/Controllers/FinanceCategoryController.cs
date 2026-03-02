@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Katino.Web.Controllers;
 
 [Route("api/[controller]")]
-[Authorize(Roles = Role.Admin)]
+[Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
 [ApiController]
 public class FinanceCategoryController : ControllerBase
 {

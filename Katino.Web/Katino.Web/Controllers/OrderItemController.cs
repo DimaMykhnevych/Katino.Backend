@@ -20,7 +20,7 @@ public class OrderItemController : ControllerBase
     }
 
     [HttpGet("sewing-queue")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Sewer}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
     public async Task<IActionResult> GetSewingQueue()
     {
         var result = await _mediator.Send(new GetSewingQueueQuery());
@@ -28,7 +28,7 @@ public class OrderItemController : ControllerBase
     }
 
     [HttpGet("sewing-queue-grouped")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Sewer}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
     public async Task<IActionResult> GetSewingQueueGrouped()
     {
         var result = await _mediator.Send(new GetGroupedSewingQueueQuery());
@@ -36,7 +36,7 @@ public class OrderItemController : ControllerBase
     }
 
     [HttpPost("sewing-report")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Sewer}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
     public async Task<IActionResult> SubmitSewingReport([FromBody] SubmitSewedReportCommand submitSewedReportCommand)
     {
         var userIdString = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;

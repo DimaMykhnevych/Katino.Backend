@@ -21,7 +21,7 @@ public class CrmUserSettingsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
     public async Task<IActionResult> Get()
     {
         var user = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
@@ -31,7 +31,7 @@ public class CrmUserSettingsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromBody] AddCrmUserSettingsCommand crmUserSettingsCommand)
     {
         var user = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
@@ -41,7 +41,7 @@ public class CrmUserSettingsController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromBody] UpdateCrmUserSettingsCommand crmUserSettingsCommand)
     {
         var user = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
@@ -51,7 +51,7 @@ public class CrmUserSettingsController : ControllerBase
     }
 
     [HttpDelete("{crmUserSettingsId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid crmUserSettingsId)
     {
         var user = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;

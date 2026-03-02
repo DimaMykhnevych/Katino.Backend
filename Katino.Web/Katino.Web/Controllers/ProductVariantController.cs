@@ -23,7 +23,7 @@ public class ProductVariantController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
     public async Task<IActionResult> Get([FromQuery] GetProductVariantsQuery getProductVariantsQuery)
     {
         GetProductVariantDto productVariants = await _mediator.Send(getProductVariantsQuery);
@@ -31,7 +31,7 @@ public class ProductVariantController : ControllerBase
     }
 
     [HttpGet("article/generate")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> GetGeneratedArticle()
     {
         string article = await _mediator.Send(new GetGeneratedArticleQuery());
@@ -40,7 +40,7 @@ public class ProductVariantController : ControllerBase
 
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromForm] AddProductVariantCommand addProductVariantCommand)
     {
         bool result = await _mediator.Send(addProductVariantCommand);
@@ -48,7 +48,7 @@ public class ProductVariantController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromForm] UpdateProductVariantCommand updateProductVariantCommand)
     {
         bool result = await _mediator.Send(updateProductVariantCommand);
@@ -56,7 +56,7 @@ public class ProductVariantController : ControllerBase
     }
 
     [HttpDelete("{productVariantId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid productVariantId)
     {
         DeleteProductVariantCommand command = new() { Id = productVariantId };

@@ -29,7 +29,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromBody] AddCategoryCommand addCategoryCommand)
     {
         CategoryDto result = await _mediator.Send(addCategoryCommand);
@@ -37,7 +37,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromBody] UpdateCategoryCommand updateCategoryCommand)
     {
         CategoryDto result = await _mediator.Send(updateCategoryCommand);
@@ -45,7 +45,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpDelete("{categoryId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid categoryId)
     {
         DeleteCategoryCommand command = new() { Id = categoryId };

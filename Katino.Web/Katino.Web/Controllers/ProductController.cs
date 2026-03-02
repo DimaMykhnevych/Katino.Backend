@@ -22,7 +22,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Get([FromQuery] GetProductsQuery getProductsQuery)
     {
         GetProductDto products = await _mediator.Send(getProductsQuery);
@@ -30,7 +30,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromBody] AddProductCommand addProductCommand)
     {
         ProductDto result = await _mediator.Send(addProductCommand);
@@ -38,7 +38,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromBody] UpdateProductCommand updateProductCommand)
     {
         ProductDto result = await _mediator.Send(updateProductCommand);
@@ -46,7 +46,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete("{productId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid productId)
     {
         DeleteProductCommand command = new() { Id = productId };

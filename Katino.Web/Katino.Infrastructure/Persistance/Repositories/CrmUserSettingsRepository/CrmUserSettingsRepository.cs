@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Entities;
+﻿using Katino.Domain.Constants;
+using Katino.Domain.Entities;
 using Katino.Domain.Repositories.CrmUserSettingsRepository;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
@@ -19,5 +20,17 @@ public class CrmUserSettingsRepository : Repository<CrmUserSettings>, ICrmUserSe
             .Include(x => x.NpWarehouse)
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.AppUserId == appUserId);
+    }
+
+    public async Task<CrmUserSettings> GetOwnerAppUserSettingsWithFullInfo()
+    {
+        return await context.CrmUserSettings
+            .Include(x => x.NpCity)
+            .AsNoTracking()
+            .Include(x => x.NpWarehouse)
+            .AsNoTracking()
+            .Include(x => x.AppUser)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.AppUser.Role == Role.Owner);
     }
 }

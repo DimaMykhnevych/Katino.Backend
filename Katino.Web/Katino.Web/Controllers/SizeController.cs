@@ -29,7 +29,7 @@ public class SizeController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Add([FromBody] AddSizeCommand addSizeCommand)
     {
         SizeDto result = await _mediator.Send(addSizeCommand);
@@ -37,7 +37,7 @@ public class SizeController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Update([FromBody] UpdateSizeCommand updateSizeCommand)
     {
         bool result = await _mediator.Send(updateSizeCommand);
@@ -45,7 +45,7 @@ public class SizeController : ControllerBase
     }
 
     [HttpDelete("{sizeId}")]
-    [Authorize(Roles = Role.Admin)]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
     public async Task<IActionResult> Delete(Guid sizeId)
     {
         DeleteSizeCommand command = new() { Id = sizeId };
