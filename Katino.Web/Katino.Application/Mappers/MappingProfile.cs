@@ -12,6 +12,7 @@ using Katino.Application.DTOs.Category;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.CrmUserSettings;
 using Katino.Application.DTOs.FinanceCategory;
+using Katino.Application.DTOs.FinanceEntry;
 using Katino.Application.DTOs.MeasurementType;
 using Katino.Application.DTOs.NovaPost;
 using Katino.Application.DTOs.NpCity;
@@ -139,6 +140,9 @@ public class MappingProfile : Profile
 
         CreateMap<FinanceCategoryType, FinanceCategoryTypeDto>().ReverseMap();
         CreateMap<FinanceCategory, FinanceCategoryDto>();
+
+        CreateMap<FinanceEntry, FinanceExpenseDto>()
+            .ForMember(s => s.CategoryName, m => m.MapFrom(s => s.Category.Name));
     }
 }
 

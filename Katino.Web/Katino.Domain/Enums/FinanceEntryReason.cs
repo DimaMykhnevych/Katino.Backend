@@ -4,6 +4,7 @@ public enum FinanceEntryReason
 {
     None = 0,
     OrderDeleted = 1,
-    OrderRefunded = 2
+    OrderRefunded = 2,
+    Expense = 3,
 }
 

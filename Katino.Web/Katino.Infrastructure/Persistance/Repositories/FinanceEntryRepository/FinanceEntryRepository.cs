@@ -42,4 +42,22 @@ public class FinanceEntryRepository : Repository<FinanceEntry>, IFinanceEntryRep
             .Select(x => x.InternetDocumentIntDocNumber)
             .FirstOrDefaultAsync();
     }
+
+    public Task<FinanceEntry> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => context.Set<FinanceEntry>()
+        .Include(x => x.Category)
+        .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public Task<List<FinanceEntry>> GetManualExpensesByYearAsync(int year, CancellationToken ct = default)
+        => context.Set<FinanceEntry>()
+            .AsNoTracking()
+            .Include(x => x.Category)
+            .Where(x =>
+                x.SourceType == FinanceEntrySourceType.Manual &&
+                x.Reason == FinanceEntryReason.Expense &&
+                x.EntryDate.Year == year &&
+                x.Category.Type == FinanceCategoryType.Expense)
+            .OrderByDescending(x => x.EntryDate)
+            .ThenByDescending(x => x.CreatedAtUtc)
+            .ToListAsync(ct);
 }
