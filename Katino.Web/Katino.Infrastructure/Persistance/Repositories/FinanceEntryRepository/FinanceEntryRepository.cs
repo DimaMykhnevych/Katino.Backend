@@ -60,4 +60,6 @@ public class FinanceEntryRepository : Repository<FinanceEntry>, IFinanceEntryRep
             .OrderByDescending(x => x.EntryDate)
             .ThenByDescending(x => x.CreatedAtUtc)
             .ToListAsync(ct);
+
+    public IQueryable<FinanceEntry> Query() => context.FinanceEntries;
 }

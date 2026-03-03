@@ -31,4 +31,6 @@ public class FinanceCategoryRepository : Repository<FinanceCategory>, IFinanceCa
             x.Type == type &&
             x.Name == name);
     }
+
+    public IQueryable<FinanceCategory> Query() => context.FinanceCategories;
 }

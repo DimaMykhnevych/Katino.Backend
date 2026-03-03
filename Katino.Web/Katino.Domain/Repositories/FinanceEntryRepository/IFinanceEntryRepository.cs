@@ -11,4 +11,5 @@ public interface IFinanceEntryRepository : IRepository<FinanceEntry>
     Task<string?> GetAnyTtnByOrderIdAsync(Guid orderId);
     Task<List<FinanceEntry>> GetManualExpensesByYearAsync(int year, CancellationToken ct = default);
     Task<FinanceEntry> GetByIdAsync(Guid id, CancellationToken ct = default);
+    IQueryable<FinanceEntry> Query();
 }

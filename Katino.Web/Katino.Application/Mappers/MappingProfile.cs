@@ -25,6 +25,7 @@ using Katino.Application.DTOs.OrderAddressInfo;
 using Katino.Application.DTOs.OrderItem;
 using Katino.Application.DTOs.OrderNpOptionsSeat;
 using Katino.Application.DTOs.OrderRecipient;
+using Katino.Application.DTOs.Pnl;
 using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
@@ -35,6 +36,7 @@ using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
+using Katino.Domain.Models.Pnl;
 
 namespace Katino.Application.Mappers;
 
@@ -143,6 +145,10 @@ public class MappingProfile : Profile
 
         CreateMap<FinanceEntry, FinanceExpenseDto>()
             .ForMember(s => s.CategoryName, m => m.MapFrom(s => s.Category.Name));
+
+        CreateMap<PnlRowKind, PnlRowKindDto>();
+        CreateMap<PnlRow, PnlRowDto>();
+        CreateMap<PnlReport, PnlReportDto>();
     }
 }
 
