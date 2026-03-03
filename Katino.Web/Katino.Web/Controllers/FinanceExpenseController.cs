@@ -23,7 +23,7 @@ public class FinanceExpenseController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<FinanceExpenseDto>>> Get([FromQuery] int year, CancellationToken ct)
+    public async Task<ActionResult<List<FinanceExpenseDto>>> Get([FromQuery] int? year, CancellationToken ct)
     {
         var res = await _mediator.Send(new GetManualExpensesQuery
         {
