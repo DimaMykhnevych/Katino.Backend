@@ -29,11 +29,12 @@ using Katino.Infrastructure.Persistance.Services.NovaPost;
 using Katino.Infrastructure.Persistance.Services.OrderItemN;
 using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Microsoft.ApplicationInsights.Extensibility;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
@@ -50,10 +51,19 @@ var host = new HostBuilder()
             config.AddUserSecrets<Program>();
         }
     })
+    .UseSerilog((context, services, loggerConfig) =>
+    {
+        var telemetryConfig = services.GetRequiredService<TelemetryConfiguration>();
+
+        loggerConfig
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .WriteTo.Console()
+            .WriteTo.ApplicationInsights(telemetryConfig, TelemetryConverter.Traces);
+    })
     .ConfigureServices((context, services) =>
     {
         services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
 
         services.Configure<NovaPostOptions>(context.Configuration.GetSection(ConfigurationKeys.NovaPostOptions));
 
