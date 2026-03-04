@@ -33,7 +33,7 @@ public class AuthTokenFactory(IOptions<SecretKeyOptions> secretKeyOptions) : IAu
             issuer: issuer,
             audience: audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(1),
+            expires: DateTime.UtcNow.AddDays(30),
             signingCredentials: signinCredentials);
 
         return jwtSecurityToken;
