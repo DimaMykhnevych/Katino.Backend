@@ -76,7 +76,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         {
             var orderIntDocNumbers = batch.Select(o => o.InternetDocumentIntDocNumber).ToList();
 
-            _logger.LogTrace($"Getting statuses for internet docs: {string.Join(",", orderIntDocNumbers)}");
+            _logger.LogInformation($"Getting statuses for internet docs: {string.Join(",", orderIntDocNumbers)}");
 
             var statuses = await _internetDocumentService.GetIntDocStatuses(orderIntDocNumbers);
             var statusesDict = statuses.ToDictionary(k => k["Number"].ToString(), v => v["StatusCode"].ToString());
@@ -110,7 +110,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
             var orderInternetDocStatus = (OrderInternetDocStatus)orderStatusNumber;
             var orderStatus = GetOrderStatusFromIntDocStatus(orderInternetDocStatus);
 
-            _logger.LogInformation($"Order with {order.Id} has InternetDocStatus {orderInternetDocStatus} and orderStatus {orderStatus}");
+            _logger.LogDebug($"Order with {order.Id} has InternetDocStatus {orderInternetDocStatus} and orderStatus {orderStatus}");
             bool shouldUpdateOrderStatus = OrderStatusHelper.ShouldUpdateToNpRelatedStatus(order.OrderStatus, orderStatus);
 
             _logger.LogDebug($"Updating order with {order.Id}, shouldUpdateOrderStatus: {shouldUpdateOrderStatus}");
