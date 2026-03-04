@@ -97,7 +97,10 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         try
         {
             var orderStatusString = statusesDict[order.InternetDocumentIntDocNumber];
+            _logger.LogDebug($"Raw order status string: {orderStatusString}");
+
             var orderStatusNumber = int.Parse(orderStatusString);
+            _logger.LogTrace($"Order status number: {orderStatusNumber}");
 
             if (!Enum.IsDefined(typeof(OrderInternetDocStatus), orderStatusNumber))
             {
@@ -106,14 +109,22 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
 
             var orderInternetDocStatus = (OrderInternetDocStatus)orderStatusNumber;
             var orderStatus = GetOrderStatusFromIntDocStatus(orderInternetDocStatus);
+
+            _logger.LogInformation($"Order with {order.Id} has InternetDocStatus {orderInternetDocStatus} and orderStatus {orderStatus}");
             bool shouldUpdateOrderStatus = OrderStatusHelper.ShouldUpdateToNpRelatedStatus(order.OrderStatus, orderStatus);
 
+            _logger.LogDebug($"Updating order with {order.Id}, shouldUpdateOrderStatus: {shouldUpdateOrderStatus}");
             await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus, orderStatus, shouldUpdateOrderStatus);
 
             // Handle rejected status
             if (RejectedStatuses.Contains(orderInternetDocStatus))
             {
+                _logger.LogInformation($"Order with {order.Id} was rejected, handling rejection...");
                 await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus, false);
+            }
+            else
+            {
+                _logger.LogTrace($"Order with {order.Id} wasn't rejected");
             }
         }
         catch (Exception ex)

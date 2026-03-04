@@ -192,6 +192,7 @@ public class DeleteOrderService : IDeleteOrderService
         Dictionary<Guid, int> currentProductQuantities = [];
         Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
 
+        _logger.LogInformation($"[HandleOrderRejectionAsync] Handling order items return {order.Id}");
         await _orderItemChangeService.HandleOrderItemsReturn(order, currentProductQuantities, productQuantitiesAfterProcessing);
 
         var commentText = isManualExchange
@@ -199,6 +200,8 @@ public class DeleteOrderService : IDeleteOrderService
             : orderInternetDocStatus != null
             ? $"Rejected by NP: {orderInternetDocStatus}"
             : "Rejected manually";
+
+        _logger.LogInformation($"Reversing order finance for {order.Id}");
         await TryReverseOrderFinanceAsync(
             order,
             FinanceEntryReason.OrderRefunded,
@@ -206,6 +209,7 @@ public class DeleteOrderService : IDeleteOrderService
 
         await _orderRepository.Save();
 
+        _logger.LogDebug("Updating current quantities");
         foreach (var currentQuantity in currentProductQuantities)
         {
             var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
