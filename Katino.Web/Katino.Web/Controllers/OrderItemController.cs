@@ -40,7 +40,11 @@ public class OrderItemController : ControllerBase
     public async Task<IActionResult> SubmitSewingReport([FromBody] SubmitSewedReportCommand submitSewedReportCommand)
     {
         var userIdString = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID).Value;
-        submitSewedReportCommand.SubmittedBy = Guid.Parse(userIdString);
+        var userIdGuid = Guid.Parse(userIdString);
+        foreach (var item in submitSewedReportCommand.ReportItems)
+        {
+            item.SubmittedBy = userIdGuid;
+        }
 
         var result = await _mediator.Send(submitSewedReportCommand);
         return result ? Ok(result) : BadRequest();

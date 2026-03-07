@@ -33,32 +33,35 @@ public class SewingProductionReportService : ISewingProductionReportService
         _logger = loggerFactory?.CreateLogger(nameof(SewingProductionReportService));
     }
 
-    public async Task ApplySewedAsync(SewedReport report, Guid submittedBy)
+    public async Task ApplySewedAsync(List<SewedReport> report, Guid submittedBy)
     {
-        _logger.LogInformation($"Applying sewed report, sewed quantity: {report.ActualSewedQuantity}, product variant id: {report.ProductVariantId}");
+        foreach (var reportItem in report)
+        {
+            _logger.LogInformation($"Applying sewed report, sewed quantity: {reportItem.ActualSewedQuantity}, product variant id: {reportItem.ProductVariantId}");
 
-        if (report.ActualSewedQuantity <= 0)
-        {
-            return;
-        }
+            if (reportItem.ActualSewedQuantity <= 0)
+            {
+                continue;
+            }
 
-        if (report.OrderItemId is not null)
-        {
-            await ApplyCustomSewedAsync(report.ProductVariantId, report.OrderItemId.Value, report.ActualSewedQuantity);
-        }
-        else
-        {
-            await ApplyRegularSewedAsync(report.ProductVariantId, report.ActualSewedQuantity);
-        }
+            if (reportItem.OrderItemId is not null)
+            {
+                await ApplyCustomSewedAsync(reportItem.ProductVariantId, reportItem.OrderItemId.Value, reportItem.ActualSewedQuantity);
+            }
+            else
+            {
+                await ApplyRegularSewedAsync(reportItem.ProductVariantId, reportItem.ActualSewedQuantity);
+            }
 
-        await _sewingHistoryRepository.Insert(new SewingHistory
-        {
-            ProductVariantId = report.ProductVariantId,
-            SewedBy = submittedBy,
-            SewedQuantity = report.ActualSewedQuantity,
-            IsCustomTailoring = report.OrderItemId is not null,
-            SewedDate = DateTimeOffset.UtcNow
-        });
+            await _sewingHistoryRepository.Insert(new SewingHistory
+            {
+                ProductVariantId = reportItem.ProductVariantId,
+                SewedBy = submittedBy,
+                SewedQuantity = reportItem.ActualSewedQuantity,
+                IsCustomTailoring = reportItem.OrderItemId is not null,
+                SewedDate = DateTimeOffset.UtcNow
+            });
+        }
 
         await _sewingHistoryRepository.Save();
     }

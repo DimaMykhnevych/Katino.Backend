@@ -138,7 +138,7 @@ public class MappingProfile : Profile
         CreateMap<UpdateCrmUserSettingsDto, CrmUserSettings>();
 
         CreateMap<SewingQueueItem, SewingQueueItemDto>();
-        CreateMap<SubmitSewedReportCommand, SewedReport>();
+        CreateMap<SubmitSewedReportItemDto, SewedReport>();
 
         CreateMap<FinanceCategoryType, FinanceCategoryTypeDto>().ReverseMap();
         CreateMap<FinanceCategory, FinanceCategoryDto>();

@@ -29,8 +29,8 @@ public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReport
 
         try
         {
-            SewedReport report = _mapper.Map<SewedReport>(request);
-             await _sewingProductionReportService.ApplySewedAsync(report, request.SubmittedBy).ConfigureAwait(false);
+            var report = _mapper.Map<List<SewedReport>>(request.ReportItems);
+             await _sewingProductionReportService.ApplySewedAsync(report, request.ReportItems.First().SubmittedBy).ConfigureAwait(false);
             return true;
         }
         catch (Exception ex)

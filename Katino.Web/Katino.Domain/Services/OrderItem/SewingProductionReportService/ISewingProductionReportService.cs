@@ -4,5 +4,5 @@ namespace Katino.Domain.Services.OrderItemN.SewingProductionReportService;
 
 public interface ISewingProductionReportService
 {
-    Task ApplySewedAsync(SewedReport report, Guid submittedBy);
+    Task ApplySewedAsync(List<SewedReport> report, Guid submittedBy);
 }
