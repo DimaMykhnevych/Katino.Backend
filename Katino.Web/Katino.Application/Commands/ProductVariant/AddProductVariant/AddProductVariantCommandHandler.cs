@@ -45,7 +45,24 @@ public class AddProductVariantCommandHandler : IRequestHandler<AddProductVariant
             }
 
             var addedProductVariant = await _productVariantRepository.Insert(productVariant);
-            await _productVariantRepository.Save();
+
+            var photosCount = request.ProductVariant.ExistingPhotoUrls.Count;
+            if (photosCount > 0)
+            {
+                for (int i = 0; i < request.ProductVariant.ExistingPhotoUrls.Count; i++)
+                {
+                    var copiedPhoto = new ProductPhoto
+                    {
+                        ProductVariantId = addedProductVariant.Id,
+                        PhotoUrl = request.ProductVariant.ExistingPhotoUrls[i],
+                        AltText = "Product photo",
+                        DisplayOrder = i + 1,
+                        UploadedAt = DateTime.UtcNow
+                    };
+
+                    await _productPhotoRepository.Insert(copiedPhoto);
+                }
+            }
 
             if (request.ProductVariant.Photos != null && request.ProductVariant.Photos.Count > 0)
             {
@@ -59,15 +76,15 @@ public class AddProductVariantCommandHandler : IRequestHandler<AddProductVariant
                         ProductVariantId = addedProductVariant.Id,
                         PhotoUrl = photoUrls[i],
                         AltText = request.ProductVariant.Photos[i].FileName,
-                        DisplayOrder = i + 1,
+                        DisplayOrder = photosCount + i + 1,
                         UploadedAt = DateTime.UtcNow
                     };
 
                     await _productPhotoRepository.Insert(photo);
                 }
-
-                await _productPhotoRepository.Save();
             }
+
+            await _productPhotoRepository.Save();
 
             return true;
         }

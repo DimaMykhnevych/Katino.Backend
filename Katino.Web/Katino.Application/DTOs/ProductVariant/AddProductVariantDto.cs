@@ -19,4 +19,5 @@ public class AddProductVariantDto
 
     public List<AddProductVariantMeasurementDto> Measurements { get; set; } = [];
     public IFormFileCollection Photos { get; set; }
+    public List<string> ExistingPhotoUrls { get; set; } = [];
 }
