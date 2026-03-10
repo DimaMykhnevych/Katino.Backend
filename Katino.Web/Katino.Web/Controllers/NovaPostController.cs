@@ -1,4 +1,5 @@
-﻿using Katino.Application.DTOs.NovaPost;
+﻿using Katino.Application.Commands.NovaPost.CreateScanSheet;
+using Katino.Application.DTOs.NovaPost;
 using Katino.Application.Queries.NovaPost.GetNpCities;
 using Katino.Application.Queries.NovaPost.GetNpContactPerson;
 using Katino.Application.Queries.NovaPost.GetNpSenderContactPersons;
@@ -41,5 +42,13 @@ public class NovaPostController : ControllerBase
     {
         var senderContactPersons = await _mediator.Send(new GetNpSenderContactPersonsQuery());
         return Ok(senderContactPersons);
+    }
+
+    [HttpPost("scan-sheet")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
+    public async Task<IActionResult> CreateScanSheet()
+    {
+        var result = await _mediator.Send(new CreateScanSheetCommand());
+        return result ? Ok(result) : BadRequest();
     }
 }

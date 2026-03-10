@@ -111,4 +111,12 @@ public class OrderRepository : Repository<Order>, IOrderRepository
                 .ThenInclude(o => o.OrderItems)
             .FirstAsync(oi => oi.Id == orderItemId);
     }
+
+    public async Task<List<string>> GetOrderRefsWithStatusAndInternetDocCreatedAsync(OrderStatus status)
+    {
+        return await context.Orders
+            .Where(o => o.OrderStatus == status && !string.IsNullOrEmpty(o.InternetDocumentRef))
+            .Select(o => o.InternetDocumentRef)
+            .ToListAsync();
+    }
 }

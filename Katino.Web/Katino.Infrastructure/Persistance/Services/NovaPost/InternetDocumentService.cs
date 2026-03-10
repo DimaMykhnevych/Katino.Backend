@@ -301,4 +301,31 @@ public class InternetDocumentService : BaseNpApiService, IInternetDocumentServic
 
         return currentDateTime;
     }
+
+    public async Task<ScanSheetCreationResponse> CreateScanSheet(List<string> documentRefs, string description)
+    {
+        var npRequest = new NpApiRequest<object>()
+        {
+            ApiKey = _novaPostOptions.ApiKey,
+            ModelName = "ScanSheetGeneral",
+            CalledMethod = "insertDocuments",
+            MethodProperties = new
+            {
+                DocumentRefs = documentRefs,
+                Description = description
+            }
+        };
+
+        var responseString = await GetProcessedStringResponse(npRequest);
+        var createScanSheetResponse = JsonConvert.DeserializeObject<NpApiResponse<ScanSheetCreationResponse>>(responseString);
+
+        _logger.LogDebug("CreateScanSheet response: {Response}", responseString);
+        if (createScanSheetResponse == null || !createScanSheetResponse.Success)
+        {
+            _logger.LogError($"An error occurred while getting internet doc statuses: {createScanSheetResponse.Errors.FirstOrDefault()}");
+            return null;
+        }
+
+        return createScanSheetResponse.Data.FirstOrDefault();
+    }
 }

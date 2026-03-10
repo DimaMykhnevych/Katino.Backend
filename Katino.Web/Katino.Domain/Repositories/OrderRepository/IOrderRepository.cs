@@ -16,4 +16,5 @@ public interface IOrderRepository : IRepository<Order>
         bool shouldUpdateOrderStatus);
     Task<Order> GetOrderWithOrderItemsAsync(Guid orderId);
     Task<OrderItem> GetOrderItemWithOrderAsync(Guid orderItemId);
+    Task<List<string>> GetOrderRefsWithStatusAndInternetDocCreatedAsync(OrderStatus status);
 }

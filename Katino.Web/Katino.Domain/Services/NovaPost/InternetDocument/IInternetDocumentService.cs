@@ -11,4 +11,5 @@ public interface IInternetDocumentService
     Task<JArray> GetIntDocStatuses(List<string> documentNumbers);
     CreateNovaPostInternetDocument CreateNovaPostInternetDocument(Order orderWithAllInfo);
     UpdateNovaPostInternetDocument CreateUpdateNovaPostInternetDocument(Order orderWithAllInfo);
+    Task<ScanSheetCreationResponse> CreateScanSheet(List<string> documentRefs, string description);
 }
