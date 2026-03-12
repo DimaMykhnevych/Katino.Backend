@@ -211,6 +211,11 @@ public class UpdateOrderService : IUpdateOrderService
                     InternetDocumentIntDocNumber = currentOrderInDb.InternetDocumentIntDocNumber,
                     OrderInternetDocStatus = currentOrderInDb.OrderInternetDocStatus,
                     OrderStatus = currentOrderInDb.OrderStatus,
+                    Comment = order.Comment,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    UpdateReasonDetails = $"Manual order update." +
+                    $" Previous orderItems: {string.Join(", ", currentOrderInDb.OrderItems.Select(oi => oi.ProductVariantId))}," +
+                    $" orderItems new: {string.Join(", ", order.OrderItems.Select(oi => oi.ProductVariantId))}"
                 };
 
                 var newOrderStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)

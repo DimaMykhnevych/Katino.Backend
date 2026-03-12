@@ -157,6 +157,7 @@ public class AddOrderService : IAddOrderService
             // there may be incorrect statuses, if we call ProcessNewOrderItemsStatuses after HandleAddedOrderItems
             _orderItemChangeService.ProcessNewOrderItemsStatuses(order.OrderItems, productVariantsRelatedToCurrentOrder);
 
+            var utcNow = DateTimeOffset.UtcNow;
             Order orderToAdd = new()
             {
                 SenderNpWarehouseId = order.SenderNpWarehouseId,
@@ -168,7 +169,7 @@ public class AddOrderService : IAddOrderService
                 PayerType = order.PayerType,
                 PaymentMethod = order.PaymentMethod,
                 SaleType = order.SaleType,
-                CreationDateTime = DateTimeOffset.UtcNow,
+                CreationDateTime = utcNow,
                 SendUntilDate = order.SendUntilDate,
                 Weight = order.Weight,
                 DeliveryType = order.DeliveryType,
@@ -180,7 +181,10 @@ public class AddOrderService : IAddOrderService
                 OrderNpOptionsSeats = npOptionSeats,
                 AddressInfo = order.AddressInfo,
                 OrderInternetDocStatus = OrderInternetDocStatus.NotProcessed,
-                OrderStatus = OrderStatus.None
+                OrderStatus = OrderStatus.None,
+                Comment = order.Comment,
+                UpdatedAt = utcNow,
+                UpdateReasonDetails = "Order created"
             };
 
             // 2.Calculate Order status and add it to order

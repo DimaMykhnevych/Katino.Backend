@@ -93,7 +93,9 @@ public class OrderRepository : Repository<Order>, IOrderRepository
                 .Where(o => o.Id == orderId)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(o => o.OrderInternetDocStatus, status)
-                    .SetProperty(o => o.OrderStatus, orderStatus));
+                    .SetProperty(o => o.OrderStatus, orderStatus)
+                    .SetProperty(o => o.UpdatedAt, DateTimeOffset.UtcNow)
+                    .SetProperty(o => o.UpdateReasonDetails, $"New order status (from Function App) - {orderStatus}"));
         }
     }
 

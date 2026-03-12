@@ -58,6 +58,7 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
         {
             var order = await _orderRepository.GetOrderWithOrderItemsAsync(orderId);
             _logger.LogDebug($"Previous order status: {order.OrderStatus}, new status: {orderStatus}");
+            var updateReason = $"Order {orderId} manual status change - from {order.OrderStatus} to {orderStatus}";
 
             if (orderStatus == OrderStatus.Refusal)
             {
@@ -67,6 +68,8 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 }
 
                 order.OrderStatus = orderStatus;
+                order.UpdatedAt = DateTimeOffset.UtcNow;
+                order.UpdateReasonDetails = updateReason;
 
                 // Status updated here
                 await _deleteOrderService.HandleOrderRejectionAsync(order, null, false);
@@ -79,6 +82,8 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 if (InternetDocumentConstants.OrderRejectedStatuses.Contains(order.OrderStatus))
                 {
                     order.OrderStatus = orderStatus;
+                    order.UpdatedAt = DateTimeOffset.UtcNow;
+                    order.UpdateReasonDetails = updateReason;
 
                     await _orderRepository.Save();
 
@@ -87,6 +92,8 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 else if (InternetDocumentConstants.OrderReceivedStatuses.Contains(order.OrderStatus))
                 {
                     order.OrderStatus = orderStatus;
+                    order.UpdatedAt = DateTimeOffset.UtcNow;
+                    order.UpdateReasonDetails = updateReason;
 
                     // Status updated here
                     await _deleteOrderService.HandleOrderRejectionAsync(order, null, true);
@@ -107,6 +114,8 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 }
 
                 order.OrderStatus = orderStatus;
+                order.UpdatedAt = DateTimeOffset.UtcNow;
+                order.UpdateReasonDetails = updateReason;
 
                 await _orderRepository.Save();
 
@@ -121,6 +130,8 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 }
 
                 order.OrderStatus = orderStatus;
+                order.UpdatedAt = DateTimeOffset.UtcNow;
+                order.UpdateReasonDetails = updateReason;
 
                 await _orderRepository.Save();
 

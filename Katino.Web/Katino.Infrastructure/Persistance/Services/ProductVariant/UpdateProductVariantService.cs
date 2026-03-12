@@ -161,6 +161,11 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 : OrderStatus.ReadyToShip;
 
             OrderStatusHelper.SetOrderStatus(order, newOrderStatus, false);
+            if (order.OrderStatus != newOrderStatus)
+            {
+                order.UpdatedAt = DateTimeOffset.UtcNow;
+                order.UpdateReasonDetails = $"Status changed due to product variant quantity change (id: '{productVariantId}', new quantity: {newQuantity})";
+            }
 
             await _orderRepository.Save();
 

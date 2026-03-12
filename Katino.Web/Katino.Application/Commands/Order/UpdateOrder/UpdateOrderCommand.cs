@@ -25,6 +25,7 @@ public class UpdateOrderCommand : IRequest<OrderUpdateResultDto>
     public string Description { get; set; }
     public double Cost { get; set; }
     public double? AfterpaymentOnGoodsCost { get; set; }
+    public string Comment { get; set; }
 
     public List<UpdateOrderItemDto> OrderItems { get; set; } = [];
     public List<UpdateOrderNpOptionsSeatDto> OrderNpOptionsSeats { get; set; } = [];

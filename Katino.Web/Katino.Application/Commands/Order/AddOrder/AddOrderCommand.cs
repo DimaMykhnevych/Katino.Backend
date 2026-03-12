@@ -24,6 +24,7 @@ public class AddOrderCommand : IRequest<OrderCreationResultDto>
     public string Description { get; set; }
     public double Cost { get; set; }
     public double? AfterpaymentOnGoodsCost { get; set; }
+    public string Comment { get; set; }
 
     public List<AddOrderItemDto> OrderItems { get; set; } = [];
     public List<AddOrderNpOptionsSeatDto> OrderNpOptionsSeats { get; set; } = [];

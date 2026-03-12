@@ -32,6 +32,9 @@ public class OrderDto
     public bool InternetDocumentCreationAttempted { get; set; }
     public string InternetDocumentRef { get; set; }
     public string InternetDocumentIntDocNumber { get; set; }
+    public string Comment { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string UpdateReasonDetails { get; set; }
     public OrderStatusDto OrderStatus { get; set; }
     public OrderInternetDocStatusDto OrderInternetDocStatus { get; set; }
     public List<OrderItemDto> OrderItems { get; set; } = [];

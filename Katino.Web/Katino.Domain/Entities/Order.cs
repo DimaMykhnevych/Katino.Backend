@@ -24,6 +24,9 @@ public class Order
     public string Description { get; set; }
     public double Cost { get; set; }
     public double? AfterpaymentOnGoodsCost { get; set; }
+    public string Comment { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string UpdateReasonDetails { get; set; }
 
     // InternetDocument Creation Result
     public bool InternetDocumentCreationAttempted { get; set; }
