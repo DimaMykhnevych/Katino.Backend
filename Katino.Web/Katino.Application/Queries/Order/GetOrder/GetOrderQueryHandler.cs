@@ -35,6 +35,7 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, GetOrderDto>
             .SetBaseOrderInfo()
             .ApplySearch(request.Search)
             .ApplyOrderStatusFilter(orderStatuses)
+            .ApplyOrderCreationDateFilter(request.CreatedFrom, request.CreatedTo)
             .ApplyPaging(request.Page, request.PageSize)
             .Build();
 
@@ -42,6 +43,7 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, GetOrderDto>
             .SetBaseOrderInfoForToatalCount()
             .ApplySearch(request.Search)
             .ApplyOrderStatusFilter(orderStatuses)
+            .ApplyOrderCreationDateFilter(request.CreatedFrom, request.CreatedTo)
             .Build()
             .CountAsync(cancellationToken);
 

@@ -113,6 +113,11 @@ public class SewingProductionReportService : ISewingProductionReportService
             : OrderStatus.ReadyToShip;
 
         OrderStatusHelper.SetOrderStatus(order, newOrderStatus, false);
+        if (order.OrderStatus != newOrderStatus)
+        {
+            order.UpdatedAt = DateTimeOffset.UtcNow;
+            order.UpdateReasonDetails = $"Status changed due to product variant quantity change (id: '{productVariantId}', new quantity: {actualSewedQuantity})";
+        }
 
         await _orderRepository.Save();
     }

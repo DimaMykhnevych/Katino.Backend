@@ -10,4 +10,5 @@ public interface IOrderQueryBuilder : IQueryBuilder<Order>
     IOrderQueryBuilder ApplyPaging(int page, int pageSize);
     IOrderQueryBuilder ApplySearch(string search);
     IOrderQueryBuilder ApplyOrderStatusFilter(IList<OrderStatus> orderStatuses);
+    IOrderQueryBuilder ApplyOrderCreationDateFilter(DateTimeOffset? from, DateTimeOffset? to);
 }

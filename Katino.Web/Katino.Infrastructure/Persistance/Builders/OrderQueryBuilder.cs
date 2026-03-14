@@ -137,6 +137,21 @@ public class OrderQueryBuilder : IOrderQueryBuilder
         return this;
     }
 
+    public IOrderQueryBuilder ApplyOrderCreationDateFilter(DateTimeOffset? from, DateTimeOffset? to)
+    {
+        if (from != null)
+        {
+            _query = _query.Where(x => x.CreationDateTime >= from);
+        }
+
+        if (to != null)
+        {
+            _query = _query.Where(x => x.CreationDateTime <= to);
+        }
+
+        return this;
+    }
+
     private void EnsureQuery()
     {
         _query ??= _dbContext.Orders.AsQueryable();

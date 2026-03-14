@@ -58,6 +58,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         List<OrderInternetDocStatus> excludedStatuses = [];
         excludedStatuses.AddRange(ReceivedStatuses);
         excludedStatuses.AddRange(RejectedStatuses);
+        excludedStatuses.Add(OrderInternetDocStatus.Deleted);
         var ordersToCheck = await _orderRepository.GetOrdersForNpStatusUpdateAsync(excludedStatuses.ToArray());
 
         var batches = ordersToCheck.Chunk(OrderBatchSize);
