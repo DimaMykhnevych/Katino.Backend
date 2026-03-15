@@ -160,8 +160,9 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 ? OrderStatus.InProgress
                 : OrderStatus.ReadyToShip;
 
+            var orderStatusChanged = order.OrderStatus != newOrderStatus;
             OrderStatusHelper.SetOrderStatus(order, newOrderStatus, false);
-            if (order.OrderStatus != newOrderStatus)
+            if (orderStatusChanged)
             {
                 order.UpdatedAt = DateTimeOffset.UtcNow;
                 order.UpdateReasonDetails = $"Status changed due to product variant quantity change (id: '{productVariantId}', new quantity: {newQuantity})";
