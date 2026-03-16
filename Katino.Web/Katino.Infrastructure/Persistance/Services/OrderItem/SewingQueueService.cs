@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Models;
+﻿using Katino.Domain.Helpers;
+using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Services.OrderItemN.SewingQueueService;
 using Microsoft.Extensions.Logging;
@@ -57,10 +58,13 @@ public class SewingQueueService : ISewingQueueService
             .ToList();
 
         var combined = grouped.Concat(custom).ToList();
+
         return combined
             .OrderBy(i => i.ProductVariant.Product.Name)
             .ThenBy(i => i.ProductVariant.Color.Name)
-            .ThenBy(i => i.ProductVariant.Size.Name)
+            .ThenBy(i => SortHelper.GetSizeSortGroup(i.ProductVariant.Size.Name))
+            .ThenBy(i => SortHelper.GetSizeSortValue(i.ProductVariant.Size.Name))
+            .ThenBy(i => SortHelper.NormalizeSizeName(i.ProductVariant.Size.Name))
             .ToList();
     }
 
@@ -68,14 +72,24 @@ public class SewingQueueService : ISewingQueueService
     {
         _logger.LogInformation("Getting sewing queue grouped by date");
         var items = await _orderItemRepository.GetOrderItemsForSewingGroupedByDateAsync(ct);
-        return items.ToDictionary(x => x.Key, x => x.Value.Select(oi => new SewingQueueItem
-        {
-            ProductVariantId = oi.ProductVariantId,
-            ProductVariant = oi.ProductVariant,
-            QuantityToProduce = oi.QuantityToProduce,
-            IsCustomTailoring = oi.IsCustomTailoring,
-            Comment = oi.Comment,
-            OrderItemId = oi.Id
-        }).ToList());
+
+        return items.ToDictionary(
+            x => x.Key,
+            x => x.Value
+                .Select(oi => new SewingQueueItem
+                {
+                    ProductVariantId = oi.ProductVariantId,
+                    ProductVariant = oi.ProductVariant,
+                    QuantityToProduce = oi.QuantityToProduce,
+                    IsCustomTailoring = oi.IsCustomTailoring,
+                    Comment = oi.Comment,
+                    OrderItemId = oi.Id
+                })
+                .OrderBy(i => i.ProductVariant.Product.Name)
+                .ThenBy(i => i.ProductVariant.Color.Name)
+                .ThenBy(i => SortHelper.GetSizeSortGroup(i.ProductVariant.Size.Name))
+                .ThenBy(i => SortHelper.GetSizeSortValue(i.ProductVariant.Size.Name))
+                .ThenBy(i => SortHelper.NormalizeSizeName(i.ProductVariant.Size.Name))
+                .ToList());
     }
 }
