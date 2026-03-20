@@ -27,6 +27,8 @@ public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
                 .ThenInclude(pv => pv.Color)
             .Include(oi => oi.ProductVariant)
                 .ThenInclude(pv => pv.Size)
+            .Include(oi => oi.ProductVariant)
+                .ThenInclude(pv => pv.Photos)
             .ToListAsync(ct);
     }
 
@@ -42,6 +44,7 @@ public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
             .Include(oi => oi.ProductVariant).ThenInclude(pv => pv.Product).ThenInclude(p => p.Category)
             .Include(oi => oi.ProductVariant).ThenInclude(pv => pv.Color)
             .Include(oi => oi.ProductVariant).ThenInclude(pv => pv.Size)
+            .Include(oi => oi.ProductVariant).ThenInclude(pv => pv.Photos)
             .ToListAsync(ct);
 
         return items
