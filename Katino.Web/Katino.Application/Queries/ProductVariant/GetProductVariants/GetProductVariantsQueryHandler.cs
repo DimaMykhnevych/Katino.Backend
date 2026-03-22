@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Katino.Application.DTOs.ProductVariant;
-using Katino.Domain.Context;
-using Katino.Domain.Entities;
+using Katino.Domain.Builders;
 using Katino.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,16 +10,16 @@ namespace Katino.Application.Queries.ProductVariantN.GetProductVariants;
 
 public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariantsQuery, GetProductVariantDto>
 {
-    private readonly IKatinoDbContext _katinoDbContext;
+    private readonly IProductVariantQueryBuilder _queryBuilder;
     private readonly ILogger _logger;
     private readonly IMapper _mapper;
 
     public GetProductVariantsQueryHandler(
-        IKatinoDbContext katinoDbContext,
+        IProductVariantQueryBuilder queryBuilder,
         ILoggerFactory loggerFactory,
         IMapper mapper)
     {
-        _katinoDbContext = katinoDbContext;
+        _queryBuilder = queryBuilder;
         _logger = loggerFactory?.CreateLogger(nameof(GetProductVariantsQueryHandler));
         _mapper = mapper;
     }
@@ -30,64 +29,49 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
         _logger.LogInformation("Handling get product variants");
         ArgumentNullException.ThrowIfNull(request);
 
-        IQueryable<ProductVariant> productVariants = _katinoDbContext.ProductVariants
-            .Include(p => p.Product)
-            .ThenInclude(p => p.Category)
-            .AsNoTracking()
-            .Include(pv => pv.Size)
-            .AsNoTracking()
-            .Include(pv => pv.Color)
-            .AsNoTracking()
-            .Include(pv => pv.Photos)
-            .AsNoTracking()
-            .Include(pv => pv.Measurements)
-            .ThenInclude(pvm => pvm.MeasurementType)
-            .AsNoTracking()
-            .OrderByDescending(p => p.CreatedAt);
+        var productStatus = request.ProductStatus != null
+            ? _mapper.Map<ProductStatus>(request.ProductStatus)
+            : (ProductStatus?)null;
 
-        if (!string.IsNullOrWhiteSpace(request.ProductName))
-        {
-            productVariants = productVariants
-                .Where(pv => pv.Product.Name.ToLower().Contains(request.ProductName.ToLower()));
-        }
+        _queryBuilder
+            .SetBaseQuery()
+            .ApplyNameFilter(request.ProductName)
+            .ApplyCategoryFilter(request.CategoryId)
+            .ApplyStatusFilter(productStatus);
 
-        if (request.CategoryId != null)
+        if (request.GetLastAddedProductVariant == true)
         {
-            productVariants = productVariants
-                .Where(pv => pv.Product.Category.Id == request.CategoryId);
-        }
-
-        if (request.ProductStatus != null)
-        {
-            var productStatus = _mapper.Map<ProductStatus>(request.ProductStatus);
-            productVariants = productVariants
-                .Where(pv => pv.Status == productStatus);
-        }
-
-        if (request.GetLastAddedProductVariant != null && request.GetLastAddedProductVariant.Value)
-        {
-            var lastAddedProductVariant = await productVariants
-                .OrderByDescending(pv => pv.CreatedAt)
+            var last = await _queryBuilder.Build()
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var mappedProductVariant = _mapper.Map<ProductVariantDto>(lastAddedProductVariant);
+            var mappedLast = _mapper.Map<ProductVariantDto>(last);
 
             return new GetProductVariantDto
             {
-                ProductVariants = mappedProductVariant == null ? [] : [mappedProductVariant],
-                ResultsAmount = mappedProductVariant == null ? 0 : 1
+                ProductVariants = mappedLast == null ? [] : [mappedLast],
+                ResultsAmount = mappedLast == null ? 0 : 1
             };
         }
 
-        var resultProductVariants = await productVariants.ToListAsync(cancellationToken);
-        List<ProductVariantDto> productVariantDtos =
-            _mapper.Map<IEnumerable<ProductVariantDto>>(resultProductVariants)
-                .ToList();
+        var totalCount = await _queryBuilder.Build().CountAsync(cancellationToken);
+
+        _queryBuilder
+            .SetBaseQuery()
+            .ApplyNameFilter(request.ProductName)
+            .ApplyCategoryFilter(request.CategoryId)
+            .ApplyStatusFilter(productStatus)
+            .ApplyPaging(request.Page, request.PageSize);
+
+        var productVariants = await _queryBuilder.Build().ToListAsync(cancellationToken);
+
+        var productVariantDtos = _mapper
+            .Map<IEnumerable<ProductVariantDto>>(productVariants)
+            .ToList();
 
         return new GetProductVariantDto
         {
             ProductVariants = productVariantDtos,
-            ResultsAmount = productVariantDtos.Count
+            ResultsAmount = totalCount
         };
     }
 }

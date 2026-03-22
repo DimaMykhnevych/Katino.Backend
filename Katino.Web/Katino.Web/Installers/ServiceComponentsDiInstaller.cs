@@ -138,6 +138,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         // builders
         services.AddTransient<IAppUserQueryBuilder, AppUserQueryBuilder>();
         services.AddTransient<IOrderQueryBuilder, OrderQueryBuilder>();
+        services.AddTransient<IProductVariantQueryBuilder, ProductVariantQueryBuilder>();
 
         // repositories
         services.AddTransient<IProductRepository, ProductRepository>();
