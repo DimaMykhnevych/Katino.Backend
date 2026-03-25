@@ -125,6 +125,7 @@ public class MappingProfile : Profile
 
         CreateMap<NovaPoshtaSyncStatus, SyncRecordDto>();
         CreateMap<OrderStatusDto, OrderStatus>().ReverseMap();
+        CreateMap<OrderSortDto, OrderSort>().ReverseMap();
 
         CreateMap<CityResponse, NpCityResponseDto>();
         CreateMap<GetCitiesResponse, GetNpCitiesResponseDto>();

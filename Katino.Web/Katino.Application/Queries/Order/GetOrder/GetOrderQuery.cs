@@ -11,4 +11,5 @@ public class GetOrderQuery : IRequest<GetOrderDto>
     public IList<OrderStatusDto> OrderStatuses { get; set; } = [];
     public DateTimeOffset? CreatedFrom { get; set; }
     public DateTimeOffset? CreatedTo { get; set; }
+    public OrderSortDto Sort { get; set; } = OrderSortDto.ByCreationDate;
 }

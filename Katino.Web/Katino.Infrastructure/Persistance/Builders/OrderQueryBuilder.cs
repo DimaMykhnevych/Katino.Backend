@@ -49,8 +49,7 @@ public class OrderQueryBuilder : IOrderQueryBuilder
             .Include(o => o.OrderRecipient)
                 .ThenInclude(r => r.NpContactPerson)
             .Include(o => o.AddressInfo)
-            .IgnoreQueryFilters()
-            .OrderByDescending(o => o.CreationDateTime);
+            .IgnoreQueryFilters();
 
         return this;
     }
@@ -148,6 +147,19 @@ public class OrderQueryBuilder : IOrderQueryBuilder
         {
             _query = _query.Where(x => x.CreationDateTime <= to);
         }
+
+        return this;
+    }
+
+    public IOrderQueryBuilder ApplySorting(OrderSort sort)
+    {
+        EnsureQuery();
+
+        _query = sort switch
+        {
+            OrderSort.ByUrgency => _query!.OrderBy(o => o.SendUntilDate),
+            _ => _query!.OrderByDescending(o => o.CreationDateTime),
+        };
 
         return this;
     }

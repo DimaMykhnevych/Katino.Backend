@@ -11,4 +11,5 @@ public interface IOrderQueryBuilder : IQueryBuilder<Order>
     IOrderQueryBuilder ApplySearch(string search);
     IOrderQueryBuilder ApplyOrderStatusFilter(IList<OrderStatus> orderStatuses);
     IOrderQueryBuilder ApplyOrderCreationDateFilter(DateTimeOffset? from, DateTimeOffset? to);
+    IOrderQueryBuilder ApplySorting(OrderSort sort);
 }

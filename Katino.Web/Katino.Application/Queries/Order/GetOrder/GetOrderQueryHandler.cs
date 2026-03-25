@@ -30,12 +30,14 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, GetOrderDto>
         ArgumentNullException.ThrowIfNull(request);
 
         var orderStatuses = _mapper.Map<List<OrderStatus>>(request.OrderStatuses);
+        var orderSort = _mapper.Map<OrderSort>(request.Sort);
 
         var orders = _orderQueryBuilder
             .SetBaseOrderInfo()
             .ApplySearch(request.Search)
             .ApplyOrderStatusFilter(orderStatuses)
             .ApplyOrderCreationDateFilter(request.CreatedFrom, request.CreatedTo)
+            .ApplySorting(orderSort)
             .ApplyPaging(request.Page, request.PageSize)
             .Build();
 
