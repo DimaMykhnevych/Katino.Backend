@@ -2,6 +2,7 @@
 using Katino.Application.DTOs.ProductVariant;
 using Katino.Domain.Builders;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -53,16 +54,26 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
             };
         }
 
-        var totalCount = await _queryBuilder.Build().CountAsync(cancellationToken);
+        // TODO IN-MEMORY pagination, is okay for now, in future - rewrite!
+        var allFiltered = await _queryBuilder.Build().ToListAsync(cancellationToken);
 
-        _queryBuilder
-            .SetBaseQuery()
-            .ApplyNameFilter(request.ProductName)
-            .ApplyCategoryFilter(request.CategoryId)
-            .ApplyStatusFilter(productStatus)
-            .ApplyPaging(request.Page, request.PageSize);
+        var sorted = allFiltered
+            .GroupBy(pv => pv.ProductId)
+            .OrderByDescending(g => g.Max(pv => pv.CreatedAt))
+            .SelectMany(g => g
+                .OrderBy(pv => pv.Color.Name)
+                .ThenBy(pv => SortHelper.GetSizeSortGroup(pv.Size.Name))
+                .ThenBy(pv => SortHelper.GetSizeSortValue(pv.Size.Name))
+                .ThenBy(pv => SortHelper.NormalizeSizeName(pv.Size.Name)))
+            .ToList();
 
-        var productVariants = await _queryBuilder.Build().ToListAsync(cancellationToken);
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1 ? 20 : request.PageSize;
+
+        var productVariants = sorted
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
 
         var productVariantDtos = _mapper
             .Map<IEnumerable<ProductVariantDto>>(productVariants)
@@ -71,7 +82,7 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
         return new GetProductVariantDto
         {
             ProductVariants = productVariantDtos,
-            ResultsAmount = totalCount
+            ResultsAmount = sorted.Count
         };
     }
 }
