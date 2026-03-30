@@ -87,40 +87,55 @@ public class OrderQueryBuilder : IOrderQueryBuilder
             return this;
         }
 
-        var term = search.Trim();
-        var like = $"%{term.ToLower()}%";
+        var tokens = search.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        _query = _query!.Where(o =>
+        foreach (var token in tokens)
+        {
+            var like = $"%{token}%";
+            _query = _query!.Where(o =>
             // 1) InternetDocumentIntDocNumber
-            (o.InternetDocumentIntDocNumber != null &&
-             EF.Functions.Like(o.InternetDocumentIntDocNumber.ToLower(), like))
+                (o.InternetDocumentIntDocNumber != null &&
+                 EF.Functions.Like(o.InternetDocumentIntDocNumber.ToLower(), like))
 
-            ||
+                ||
 
             // 2) OrderRecipient.InstUrl
-            (o.OrderRecipient != null &&
-             o.OrderRecipient.InstUrl != null &&
-             EF.Functions.Like(o.OrderRecipient.InstUrl.ToLower(), like))
+                (o.OrderRecipient != null &&
+                 o.OrderRecipient.InstUrl != null &&
+                 EF.Functions.Like(o.OrderRecipient.InstUrl.ToLower(), like))
 
-            ||
+                ||
 
             // 3) OrderRecipient.NpContactPerson fields
-            (o.OrderRecipient != null &&
-             o.OrderRecipient.NpContactPerson != null &&
-             (
-                 (o.OrderRecipient.NpContactPerson.LastName != null &&
-                  EF.Functions.Like(o.OrderRecipient.NpContactPerson.LastName.ToLower(), like))
-                 ||
-                 (o.OrderRecipient.NpContactPerson.FirstName != null &&
-                  EF.Functions.Like(o.OrderRecipient.NpContactPerson.FirstName.ToLower(), like))
-                 ||
-                 (o.OrderRecipient.NpContactPerson.MiddleName != null &&
-                  EF.Functions.Like(o.OrderRecipient.NpContactPerson.MiddleName.ToLower(), like))
-                 ||
-                 (o.OrderRecipient.NpContactPerson.Phones != null &&
-                  EF.Functions.Like(o.OrderRecipient.NpContactPerson.Phones.ToLower(), like))
-             ))
-        );
+                (o.OrderRecipient != null &&
+                 o.OrderRecipient.NpContactPerson != null &&
+                 (
+                     (o.OrderRecipient.NpContactPerson.LastName != null &&
+                      EF.Functions.Like(o.OrderRecipient.NpContactPerson.LastName.ToLower(), like))
+                     ||
+                     (o.OrderRecipient.NpContactPerson.FirstName != null &&
+                      EF.Functions.Like(o.OrderRecipient.NpContactPerson.FirstName.ToLower(), like))
+                     ||
+                     (o.OrderRecipient.NpContactPerson.MiddleName != null &&
+                      EF.Functions.Like(o.OrderRecipient.NpContactPerson.MiddleName.ToLower(), like))
+                     ||
+                     (o.OrderRecipient.NpContactPerson.Phones != null &&
+                      EF.Functions.Like(o.OrderRecipient.NpContactPerson.Phones.ToLower(), like))
+                 ))
+
+                ||
+
+                o.OrderItems.Any(oi =>
+                    oi.ProductVariant != null &&
+                    oi.ProductVariant.Product != null &&
+                    EF.Functions.Like(
+                        ((oi.ProductVariant.Product.Name ?? "") + " " +
+                         (oi.ProductVariant.Color != null ? oi.ProductVariant.Color.Name : "") + " " +
+                         (oi.ProductVariant.Size != null ? oi.ProductVariant.Size.Name : "")).ToLower(),
+                        like
+                    ))
+            );
+        }
 
         return this;
     }
