@@ -1,5 +1,6 @@
-﻿using Katino.Domain.Constants;
+using Katino.Domain.Constants;
 using Katino.Domain.Enums;
+using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
@@ -24,39 +25,35 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
         _logger = loggerFactory?.CreateLogger(nameof(SetOrderManualStatusService));
     }
 
-    public OrderStatus[] GetNextOrderStatuses(OrderStatus orderStatusCurrent)
+    public async Task<OrderStatus[]> GetNextOrderStatusesAsync(Guid orderId)
     {
-        if (orderStatusCurrent == OrderStatus.ReadyToShip)
+        var order = await _orderRepository.GetOrderWithOrderItemsAsync(orderId);
+
+        if (order.DeliveryType == DeliveryType.NotNovaPost)
         {
-            return [OrderStatus.Packed];
+            return GetNextOrderStatusesForNonNp(order.OrderStatus);
         }
 
-        if (orderStatusCurrent == OrderStatus.Packed)
-        {
-            return [OrderStatus.ReadyToShip];
-        }
-
-        if (InternetDocumentConstants.OrderReceivedStatuses.Contains(orderStatusCurrent))
-        {
-            return [OrderStatus.Refusal, OrderStatus.Exchange];
-        }
-
-        if (InternetDocumentConstants.OrderRejectedStatuses.Contains(orderStatusCurrent))
-        {
-            return [OrderStatus.Exchange];
-        }
-
-        return [];
+        return GetNextOrderStatusesForNp(order.OrderStatus);
     }
 
     public async Task<bool> SetOrderManualStatusAsync(Guid orderId, OrderStatus orderStatus)
     {
-        _logger.LogInformation($"Handling manual status change for oder {orderId}: {orderStatus}");
-        OrderStatusHelper.ValidateManualOrderStatus(orderStatus);
+        _logger.LogInformation($"Handling manual status change for order {orderId}: {orderStatus}");
 
         try
         {
             var order = await _orderRepository.GetOrderWithOrderItemsAsync(orderId);
+
+            if (order.DeliveryType == DeliveryType.NotNovaPost)
+            {
+                OrderStatusHelper.ValidateManualOrderStatusForNonNp(orderStatus);
+            }
+            else
+            {
+                OrderStatusHelper.ValidateManualOrderStatus(orderStatus);
+            }
+
             _logger.LogDebug($"Previous order status: {order.OrderStatus}, new status: {orderStatus}");
             var updateReason = $"Order {orderId} manual status change - from {order.OrderStatus} to {orderStatus}";
 
@@ -106,6 +103,22 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 }
             }
 
+            if (orderStatus == OrderStatus.Received && order.DeliveryType == DeliveryType.NotNovaPost)
+            {
+                if (order.OrderStatus != OrderStatus.Packed)
+                {
+                    throw new ArgumentException("Received can only be set for Packed orders");
+                }
+
+                order.OrderStatus = orderStatus;
+                order.UpdatedAt = DateTimeOffset.UtcNow;
+                order.UpdateReasonDetails = updateReason;
+
+                await _orderRepository.Save();
+
+                return true;
+            }
+
             if (orderStatus == OrderStatus.Packed)
             {
                 if (order.OrderStatus != OrderStatus.ReadyToShip)
@@ -143,8 +156,53 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"An error occurred while handling manual status change for oder {orderId}");
+            _logger.LogError(ex, $"An error occurred while handling manual status change for order {orderId}");
             return false;
         }
+    }
+
+    private static OrderStatus[] GetNextOrderStatusesForNp(OrderStatus currentStatus)
+    {
+        if (currentStatus == OrderStatus.ReadyToShip)
+        {
+            return [OrderStatus.Packed];
+        }
+
+        if (currentStatus == OrderStatus.Packed)
+        {
+            return [OrderStatus.ReadyToShip];
+        }
+
+        if (InternetDocumentConstants.OrderReceivedStatuses.Contains(currentStatus))
+        {
+            return [OrderStatus.Refusal, OrderStatus.Exchange];
+        }
+
+        if (InternetDocumentConstants.OrderRejectedStatuses.Contains(currentStatus))
+        {
+            return [OrderStatus.Exchange];
+        }
+
+        return [];
+    }
+
+    private static OrderStatus[] GetNextOrderStatusesForNonNp(OrderStatus currentStatus)
+    {
+        if (currentStatus == OrderStatus.ReadyToShip)
+        {
+            return [OrderStatus.Packed];
+        }
+
+        if (currentStatus == OrderStatus.Packed)
+        {
+            return [OrderStatus.ReadyToShip, OrderStatus.Received];
+        }
+
+        if (InternetDocumentConstants.OrderReceivedStatuses.Contains(currentStatus))
+        {
+            return [OrderStatus.Refusal, OrderStatus.Exchange];
+        }
+
+        return [];
     }
 }

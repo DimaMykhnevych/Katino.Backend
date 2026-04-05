@@ -12,6 +12,14 @@ public class OrderStatusHelper
             OrderStatus.ReadyToShip,
         ];
 
+    private static readonly List<OrderStatus> PossibleManualOrderStatusesForNonNp = [
+            OrderStatus.Packed,
+            OrderStatus.ReadyToShip,
+            OrderStatus.Received,
+            OrderStatus.Refusal,
+            OrderStatus.Exchange,
+        ];
+
     public static void SetOrderStatus(Order order, OrderStatus newOrderStatus, bool shouldPackedStatusBeUpdated)
     {
         if (newOrderStatus == OrderStatus.InProgress ||
@@ -66,6 +74,14 @@ public class OrderStatusHelper
         if (!PossibleManualOrderStatuses.Contains(orderStatus))
         {
             throw new ArgumentException($"{orderStatus} cannot be manually set", nameof(orderStatus));
+        }
+    }
+
+    public static void ValidateManualOrderStatusForNonNp(OrderStatus orderStatus)
+    {
+        if (!PossibleManualOrderStatusesForNonNp.Contains(orderStatus))
+        {
+            throw new ArgumentException($"{orderStatus} cannot be manually set for non-Nova Post orders", nameof(orderStatus));
         }
     }
 }

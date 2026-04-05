@@ -34,4 +34,5 @@ public class AddOrderCommand : IRequest<OrderCreationResultDto>
     public AddNpContactPersonDto SenderContactPerson { get; set; }
     public AddOrderRecipientDto OrderRecipient { get; set; }
     public AddOrderAddressInfoDto AddressInfo { get; set; }
+    public string GeneralOrderInfo { get; set; }
 }

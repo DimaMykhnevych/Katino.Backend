@@ -18,6 +18,7 @@ using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Domain.Repositories.OrderRecipientRepository;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
@@ -39,6 +40,7 @@ using Katino.Domain.Services.NovaPost.Warehouse;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
+using Katino.Domain.Services.OrderN.OrderDeliveryHandler;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderItemN.SewingProductionReportService;
 using Katino.Domain.Services.OrderItemN.SewingQueueService;
@@ -68,6 +70,7 @@ using Katino.Infrastructure.Persistance.Repositories.OrderItemRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRecipientRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRepository;
+using Katino.Infrastructure.Persistance.Repositories.OrderTagRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
@@ -95,7 +98,7 @@ public class ServiceComponentsDiInstaller : IInstaller
     public void InstallServices(IServiceCollection services, IConfiguration configuration)
     {
         // contexts
-        services.AddScoped<IKatinoDbContext, KatinoDbContext>();
+        services.AddScoped<IKatinoDbContext>(sp => sp.GetRequiredService<KatinoDbContext>());
 
         // factories
         services.AddTransient<IAuthTokenFactory, AuthTokenFactory>();
@@ -111,6 +114,9 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IAddOrderService, AddOrderService>();
         services.AddTransient<IUpdateOrderService, UpdateOrderService>();
         services.AddTransient<IDeleteOrderService, DeleteOrderService>();
+        services.AddTransient<NovaPostDeliveryHandler>();
+        services.AddTransient<NonNovaPostDeliveryHandler>();
+        services.AddTransient<IOrderDeliveryHandlerFactory, OrderDeliveryHandlerFactory>();
         services.AddTransient<INovaPoshtaSyncService, NovaPoshtaSyncService>();
         services.AddTransient<INovaPoshtaSyncStatusService, NovaPoshtaSyncStatusService>();
         services.AddTransient<IAddNpCityService, AddNpCityService>();
@@ -157,6 +163,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IOrderRecipientRepository, OrderRecipientRepository>();
         services.AddTransient<INpOptionsSeatRepository, NpOptionsSeatRepository>();
         services.AddTransient<IOrderRepository, OrderRepository>();
+        services.AddTransient<IOrderTagRepository, OrderTagRepository>();
         services.AddTransient<IOrderItemRepository, OrderItemRepository>();
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
         services.AddTransient<IOrderNpOptionsSeatRepository, OrderNpOptionsSeatRepository>();

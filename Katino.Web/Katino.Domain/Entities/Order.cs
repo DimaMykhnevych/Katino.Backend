@@ -12,7 +12,7 @@ public class Order
     public Guid SenderNpCityId { get; set; }
     public Guid? RecipientNpCityId { get; set; } // Nullable because for address delivery this field is null
     public Guid SenderContactPersonId { get; set; }
-    public Guid OrderRecipientId { get; set; }
+    public Guid? OrderRecipientId { get; set; }
     public PayerType PayerType { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public SaleType SaleType { get; set; }
@@ -27,6 +27,7 @@ public class Order
     public string Comment { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string UpdateReasonDetails { get; set; }
+    public string GeneralOrderInfo { get; set; }
 
     // InternetDocument Creation Result
     public bool InternetDocumentCreationAttempted { get; set; }
@@ -40,6 +41,7 @@ public class Order
 
     public List<OrderItem> OrderItems { get; set; } = [];
     public List<OrderNpOptionsSeat> OrderNpOptionsSeats { get; set; } = [];
+    public List<OrderOrderTag> OrderTags { get; set; } = [];
 
 
     public NpWarehouse SenderNpWarehouse { get; set; }

@@ -1,6 +1,5 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Katino.Application.DTOs.Order;
-using Katino.Domain.Enums;
 using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -28,9 +27,7 @@ public class GetNextOrderStatusQueryHandler : IRequestHandler<GetNextOrderStatus
         _logger.LogInformation("Handling get next order status");
         ArgumentNullException.ThrowIfNull(request);
 
-        var orderStatusCurrent = _mapper.Map<OrderStatus>(request.CurrentOrderStatus);
-
-        var statuses = _orderManualStatusService.GetNextOrderStatuses(orderStatusCurrent);
+        var statuses = await _orderManualStatusService.GetNextOrderStatusesAsync(request.OrderId);
 
         return _mapper.Map<OrderStatusDto[]>(statuses);
     }

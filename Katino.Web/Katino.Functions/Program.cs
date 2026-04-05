@@ -35,6 +35,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Microsoft.ApplicationInsights.Extensibility;
+using Katino.Domain.Services.NovaPost.ContactPerson;
+using Katino.Domain.Repositories.OrderRecipientRepository;
+using Katino.Infrastructure.Persistance.Repositories.OrderRecipientRepository;
+using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
+using Katino.Infrastructure.Persistance.Services.OrderRecipientN;
+using Katino.Domain.Services.NpOptionsSeatN.AddNpOptionsSeatService;
+using Katino.Infrastructure.Persistance.Services.NpOptionsSeatN;
+using Katino.Domain.Repositories.NpOptionsSeatRepository;
+using Katino.Infrastructure.Persistance.Repositories.NpOptionsSeatRepository;
+using Katino.Domain.Services.OrderN.OrderDeliveryHandler;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
@@ -69,6 +79,7 @@ var host = new HostBuilder()
 
         // HTTP clients
         services.AddHttpClient<IInternetDocumentService, InternetDocumentService>();
+        services.AddHttpClient<IContactPersonService, ContactPersonService>();
 
         // Services
         services.AddTransient<INpIntDocStatusSyncService, NpIntDocStatusSyncService>();
@@ -76,6 +87,12 @@ var host = new HostBuilder()
         services.AddTransient<IUpdateProductVariantService, UpdateProductVariantService>();
         services.AddTransient<IAzureStorageService, AzureStorageService>();
         services.AddTransient<IDeleteOrderService, DeleteOrderService>();
+
+        services.AddTransient<NovaPostDeliveryHandler>();
+        services.AddTransient<NonNovaPostDeliveryHandler>();
+        services.AddTransient<IOrderDeliveryHandlerFactory, OrderDeliveryHandlerFactory>();
+        services.AddTransient<IAddOrderRecipientService, AddOrderRecipientService>();
+        services.AddTransient<IAddNpOptionsSeatService, AddNpOptionsSeatService>();
 
         string connectionString = context.Configuration[ConfigurationKeys.DefaultConnectionString];
         services.AddDbContext<KatinoDbContext>(opt =>
@@ -93,6 +110,8 @@ var host = new HostBuilder()
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
         services.AddTransient<IFinanceEntryRepository, FinanceEntryRepository>();
         services.AddTransient<IFinanceCategoryRepository, FinanceCategoryRepository>();
+        services.AddTransient<IOrderRecipientRepository, OrderRecipientRepository>();
+        services.AddTransient<INpOptionsSeatRepository, NpOptionsSeatRepository>();
     })
     .Build();
 

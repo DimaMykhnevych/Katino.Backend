@@ -32,4 +32,6 @@ public interface IKatinoDbContext
     DbSet<SewingHistory> SewingHistory { get; set; }
     DbSet<FinanceCategory> FinanceCategories { get; set; }
     DbSet<FinanceEntry> FinanceEntries { get; set; }
+    DbSet<OrderTag> OrderTags { get; set; }
+    DbSet<OrderOrderTag> OrderOrderTags { get; set; }
 }

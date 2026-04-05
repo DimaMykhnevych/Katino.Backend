@@ -35,4 +35,5 @@ public class UpdateOrderCommand : IRequest<OrderUpdateResultDto>
     public UpdateNpContactPersonDto SenderContactPerson { get; set; }
     public UpdateOrderRecipientDto OrderRecipient { get; set; }
     public UpdateOrderAddressInfoDto AddressInfo { get; set; }
+    public string GeneralOrderInfo { get; set; }
 }

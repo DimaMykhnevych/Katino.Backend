@@ -49,6 +49,8 @@ public class OrderQueryBuilder : IOrderQueryBuilder
             .Include(o => o.OrderRecipient)
                 .ThenInclude(r => r.NpContactPerson)
             .Include(o => o.AddressInfo)
+            .Include(o => o.OrderTags)
+                .ThenInclude(ot => ot.OrderTag)
             .IgnoreQueryFilters();
 
         return this;

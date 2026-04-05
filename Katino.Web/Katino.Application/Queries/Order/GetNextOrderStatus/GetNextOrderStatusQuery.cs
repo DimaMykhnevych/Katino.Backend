@@ -1,9 +1,9 @@
-﻿using Katino.Application.DTOs.Order;
-using MediatR;
+﻿using MediatR;
+using Katino.Application.DTOs.Order;
 
 namespace Katino.Application.Queries.OrderN.GetNextOrderStatus;
 
 public class GetNextOrderStatusQuery : IRequest<OrderStatusDto[]>
 {
-    public OrderStatusDto CurrentOrderStatus { get; set; }
+    public Guid OrderId { get; set; }
 }

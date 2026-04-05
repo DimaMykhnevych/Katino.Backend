@@ -32,6 +32,7 @@ using Katino.Application.DTOs.ProductVariant;
 using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
 using Katino.Domain.Entities;
+using Katino.Application.DTOs.OrderTag;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
@@ -77,7 +78,10 @@ public class MappingProfile : Profile
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
         CreateMap<UpdateProductVariantDto, ProductVariant>();
 
-        CreateMap<Order, OrderDto>();
+        CreateMap<Order, OrderDto>()
+            .ForMember(d => d.Tags, m => m.MapFrom(s => s.OrderTags.Select(ot => ot.OrderTag).ToList()));
+        CreateMap<OrderTag, OrderTagDto>();
+        CreateMap<OrderTagType, OrderTagTypeDto>().ReverseMap();
         CreateMap<AddOrderCommand, Order>();
         CreateMap<UpdateOrderCommand, Order>();
 

@@ -8,7 +8,7 @@ using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
-using Katino.Domain.Services.NovaPost.InternetDocument;
+using Katino.Domain.Services.OrderN.OrderDeliveryHandler;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
@@ -25,7 +25,7 @@ public class DeleteOrderService : IDeleteOrderService
     private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly IOrderItemChangeService _orderItemChangeService;
-    private readonly IInternetDocumentService _internetDocumentService;
+    private readonly IOrderDeliveryHandlerFactory _deliveryHandlerFactory;
     private readonly ILogger _logger;
 
     public DeleteOrderService(
@@ -36,7 +36,7 @@ public class DeleteOrderService : IDeleteOrderService
         IFinanceCategoryRepository financeCategoryRepository,
         IUpdateProductVariantService updateProductVariantService,
         IOrderItemChangeService orderItemChangeService,
-        IInternetDocumentService internetDocumentService,
+        IOrderDeliveryHandlerFactory deliveryHandlerFactory,
         ILoggerFactory loggerFactory)
     {
         _orderRepository = orderRepository;
@@ -46,7 +46,7 @@ public class DeleteOrderService : IDeleteOrderService
         _financeCategoryRepository = financeCategoryRepository;
         _updateProductVariantService = updateProductVariantService;
         _orderItemChangeService = orderItemChangeService;
-        _internetDocumentService = internetDocumentService;
+        _deliveryHandlerFactory = deliveryHandlerFactory;
         _logger = loggerFactory?.CreateLogger(nameof(DeleteOrderService));
     }
 
@@ -101,7 +101,8 @@ public class DeleteOrderService : IDeleteOrderService
                 await _orderRepository.Save();
 
                 // Internet doc deletion
-                var docDeletionResult = await DeleteInternetDocument(existingOrder);
+                var docDeletionResult = await _deliveryHandlerFactory.Create(existingOrder.DeliveryType)
+                    .HandleInternetDocumentOnDeleteAsync(existingOrder);
 
                 return new() { OrderDeletedSuccessfully = true, NpInternetDocDeletedSuccessfully = docDeletionResult };
             }
@@ -148,7 +149,8 @@ public class DeleteOrderService : IDeleteOrderService
             await _orderRepository.Save();
 
             // Internet doc deletion
-            var npInternetDocDeletedSuccessfully = await DeleteInternetDocument(existingOrder);
+            var npInternetDocDeletedSuccessfully = await _deliveryHandlerFactory.Create(existingOrder.DeliveryType)
+                .HandleInternetDocumentOnDeleteAsync(existingOrder);
 
             // At the end, after actual order deletion perform updates of other orders
             try
@@ -219,27 +221,6 @@ public class DeleteOrderService : IDeleteOrderService
                 await _updateProductVariantService
                     .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
             }
-        }
-    }
-
-    private async Task<bool> DeleteInternetDocument(Order currentOrderInDb)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(currentOrderInDb.InternetDocumentRef))
-            {
-                _logger.LogInformation($"Order {currentOrderInDb.Id} dosen't have associated internet document, skipping deletion of it");
-                return true;
-            }
-
-            _logger.LogInformation($"Deleting internet document for order {currentOrderInDb.Id}");
-
-            return await _internetDocumentService.DeleteInternetDocumentAsync(currentOrderInDb.InternetDocumentRef);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred while deleting NP internet document for order");
-            return false;
         }
     }
 

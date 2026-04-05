@@ -6,6 +6,7 @@ using Katino.Application.DTOs.OrderAddressInfo;
 using Katino.Application.DTOs.OrderItem;
 using Katino.Application.DTOs.OrderNpOptionsSeat;
 using Katino.Application.DTOs.OrderRecipient;
+using Katino.Application.DTOs.OrderTag;
 
 namespace Katino.Application.DTOs.Order;
 
@@ -17,7 +18,7 @@ public class OrderDto
     public Guid SenderNpCityId { get; set; }
     public Guid? RecipientNpCityId { get; set; } // Nullable because for address delivery this field is null
     public Guid SenderContactPersonId { get; set; }
-    public Guid OrderRecipientId { get; set; }
+    public Guid? OrderRecipientId { get; set; }
     public PayerTypeDto PayerType { get; set; }
     public PaymentMethodDto PaymentMethod { get; set; }
     public SaleTypeDto SaleType { get; set; }
@@ -35,10 +36,12 @@ public class OrderDto
     public string Comment { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string UpdateReasonDetails { get; set; }
+    public string GeneralOrderInfo { get; set; }
     public OrderStatusDto OrderStatus { get; set; }
     public OrderInternetDocStatusDto OrderInternetDocStatus { get; set; }
     public List<OrderItemDto> OrderItems { get; set; } = [];
     public List<OrderNpOptionsSeatDto> OrderNpOptionsSeats { get; set; } = [];
+    public List<OrderTagDto> Tags { get; set; } = [];
 
     public NpWarehouseDto SenderNpWarehouse { get; set; }
     public NpWarehouseDto RecipientNpWarehouse { get; set; }

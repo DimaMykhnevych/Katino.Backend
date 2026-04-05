@@ -35,6 +35,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<SewingHistory> SewingHistory { get; set; }
     public DbSet<FinanceCategory> FinanceCategories { get; set; }
     public DbSet<FinanceEntry> FinanceEntries { get; set; }
+    public DbSet<OrderTag> OrderTags { get; set; }
+    public DbSet<OrderOrderTag> OrderOrderTags { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -208,7 +210,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             entity.HasOne(d => d.OrderRecipient)
                   .WithMany(p => p.Orders)
                   .HasForeignKey(d => d.OrderRecipientId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .IsRequired(false);
 
             entity.HasOne(d => d.AddressInfo)
                   .WithOne()
@@ -279,6 +282,31 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             b.HasIndex(x => x.EntryDate);
             b.HasIndex(x => new { x.CategoryId, x.EntryDate });
             b.HasIndex(x => x.OrderId);
+        });
+
+        builder.Entity<OrderTag>(b =>
+        {
+            b.HasKey(t => t.Id);
+            b.Property(t => t.Type).IsRequired();
+            b.Property(t => t.CanBeDeleted).IsRequired();
+            b.Property(t => t.CreatedAt).IsRequired();
+            b.HasIndex(t => t.Type).IsUnique();
+        });
+
+        builder.Entity<OrderOrderTag>(b =>
+        {
+            b.HasKey(ot => new { ot.OrderId, ot.OrderTagId });
+            b.Property(ot => ot.CreatedAt).IsRequired();
+
+            b.HasOne(ot => ot.Order)
+                .WithMany(o => o.OrderTags)
+                .HasForeignKey(ot => ot.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(ot => ot.OrderTag)
+                .WithMany(t => t.OrderOrderTags)
+                .HasForeignKey(ot => ot.OrderTagId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         base.OnModelCreating(builder);

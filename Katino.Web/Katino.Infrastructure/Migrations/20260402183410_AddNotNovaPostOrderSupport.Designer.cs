@@ -4,6 +4,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Katino.Infrastructure.Migrations
 {
     [DbContext(typeof(KatinoDbContext))]
-    partial class KatinoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260402183410_AddNotNovaPostOrderSupport")]
+    partial class AddNotNovaPostOrderSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -627,24 +630,6 @@ namespace Katino.Infrastructure.Migrations
                     b.ToTable("OrderNpOptionsSeats");
                 });
 
-            modelBuilder.Entity("Katino.Domain.Entities.OrderOrderTag", b =>
-                {
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("OrderTagId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("OrderId", "OrderTagId");
-
-                    b.HasIndex("OrderTagId");
-
-                    b.ToTable("OrderOrderTags");
-                });
-
             modelBuilder.Entity("Katino.Domain.Entities.OrderRecipient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -666,29 +651,6 @@ namespace Katino.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("OrderRecipients");
-                });
-
-            modelBuilder.Entity("Katino.Domain.Entities.OrderTag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<bool>("CanBeDeleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Type")
-                        .IsUnique();
-
-                    b.ToTable("OrderTags");
                 });
 
             modelBuilder.Entity("Katino.Domain.Entities.Product", b =>
@@ -1192,25 +1154,6 @@ namespace Katino.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Katino.Domain.Entities.OrderOrderTag", b =>
-                {
-                    b.HasOne("Katino.Domain.Entities.Order", "Order")
-                        .WithMany("OrderTags")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Katino.Domain.Entities.OrderTag", "OrderTag")
-                        .WithMany("OrderOrderTags")
-                        .HasForeignKey("OrderTagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("OrderTag");
-                });
-
             modelBuilder.Entity("Katino.Domain.Entities.OrderRecipient", b =>
                 {
                     b.HasOne("Katino.Domain.Entities.NpContactPerson", "NpContactPerson")
@@ -1402,18 +1345,11 @@ namespace Katino.Infrastructure.Migrations
                     b.Navigation("OrderItems");
 
                     b.Navigation("OrderNpOptionsSeats");
-
-                    b.Navigation("OrderTags");
                 });
 
             modelBuilder.Entity("Katino.Domain.Entities.OrderRecipient", b =>
                 {
                     b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("Katino.Domain.Entities.OrderTag", b =>
-                {
-                    b.Navigation("OrderOrderTags");
                 });
 
             modelBuilder.Entity("Katino.Domain.Entities.Product", b =>

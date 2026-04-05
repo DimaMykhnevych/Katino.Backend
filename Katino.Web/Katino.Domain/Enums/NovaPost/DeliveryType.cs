@@ -3,5 +3,6 @@
 public enum DeliveryType
 {
     WarehouseOrPost,
-    Address
+    Address,
+    NotNovaPost
 }
