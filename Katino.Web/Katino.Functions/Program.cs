@@ -15,6 +15,7 @@ using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Katino.Functions.Services.NpIntDocStatusSyncService;
+using Katino.Domain.Context;
 using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.FinanceCategoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.FinanceEntryRepository;
@@ -97,6 +98,7 @@ var host = new HostBuilder()
         string connectionString = context.Configuration[ConfigurationKeys.DefaultConnectionString];
         services.AddDbContext<KatinoDbContext>(opt =>
                 opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+        services.AddScoped<IKatinoDbContext>(sp => sp.GetRequiredService<KatinoDbContext>());
 
         var azureStorageConnectionString = context.Configuration[ConfigurationKeys.AzureStorageConnectionString];
         services.AddSingleton(new BlobServiceClient(azureStorageConnectionString));

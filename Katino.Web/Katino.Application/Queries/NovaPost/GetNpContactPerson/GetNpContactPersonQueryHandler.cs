@@ -30,11 +30,13 @@ public class GetNpContactPersonQueryHandler : IRequestHandler<GetNpContactPerson
         _logger.LogInformation("Handling get sizes");
         ArgumentNullException.ThrowIfNull(request);
 
-        IQueryable<NpContactPerson> persons = _katinoDbContext.NpContactPersons.AsNoTracking().Take(DefaultResultSize);
+        IQueryable<NpContactPerson> persons = _katinoDbContext.NpContactPersons.AsNoTracking();
         if (!string.IsNullOrEmpty(request.Phone))
         {
             persons = persons.Where(p => p.Phones.Contains(request.Phone));
         }
+
+        persons = persons.Take(DefaultResultSize);
 
         var resultPersons = await persons.OrderBy(s => s.Id).ToListAsync(cancellationToken);
         List<NpContactPersonDto> personDtos =

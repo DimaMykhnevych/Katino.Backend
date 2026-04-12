@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Entities;
+﻿using Katino.Domain.Context;
+using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
@@ -33,6 +34,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly IDeleteOrderService _deleteOrderService;
+    private readonly IKatinoDbContext _dbContext;
     private readonly ILogger _logger;
 
     public NpIntDocStatusSyncService(
@@ -42,6 +44,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         IOrderItemChangeService orderItemChangeService,
         IUpdateProductVariantService updateProductVariantService,
         IDeleteOrderService deleteOrderService,
+        IKatinoDbContext dbContext,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -50,6 +53,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         _orderItemChangeService = orderItemChangeService;
         _updateProductVariantService = updateProductVariantService;
         _deleteOrderService = deleteOrderService;
+        _dbContext = dbContext;
         _logger = loggerFactory?.CreateLogger(nameof(NpIntDocStatusSyncService));
     }
 
@@ -114,8 +118,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
             _logger.LogDebug($"Order with {order.Id} has InternetDocStatus {orderInternetDocStatus} and orderStatus {orderStatus}");
             bool shouldUpdateOrderStatus = OrderStatusHelper.ShouldUpdateToNpRelatedStatus(order.OrderStatus, orderStatus);
 
-            _logger.LogDebug($"Updating order with {order.Id}, shouldUpdateOrderStatus: {shouldUpdateOrderStatus}");
-            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus, orderStatus, shouldUpdateOrderStatus);
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
             // Handle rejected status
             if (RejectedStatuses.Contains(orderInternetDocStatus))
@@ -127,6 +130,11 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
             {
                 _logger.LogTrace($"Order with {order.Id} wasn't rejected");
             }
+
+            _logger.LogDebug($"Updating order with {order.Id}, shouldUpdateOrderStatus: {shouldUpdateOrderStatus}");
+            await _orderRepository.UpdateInternetDocStatusAsync(order.Id, orderInternetDocStatus, orderStatus, shouldUpdateOrderStatus);
+
+            await transaction.CommitAsync();
         }
         catch (Exception ex)
         {
