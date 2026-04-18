@@ -46,6 +46,7 @@ using Katino.Domain.Services.OrderItemN.SewingProductionReportService;
 using Katino.Domain.Services.OrderItemN.SewingQueueService;
 using Katino.Domain.Services.OrderN.AddOrderService;
 using Katino.Domain.Services.OrderN.CreateOrdersScanSheetService;
+using Katino.Domain.Services.OrderN.UrgentOrderRedistributionService;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
@@ -112,6 +113,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IArticleGenerator, ArticleGenerator>();
         services.AddTransient<IAzureStorageService, AzureStorageService>();
         services.AddTransient<IAddOrderService, AddOrderService>();
+        services.AddTransient<IUrgentOrderRedistributionService, UrgentOrderRedistributionService>();
         services.AddTransient<IUpdateOrderService, UpdateOrderService>();
         services.AddTransient<IDeleteOrderService, DeleteOrderService>();
         services.AddTransient<NovaPostDeliveryHandler>();

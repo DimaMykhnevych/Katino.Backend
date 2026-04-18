@@ -121,4 +121,16 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .Select(o => o.InternetDocumentRef)
             .ToListAsync();
     }
+
+    public async Task<List<Order>> GetLessUrgentOrdersWithProductVariantAsync(Guid productVariantId, DateTime urgentOrderSendUntilDate)
+    {
+        var activeStatuses = new[] { OrderStatus.InProgress, OrderStatus.ReadyToShip };
+        return await context.Orders
+            .Include(o => o.OrderItems)
+            .Where(o => activeStatuses.Contains(o.OrderStatus)
+                && o.SendUntilDate > urgentOrderSendUntilDate
+                && o.OrderItems.Any(i => i.ProductVariantId == productVariantId && !i.IsCustomTailoring))
+            .OrderByDescending(o => o.SendUntilDate)
+            .ToListAsync();
+    }
 }

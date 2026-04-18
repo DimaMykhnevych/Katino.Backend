@@ -17,4 +17,5 @@ public interface IOrderRepository : IRepository<Order>
     Task<Order> GetOrderWithOrderItemsAsync(Guid orderId);
     Task<OrderItem> GetOrderItemWithOrderAsync(Guid orderItemId);
     Task<List<string>> GetOrderRefsWithStatusAndInternetDocCreatedAsync(OrderStatus status);
+    Task<List<Order>> GetLessUrgentOrdersWithProductVariantAsync(Guid productVariantId, DateTime urgentOrderSendUntilDate);
 }

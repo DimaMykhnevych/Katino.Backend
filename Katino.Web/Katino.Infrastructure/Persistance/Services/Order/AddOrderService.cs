@@ -15,6 +15,7 @@ using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.OrderN.OrderDeliveryHandler;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.AddOrderService;
+using Katino.Domain.Services.OrderN.UrgentOrderRedistributionService;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderN;
@@ -31,6 +32,7 @@ public class AddOrderService : IAddOrderService
     private readonly IFinanceEntryRepository _financeEntryRepository;
     private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IKatinoDbContext _katinoDbContext;
+    private readonly IUrgentOrderRedistributionService _urgentOrderRedistributionService;
     private readonly ILogger _logger;
 
     public AddOrderService(
@@ -44,6 +46,7 @@ public class AddOrderService : IAddOrderService
         IFinanceEntryRepository financeEntryRepository,
         IFinanceCategoryRepository financeCategoryRepository,
         IKatinoDbContext katinoDbContext,
+        IUrgentOrderRedistributionService urgentOrderRedistributionService,
         ILoggerFactory loggerFactory)
     {
         _addNpCityService = addNpCityService;
@@ -56,6 +59,7 @@ public class AddOrderService : IAddOrderService
         _productVariantRepository = productVariantRepository;
         _financeEntryRepository = financeEntryRepository;
         _financeCategoryRepository = financeCategoryRepository;
+        _urgentOrderRedistributionService = urgentOrderRedistributionService;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
@@ -159,6 +163,14 @@ public class AddOrderService : IAddOrderService
                 await _orderItemChangeService.HandleAddedOrderItems(order.SaleType, order.OrderItems, [], productVariantsRelatedToCurrentOrder);
 
                 await _productVariantRepository.Save();
+
+                // 6. Redistribute stock from less urgent orders if the new order has items still needing production
+                if (orderToAdd.OrderStatus == OrderStatus.InProgress)
+                {
+                    _logger.LogTrace("Order has ForSewing items, attempting redistribution from less urgent orders");
+                    await _urgentOrderRedistributionService.RedistributeForUrgentOrderAsync(orderToAdd);
+                }
+
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
