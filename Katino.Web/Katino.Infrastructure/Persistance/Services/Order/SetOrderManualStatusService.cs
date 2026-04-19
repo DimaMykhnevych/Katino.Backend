@@ -3,6 +3,7 @@ using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Microsoft.Extensions.Logging;
@@ -13,15 +14,18 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IDeleteOrderService _deleteOrderService;
+    private readonly IOrderTagRepository _orderTagRepository;
     private readonly ILogger _logger;
 
     public SetOrderManualStatusService(
         IOrderRepository orderRepository,
         IDeleteOrderService deleteOrderService,
+        IOrderTagRepository orderTagRepository,
         ILoggerFactory loggerFactory)
     {
         _orderRepository = orderRepository;
         _deleteOrderService = deleteOrderService;
+        _orderTagRepository = orderTagRepository;
         _logger = loggerFactory?.CreateLogger(nameof(SetOrderManualStatusService));
     }
 
@@ -70,6 +74,11 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
 
                 // Status updated here
                 await _deleteOrderService.HandleOrderRejectionAsync(order, null, false);
+
+                _logger.LogTrace("Attaching RefundMoney tag to order");
+                var refundTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.RefundMoney, canBeDeleted: true);
+                await _orderTagRepository.AttachTagToOrderAsync(order.Id, refundTag.Id);
+                await _orderTagRepository.Save();
 
                 return true;
             }

@@ -42,4 +42,23 @@ public class OrderTagRepository : Repository<OrderTag>, IOrderTagRepository
             CreatedAt = DateTime.UtcNow
         });
     }
+
+    public async Task DetachTagFromOrderAsync(Guid orderId, Guid tagId)
+    {
+        var orderOrderTag = await context.OrderOrderTags
+            .Include(t => t.OrderTag)
+            .FirstOrDefaultAsync(t => t.OrderId == orderId && t.OrderTagId == tagId);
+
+        if (orderOrderTag == null)
+        {
+            return;
+        }
+
+        if (!orderOrderTag.OrderTag.CanBeDeleted)
+        {
+            throw new InvalidOperationException($"Tag {tagId} cannot be deleted");
+        }
+
+        context.OrderOrderTags.Remove(orderOrderTag);
+    }
 }

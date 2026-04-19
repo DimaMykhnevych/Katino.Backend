@@ -6,6 +6,7 @@ using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -22,6 +23,7 @@ using Katino.Infrastructure.Persistance.Repositories.FinanceEntryRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderAddressInfoRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderItemRepository;
 using Katino.Infrastructure.Persistance.Repositories.OrderRepository;
+using Katino.Infrastructure.Persistance.Repositories.OrderTagRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
@@ -105,6 +107,7 @@ var host = new HostBuilder()
 
         // Repos
         services.AddTransient<IOrderRepository, OrderRepository>();
+        services.AddTransient<IOrderTagRepository, OrderTagRepository>();
         services.AddTransient<IProductVariantRepository, ProductVariantRepository>();
         services.AddTransient<IOrderItemRepository, OrderItemRepository>();
         services.AddTransient<IProductVariantMeasurementRepository, ProductVariantMeasurementRepository>();

@@ -3,6 +3,7 @@ using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
@@ -34,6 +35,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
     private readonly IOrderItemChangeService _orderItemChangeService;
     private readonly IUpdateProductVariantService _updateProductVariantService;
     private readonly IDeleteOrderService _deleteOrderService;
+    private readonly IOrderTagRepository _orderTagRepository;
     private readonly IKatinoDbContext _dbContext;
     private readonly ILogger _logger;
 
@@ -44,6 +46,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         IOrderItemChangeService orderItemChangeService,
         IUpdateProductVariantService updateProductVariantService,
         IDeleteOrderService deleteOrderService,
+        IOrderTagRepository orderTagRepository,
         IKatinoDbContext dbContext,
         ILoggerFactory loggerFactory)
     {
@@ -53,6 +56,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         _orderItemChangeService = orderItemChangeService;
         _updateProductVariantService = updateProductVariantService;
         _deleteOrderService = deleteOrderService;
+        _orderTagRepository = orderTagRepository;
         _dbContext = dbContext;
         _logger = loggerFactory?.CreateLogger(nameof(NpIntDocStatusSyncService));
     }
@@ -125,6 +129,11 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
             {
                 _logger.LogInformation($"Order with {order.Id} was rejected, handling rejection...");
                 await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus, false);
+
+                _logger.LogTrace("Attaching RefundMoney tag to order {OrderId}", order.Id);
+                var refundTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.RefundMoney, canBeDeleted: true);
+                await _orderTagRepository.AttachTagToOrderAsync(order.Id, refundTag.Id);
+                await _orderTagRepository.Save();
             }
             else
             {

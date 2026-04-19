@@ -7,4 +7,5 @@ public interface IOrderTagRepository : IRepository<OrderTag>
 {
     Task<OrderTag> GetOrCreateByTypeAsync(OrderTagType type, bool canBeDeleted);
     Task AttachTagToOrderAsync(Guid orderId, Guid tagId);
+    Task DetachTagFromOrderAsync(Guid orderId, Guid tagId);
 }
