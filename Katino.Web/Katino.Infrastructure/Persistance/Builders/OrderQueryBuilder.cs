@@ -153,6 +153,17 @@ public class OrderQueryBuilder : IOrderQueryBuilder
         return this;
     }
 
+    public IOrderQueryBuilder ApplyTagFilter(IList<Guid> tagIds)
+    {
+        if (tagIds == null || !tagIds.Any())
+        {
+            return this;
+        }
+
+        _query = _query.Where(o => o.OrderTags.Any(ot => tagIds.Contains(ot.OrderTagId)));
+        return this;
+    }
+
     public IOrderQueryBuilder ApplyOrderCreationDateFilter(DateTimeOffset? from, DateTimeOffset? to)
     {
         if (from != null)

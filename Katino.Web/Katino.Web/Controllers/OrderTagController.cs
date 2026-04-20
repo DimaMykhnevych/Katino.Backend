@@ -1,4 +1,5 @@
 using Katino.Application.Commands.OrderTag.DetachOrderTag;
+using Katino.Application.Queries.OrderTag.GetOrderTags;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +16,14 @@ public class OrderTagController : ControllerBase
     public OrderTagController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _mediator.Send(new GetOrderTagsQuery());
+        return Ok(result);
     }
 
     [HttpDelete("{orderId}/{tagId}")]

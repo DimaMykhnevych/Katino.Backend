@@ -9,6 +9,7 @@ public class GetOrderQuery : IRequest<GetOrderDto>
     public int Page { get; set; }
     public int PageSize { get; set; }
     public IList<OrderStatusDto> OrderStatuses { get; set; } = [];
+    public IList<Guid> TagIds { get; set; } = [];
     public DateTimeOffset? CreatedFrom { get; set; }
     public DateTimeOffset? CreatedTo { get; set; }
     public OrderSortDto Sort { get; set; } = OrderSortDto.ByCreationDate;
