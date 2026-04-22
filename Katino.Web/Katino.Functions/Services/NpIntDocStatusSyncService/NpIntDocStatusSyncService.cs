@@ -130,10 +130,17 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
                 _logger.LogInformation($"Order with {order.Id} was rejected, handling rejection...");
                 await _deleteOrderService.HandleOrderRejectionAsync(order, orderInternetDocStatus, false);
 
-                _logger.LogTrace("Attaching RefundMoney tag to order {OrderId}", order.Id);
-                var refundTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.RefundMoney, canBeDeleted: true);
-                await _orderTagRepository.AttachTagToOrderAsync(order.Id, refundTag.Id);
-                await _orderTagRepository.Save();
+                if (order.AfterpaymentOnGoodsCost == null)
+                {
+                    _logger.LogTrace("Attaching RefundMoney tag to order {OrderId}", order.Id);
+                    var refundTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.RefundMoney, canBeDeleted: true);
+                    await _orderTagRepository.AttachTagToOrderAsync(order.Id, refundTag.Id);
+                    await _orderTagRepository.Save();
+                }
+                else
+                {
+                    _logger.LogInformation("RefundMoney tag to order {OrderId} is not attached, it has AfterpaymentOnGoodsCost, {Cost}", order.Id, order.AfterpaymentOnGoodsCost);
+                }
             }
             else
             {
