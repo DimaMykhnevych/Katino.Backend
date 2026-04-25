@@ -75,6 +75,30 @@ public class AzureStorageService : IAzureStorageService
         return photoUrls;
     }
 
+    public async Task<string> CopyPhotoAsync(string sourceUrl, Guid targetVariantId)
+    {
+        try
+        {
+            var sourceUri = new Uri(sourceUrl);
+            var sourceFileName = Path.GetFileName(sourceUri.LocalPath);
+            var destFileName = $"{targetVariantId}/{Guid.NewGuid()}_{sourceFileName}";
+
+            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+            var destBlobClient = containerClient.GetBlobClient(destFileName);
+
+            await destBlobClient.StartCopyFromUriAsync(sourceUri);
+
+            _logger.LogInformation("Photo copied successfully from {SourceUrl} to {DestUrl}", sourceUrl, destBlobClient.Uri);
+
+            return destBlobClient.Uri.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error copying photo from {SourceUrl}", sourceUrl);
+            throw;
+        }
+    }
+
     public async Task DeletePhotoAsync(Guid productVariantId, string photoUrl)
     {
         try

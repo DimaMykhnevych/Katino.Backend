@@ -51,10 +51,14 @@ public class AddProductVariantCommandHandler : IRequestHandler<AddProductVariant
             {
                 for (int i = 0; i < request.ProductVariant.ExistingPhotoUrls.Count; i++)
                 {
+                    var newUrl = await _azureStorageService.CopyPhotoAsync(
+                        request.ProductVariant.ExistingPhotoUrls[i],
+                        addedProductVariant.Id);
+
                     var copiedPhoto = new ProductPhoto
                     {
                         ProductVariantId = addedProductVariant.Id,
-                        PhotoUrl = request.ProductVariant.ExistingPhotoUrls[i],
+                        PhotoUrl = newUrl,
                         AltText = "Product photo",
                         DisplayOrder = i + 1,
                         UploadedAt = DateTime.UtcNow
