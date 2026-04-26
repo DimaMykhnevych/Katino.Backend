@@ -17,6 +17,7 @@ public class ProductVariant : ISoftDeletable
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
+    public SewingQueueVisibility SewingQueueVisibility { get; set; } = SewingQueueVisibility.AllSewers;
 
 
     // Navigation properties
@@ -26,6 +27,7 @@ public class ProductVariant : ISoftDeletable
     public List<ProductVariantMeasurement> Measurements { get; set; } = [];
     public List<ProductPhoto> Photos { get; set; } = [];
     public List<OrderItem> OrderItems { get; set; } = [];
+    public List<ProductVariantSewer> Sewers { get; set; } = [];
 
 
     // Calculated properties

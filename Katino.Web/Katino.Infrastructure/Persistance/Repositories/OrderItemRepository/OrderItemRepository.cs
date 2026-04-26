@@ -12,14 +12,18 @@ public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
     {
     }
 
-    public async Task<List<OrderItem>> GetOrderItemsForSewingAsync(CancellationToken ct = default)
+    public async Task<List<OrderItem>> GetOrderItemsForSewingAsync(Guid? sewerId = null, CancellationToken ct = default)
     {
         return await context.OrderItems
             .AsNoTracking()
             .AsSplitQuery()
             .Where(oi =>
                 oi.Order.OrderStatus == OrderStatus.InProgress &&
-                oi.OrderItemStatus == OrderItemStatus.ForSewing)
+                oi.OrderItemStatus == OrderItemStatus.ForSewing &&
+                (sewerId == null ||
+                 oi.ProductVariant.SewingQueueVisibility == SewingQueueVisibility.AllSewers ||
+                 (oi.ProductVariant.SewingQueueVisibility == SewingQueueVisibility.Specific &&
+                  oi.ProductVariant.Sewers.Any(s => s.SewerId == sewerId))))
             .Include(oi => oi.ProductVariant)
                 .ThenInclude(pv => pv.Product)
                     .ThenInclude(p => p.Category)
@@ -32,14 +36,18 @@ public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
             .ToListAsync(ct);
     }
 
-    public async Task<Dictionary<DateTime, List<OrderItem>>> GetOrderItemsForSewingGroupedByDateAsync(CancellationToken ct = default)
+    public async Task<Dictionary<DateTime, List<OrderItem>>> GetOrderItemsForSewingGroupedByDateAsync(Guid? sewerId = null, CancellationToken ct = default)
     {
         var items = await context.OrderItems
             .AsNoTracking()
             .AsSplitQuery()
             .Where(oi =>
                 oi.Order.OrderStatus == OrderStatus.InProgress &&
-                oi.OrderItemStatus == OrderItemStatus.ForSewing)
+                oi.OrderItemStatus == OrderItemStatus.ForSewing &&
+                (sewerId == null ||
+                 oi.ProductVariant.SewingQueueVisibility == SewingQueueVisibility.AllSewers ||
+                 (oi.ProductVariant.SewingQueueVisibility == SewingQueueVisibility.Specific &&
+                  oi.ProductVariant.Sewers.Any(s => s.SewerId == sewerId))))
             .Include(oi => oi.Order)
             .Include(oi => oi.ProductVariant).ThenInclude(pv => pv.Product).ThenInclude(p => p.Category)
             .Include(oi => oi.ProductVariant).ThenInclude(pv => pv.Color)

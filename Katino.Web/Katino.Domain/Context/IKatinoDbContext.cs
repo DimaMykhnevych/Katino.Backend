@@ -34,4 +34,5 @@ public interface IKatinoDbContext
     DbSet<FinanceEntry> FinanceEntries { get; set; }
     DbSet<OrderTag> OrderTags { get; set; }
     DbSet<OrderOrderTag> OrderOrderTags { get; set; }
+    DbSet<ProductVariantSewer> ProductVariantSewers { get; set; }
 }

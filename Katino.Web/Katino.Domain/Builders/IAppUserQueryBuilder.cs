@@ -8,4 +8,5 @@ public interface IAppUserQueryBuilder : IQueryBuilder<AppUser>
     IAppUserQueryBuilder SetUserName(string userName);
     IAppUserQueryBuilder SetUserId(Guid? userId);
     IAppUserQueryBuilder SetUserEmail(string userEmail);
+    IAppUserQueryBuilder SetRole(string role);
 }

@@ -37,6 +37,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<FinanceEntry> FinanceEntries { get; set; }
     public DbSet<OrderTag> OrderTags { get; set; }
     public DbSet<OrderOrderTag> OrderOrderTags { get; set; }
+    public DbSet<ProductVariantSewer> ProductVariantSewers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -307,6 +308,21 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
                 .WithMany(t => t.OrderOrderTags)
                 .HasForeignKey(ot => ot.OrderTagId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ProductVariantSewer>(b =>
+        {
+            b.HasKey(pvs => new { pvs.ProductVariantId, pvs.SewerId });
+
+            b.HasOne(pvs => pvs.ProductVariant)
+                .WithMany(pv => pv.Sewers)
+                .HasForeignKey(pvs => pvs.ProductVariantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(pvs => pvs.Sewer)
+                .WithMany()
+                .HasForeignKey(pvs => pvs.SewerId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         base.OnModelCreating(builder);

@@ -5,4 +5,5 @@ namespace Katino.Application.Queries.OrderItemN.GetSewingQueue;
 
 public class GetSewingQueueQuery : IRequest<GetSewingQueueItemsDto>
 {
+    public Guid? SewerId { get; set; }
 }

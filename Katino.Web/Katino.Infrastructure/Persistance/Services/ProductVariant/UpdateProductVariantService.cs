@@ -1,4 +1,5 @@
-﻿using Katino.Domain.Entities;
+﻿using Katino.Domain.Context;
+using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
@@ -19,6 +20,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
     private readonly IProductVariantMeasurementRepository _productVariantMeasurementRepository;
     private readonly IProductPhotoRepository _productPhotoRepository;
     private readonly IAzureStorageService _azureStorageService;
+    private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
 
     public UpdateProductVariantService(
@@ -27,6 +29,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         IProductVariantMeasurementRepository productVariantMeasurementRepository,
         IProductPhotoRepository productPhotoRepository,
         IAzureStorageService azureStorageService,
+        IKatinoDbContext katinoDbContext,
         ILoggerFactory loggerFactory)
     {
         _productVariantRepository = productVariantRepository;
@@ -34,14 +37,15 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         _productVariantMeasurementRepository = productVariantMeasurementRepository;
         _productPhotoRepository = productPhotoRepository;
         _azureStorageService = azureStorageService;
+        _katinoDbContext = katinoDbContext;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateProductVariantService));
     }
 
-    public async Task<bool> UpdateProductVariantAsync(ProductVariant productVariant, IFormFileCollection newPhotos, List<Guid> photoIdsToDelete)
+    public async Task<bool> UpdateProductVariantAsync(ProductVariant productVariant, IFormFileCollection newPhotos, List<Guid> photoIdsToDelete, List<Guid> sewerIds)
     {
         try
         {
-            var productVariantFromDb = await _productVariantRepository.GetWithMeasurements(productVariant.Id);
+            var productVariantFromDb = await _productVariantRepository.GetWithMeasurementsAndSewers(productVariant.Id);
             productVariantFromDb.Status = productVariant.Status;
             if (productVariantFromDb.QuantityInStock <= 0 && productVariantFromDb.Status != ProductStatus.Discontinued)
             {
@@ -56,60 +60,91 @@ public class UpdateProductVariantService : IUpdateProductVariantService
             productVariantFromDb.QuantityDropSold = productVariant.QuantityDropSold;
             productVariantFromDb.QuantityRegularSold = productVariant.QuantityRegularSold;
             productVariantFromDb.IsDrop = productVariant.IsDrop;
+            productVariantFromDb.SewingQueueVisibility = productVariant.SewingQueueVisibility;
 
-            foreach (var measurement in productVariantFromDb.Measurements)
+            await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
+            try
             {
-                _productVariantMeasurementRepository.Delete(measurement);
-            }
-
-            await _productVariantMeasurementRepository.Save();
-
-            productVariantFromDb.Measurements.Clear();
-
-            productVariantFromDb.Measurements.AddRange(productVariant.Measurements);
-
-            await _productVariantRepository.Update(productVariantFromDb);
-            await _productVariantRepository.Save();
-
-            if (quantityInStockChanged)
-            {
-                await HandleProductVariantQuantityChange(productVariantFromDb.Id, productVariant.QuantityInStock);
-            }
-
-            var updatedProductVariant = await _productVariantRepository.GetWithPhotos(productVariant.Id);
-
-            if (photoIdsToDelete.Any())
-            {
-                var photosToDelete = updatedProductVariant.Photos.Where(p => photoIdsToDelete.Contains(p.Id)).ToList();
-
-                foreach (var photo in photosToDelete)
+                foreach (var measurement in productVariantFromDb.Measurements)
                 {
-                    await _azureStorageService.DeletePhotoAsync(updatedProductVariant.Id, photo.PhotoUrl);
-                    _productPhotoRepository.Delete(photo);
+                    _productVariantMeasurementRepository.Delete(measurement);
                 }
-            }
 
-            if (newPhotos != null && newPhotos.Count > 0)
-            {
-                var photoUrls = await _azureStorageService.UploadPhotosAsync(updatedProductVariant.Id, newPhotos);
-                var maxDisplayOrder = updatedProductVariant.Photos.Any() ? updatedProductVariant.Photos.Max(p => p.DisplayOrder) : 0;
+                await _productVariantMeasurementRepository.Save();
 
-                for (int i = 0; i < photoUrls.Count; i++)
+                productVariantFromDb.Measurements.Clear();
+
+                productVariantFromDb.Measurements.AddRange(productVariant.Measurements);
+
+                foreach (var sewer in productVariantFromDb.Sewers)
                 {
-                    var photo = new ProductPhoto
+                    _productVariantRepository.DeleteSewer(sewer);
+                }
+
+                await _productVariantRepository.Save();
+
+                productVariantFromDb.Sewers.Clear();
+
+                if (productVariant.SewingQueueVisibility == SewingQueueVisibility.Specific)
+                {
+                    productVariantFromDb.Sewers.AddRange(sewerIds.Select(id => new ProductVariantSewer
                     {
-                        ProductVariantId = updatedProductVariant.Id,
-                        PhotoUrl = photoUrls[i],
-                        AltText = newPhotos[i].FileName,
-                        DisplayOrder = maxDisplayOrder + i + 1,
-                        UploadedAt = DateTime.UtcNow
-                    };
-
-                    await _productPhotoRepository.Insert(photo);
+                        ProductVariantId = productVariantFromDb.Id,
+                        SewerId = id
+                    }));
                 }
-            }
 
-            await _productPhotoRepository.Save();
+                await _productVariantRepository.Update(productVariantFromDb);
+                await _productVariantRepository.Save();
+
+                if (quantityInStockChanged)
+                {
+                    await HandleProductVariantQuantityChange(productVariantFromDb.Id, productVariant.QuantityInStock);
+                }
+
+                var updatedProductVariant = await _productVariantRepository.GetWithPhotos(productVariant.Id);
+
+                if (photoIdsToDelete.Any())
+                {
+                    var photosToDelete = updatedProductVariant.Photos.Where(p => photoIdsToDelete.Contains(p.Id)).ToList();
+
+                    foreach (var photo in photosToDelete)
+                    {
+                        await _azureStorageService.DeletePhotoAsync(updatedProductVariant.Id, photo.PhotoUrl);
+                        _productPhotoRepository.Delete(photo);
+                    }
+                }
+
+                if (newPhotos != null && newPhotos.Count > 0)
+                {
+                    var photoUrls = await _azureStorageService.UploadPhotosAsync(updatedProductVariant.Id, newPhotos);
+                    var maxDisplayOrder = updatedProductVariant.Photos.Any() ? updatedProductVariant.Photos.Max(p => p.DisplayOrder) : 0;
+
+                    for (int i = 0; i < photoUrls.Count; i++)
+                    {
+                        var photo = new ProductPhoto
+                        {
+                            ProductVariantId = updatedProductVariant.Id,
+                            PhotoUrl = photoUrls[i],
+                            AltText = newPhotos[i].FileName,
+                            DisplayOrder = maxDisplayOrder + i + 1,
+                            UploadedAt = DateTime.UtcNow
+                        };
+
+                        await _productPhotoRepository.Insert(photo);
+                    }
+                }
+
+                await _productPhotoRepository.Save();
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during updating product variant");
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             return true;
         }

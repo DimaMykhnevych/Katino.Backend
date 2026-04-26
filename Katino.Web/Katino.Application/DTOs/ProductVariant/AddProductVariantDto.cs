@@ -16,6 +16,8 @@ public class AddProductVariantDto
     public string Article { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public SewingQueueVisibilityDto SewingQueueVisibility { get; set; } = SewingQueueVisibilityDto.AllSewers;
+    public List<Guid> SewerIds { get; set; } = [];
 
     public List<AddProductVariantMeasurementDto> Measurements { get; set; } = [];
     public IFormFileCollection Photos { get; set; }

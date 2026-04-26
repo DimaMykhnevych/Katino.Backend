@@ -27,7 +27,7 @@ public class GetGroupedSewingQueueQueryHandler : IRequestHandler<GetGroupedSewin
         _logger.LogInformation("Handling get grouped sewing queue");
         ArgumentNullException.ThrowIfNull(request);
 
-        var sewingQueue = await _sewingQueueService.GetSewingQueueGroupedByDateAsync(cancellationToken);
+        var sewingQueue = await _sewingQueueService.GetSewingQueueGroupedByDateAsync(request.SewerId, cancellationToken);
         return sewingQueue.Select(i => new GroupedSewingQueueItemDto
         {
             SendUntilDate = i.Key,

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.DTOs.ProductVariant;
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Repositories.ProductPhotoRepository;
@@ -42,6 +43,13 @@ public class AddProductVariantCommandHandler : IRequestHandler<AddProductVariant
             if (productVariant.QuantityInStock <= 0 && productVariant.Status != ProductStatus.Discontinued)
             {
                 productVariant.Status = ProductStatus.OnOrder;
+            }
+
+            if (request.ProductVariant.SewingQueueVisibility == SewingQueueVisibilityDto.Specific)
+            {
+                productVariant.Sewers = request.ProductVariant.SewerIds
+                    .Select(sewerId => new ProductVariantSewer { SewerId = sewerId })
+                    .ToList();
             }
 
             var addedProductVariant = await _productVariantRepository.Insert(productVariant);

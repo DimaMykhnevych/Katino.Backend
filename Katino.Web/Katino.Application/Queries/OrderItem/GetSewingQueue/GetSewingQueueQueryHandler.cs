@@ -27,7 +27,7 @@ public class GetSewingQueueQueryHandler : IRequestHandler<GetSewingQueueQuery, G
         _logger.LogInformation("Handling get sewing queue");
         ArgumentNullException.ThrowIfNull(request);
 
-        var sewingQueue = await _sewingQueueService.GetSewingQueueAsync(cancellationToken);
+        var sewingQueue = await _sewingQueueService.GetSewingQueueAsync(request.SewerId, cancellationToken);
 
         List<SewingQueueItemDto> sewingQueueItems =
             _mapper.Map<IEnumerable<SewingQueueItemDto>>(sewingQueue)

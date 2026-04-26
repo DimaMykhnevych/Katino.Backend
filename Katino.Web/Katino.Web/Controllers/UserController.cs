@@ -6,11 +6,13 @@ using Katino.Application.Commands.User.ConfirmEmail;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.Commands.User.DeleteUser;
 using Katino.Application.DTOs;
+using Katino.Application.DTOs.User;
 using Katino.Domain.Constants;
 using Katino.Domain.Exceptions;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
 using Katino.Application.Queries.User.GetAppUser;
+using Katino.Application.Queries.User.GetSewers;
 
 namespace Katino.Web.Controllers;
 
@@ -29,6 +31,17 @@ public class UserController(IMediator mediator) : ControllerBase
     {
         IEnumerable<UserAuthInfoDto> users = await _mediator.Send(getUserQuery);
         return Ok(users);
+    }
+
+    [HttpGet("sewers")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
+    [SwaggerOperation(Summary = "Gets all users with Sewer role")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(List<SewerDto>))]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, Description = "User was not authorized")]
+    public async Task<IActionResult> GetSewers()
+    {
+        List<SewerDto> sewers = await _mediator.Send(new GetSewersQuery());
+        return Ok(sewers);
     }
 
     [HttpPost]

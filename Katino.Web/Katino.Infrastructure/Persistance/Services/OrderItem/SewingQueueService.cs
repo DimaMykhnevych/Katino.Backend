@@ -19,10 +19,10 @@ public class SewingQueueService : ISewingQueueService
         _logger = loggerFactory?.CreateLogger(nameof(SewingQueueService));
     }
 
-    public async Task<List<SewingQueueItem>> GetSewingQueueAsync(CancellationToken ct = default)
+    public async Task<List<SewingQueueItem>> GetSewingQueueAsync(Guid? sewerId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Getting sewing queue");
-        var items = await _orderItemRepository.GetOrderItemsForSewingAsync(ct);
+        var items = await _orderItemRepository.GetOrderItemsForSewingAsync(sewerId, ct);
 
         var custom = items
             .Where(x => x.IsCustomTailoring)
@@ -68,10 +68,10 @@ public class SewingQueueService : ISewingQueueService
             .ToList();
     }
 
-    public async Task<Dictionary<DateTime, List<SewingQueueItem>>> GetSewingQueueGroupedByDateAsync(CancellationToken ct = default)
+    public async Task<Dictionary<DateTime, List<SewingQueueItem>>> GetSewingQueueGroupedByDateAsync(Guid? sewerId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Getting sewing queue grouped by date");
-        var items = await _orderItemRepository.GetOrderItemsForSewingGroupedByDateAsync(ct);
+        var items = await _orderItemRepository.GetOrderItemsForSewingGroupedByDateAsync(sewerId, ct);
 
         return items.ToDictionary(
             x => x.Key,

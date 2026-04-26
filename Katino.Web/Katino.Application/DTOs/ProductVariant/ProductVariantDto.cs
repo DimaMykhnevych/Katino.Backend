@@ -3,6 +3,7 @@ using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
+using Katino.Application.DTOs.User;
 
 namespace Katino.Application.DTOs.ProductVariant;
 
@@ -20,6 +21,8 @@ public class ProductVariantDto
     public string Article { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public SewingQueueVisibilityDto SewingQueueVisibility { get; set; } = SewingQueueVisibilityDto.AllSewers;
+    public List<SewerDto> Sewers { get; set; } = [];
 
     public ColorDto Color { get; set; }
     public ProductDto Product { get; set; }

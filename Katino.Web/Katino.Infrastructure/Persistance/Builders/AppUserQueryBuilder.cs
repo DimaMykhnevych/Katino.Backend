@@ -54,4 +54,13 @@ public class AppUserQueryBuilder : IAppUserQueryBuilder
         }
         return this;
     }
+
+    public IAppUserQueryBuilder SetRole(string role)
+    {
+        if (!string.IsNullOrEmpty(role))
+        {
+            _query = _query.Where(u => u.Role == role);
+        }
+        return this;
+    }
 }

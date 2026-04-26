@@ -25,6 +25,19 @@ public class ProductVariantRepository : Repository<ProductVariant>, IProductVari
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 
+    public async Task<ProductVariant> GetWithMeasurementsAndSewers(Guid id)
+    {
+        return await context.ProductVariants
+            .Include(x => x.Measurements)
+            .Include(x => x.Sewers)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public void DeleteSewer(ProductVariantSewer sewer)
+    {
+        context.ProductVariantSewers.Remove(sewer);
+    }
+
     public async Task<ProductVariant> GetWithPhotos(Guid id)
     {
         return await context.ProductVariants

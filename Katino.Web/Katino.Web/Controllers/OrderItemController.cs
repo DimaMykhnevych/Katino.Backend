@@ -23,7 +23,8 @@ public class OrderItemController : ControllerBase
     [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
     public async Task<IActionResult> GetSewingQueue()
     {
-        var result = await _mediator.Send(new GetSewingQueueQuery());
+        Guid? sewerId = ResolveSewerId();
+        var result = await _mediator.Send(new GetSewingQueueQuery { SewerId = sewerId });
         return Ok(result);
     }
 
@@ -31,7 +32,8 @@ public class OrderItemController : ControllerBase
     [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
     public async Task<IActionResult> GetSewingQueueGrouped()
     {
-        var result = await _mediator.Send(new GetGroupedSewingQueueQuery());
+        Guid? sewerId = ResolveSewerId();
+        var result = await _mediator.Send(new GetGroupedSewingQueueQuery { SewerId = sewerId });
         return Ok(result);
     }
 
@@ -48,5 +50,14 @@ public class OrderItemController : ControllerBase
 
         var result = await _mediator.Send(submitSewedReportCommand);
         return result ? Ok(result) : BadRequest();
+    }
+
+    private Guid? ResolveSewerId()
+    {
+        if (!User.IsInRole(Role.Sewer))
+            return null;
+
+        var userIdString = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID)?.Value;
+        return userIdString != null ? Guid.Parse(userIdString) : null;
     }
 }

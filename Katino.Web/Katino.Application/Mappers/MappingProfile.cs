@@ -38,6 +38,7 @@ using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Models.Pnl;
+using Katino.Application.DTOs.User;
 
 namespace Katino.Application.Mappers;
 
@@ -68,15 +69,24 @@ public class MappingProfile : Profile
         CreateMap<MeasurementType, MeasurementTypeDto>().ReverseMap();
 
         CreateMap<ProductStatus, ProductStatusDto>();
+        CreateMap<SewingQueueVisibility, SewingQueueVisibilityDto>().ReverseMap();
         CreateMap<ProductPhoto, ProductPhotoDto>();
 
         CreateMap<ProductVariantMeasurement, GetProductVariantMeasurementDto>();
-        CreateMap<ProductVariant, ProductVariantDto>();
+        CreateMap<ProductVariant, ProductVariantDto>()
+            .ForMember(pv => pv.Sewers, m => m.MapFrom(s => s.Sewers.Select(sw => new SewerDto
+            {
+                Id = sw.SewerId,
+                UserName = sw.Sewer.UserName,
+                Email = sw.Sewer.Email,
+            })));
         CreateMap<ProductVariant, ProductVariantForOrderDto>();
         CreateMap<AddProductVariantDto, ProductVariant>()
-            .ForMember(pv => pv.Photos, m => m.Ignore());
+            .ForMember(pv => pv.Photos, m => m.Ignore())
+            .ForMember(pv => pv.Sewers, m => m.Ignore());
         CreateMap<AddProductVariantMeasurementDto, ProductVariantMeasurement>();
-        CreateMap<UpdateProductVariantDto, ProductVariant>();
+        CreateMap<UpdateProductVariantDto, ProductVariant>()
+            .ForMember(pv => pv.Sewers, m => m.Ignore());
 
         CreateMap<Order, OrderDto>()
             .ForMember(d => d.Tags, m => m.MapFrom(s => s.OrderTags.Select(ot => ot.OrderTag).ToList()));

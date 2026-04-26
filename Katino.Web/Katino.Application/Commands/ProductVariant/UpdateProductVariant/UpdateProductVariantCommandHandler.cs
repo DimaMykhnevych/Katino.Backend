@@ -29,6 +29,6 @@ public class UpdateProductVariantCommandHandler : IRequestHandler<UpdateProductV
 
         ProductVariant pv = _mapper.Map<ProductVariant>(request.ProductVariant);
         return await _updateProductVariantService
-            .UpdateProductVariantAsync(pv, request.ProductVariant.NewPhotos, request.ProductVariant.PhotoIdsToDelete);
+            .UpdateProductVariantAsync(pv, request.ProductVariant.NewPhotos, request.ProductVariant.PhotoIdsToDelete, request.ProductVariant.SewerIds);
     }
 }

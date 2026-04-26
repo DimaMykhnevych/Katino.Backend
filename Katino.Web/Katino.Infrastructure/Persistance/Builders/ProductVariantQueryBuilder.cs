@@ -34,6 +34,8 @@ public class ProductVariantQueryBuilder : IProductVariantQueryBuilder
             .Include(pv => pv.Size)
             .Include(pv => pv.Color)
             .Include(pv => pv.Photos)
+            .Include(pv => pv.Sewers)
+                .ThenInclude(pv => pv.Sewer)
             .Include(pv => pv.Measurements)
                 .ThenInclude(pvm => pvm.MeasurementType)
             .OrderByDescending(pv => pv.CreatedAt);
