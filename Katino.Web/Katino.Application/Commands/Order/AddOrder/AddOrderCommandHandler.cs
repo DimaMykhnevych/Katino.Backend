@@ -33,7 +33,7 @@ public class AddOrderCommandHandler : IRequestHandler<AddOrderCommand, OrderCrea
         {
             Order order = _mapper.Map<Order>(request);
 
-            OrderCreationResult creationResult = await _addOrderService.AddAsync(order).ConfigureAwait(false);
+            OrderCreationResult creationResult = await _addOrderService.AddAsync(order, request.CustomTags).ConfigureAwait(false);
             return _mapper.Map<OrderCreationResultDto>(creationResult);
         }
         catch (Exception ex)

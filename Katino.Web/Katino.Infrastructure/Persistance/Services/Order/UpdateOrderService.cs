@@ -10,6 +10,7 @@ using Katino.Domain.Repositories.FinanceEntryRepository;
 using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Domain.Repositories.OrderRepository;
+using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
@@ -35,6 +36,7 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IOrderNpOptionsSeatRepository _orderNpOptionsSeatRepository;
     private readonly IFinanceEntryRepository _financeEntryRepository;
     private readonly IFinanceCategoryRepository _financeCategoryRepository;
+    private readonly IOrderTagRepository _orderTagRepository;
     private readonly ILogger _logger;
 
     public UpdateOrderService(
@@ -50,6 +52,7 @@ public class UpdateOrderService : IUpdateOrderService
         IOrderNpOptionsSeatRepository orderNpOptionsSeatRepository,
         IFinanceEntryRepository financeEntryRepository,
         IFinanceCategoryRepository financeCategoryRepository,
+        IOrderTagRepository orderTagRepository,
         ILoggerFactory loggerFactory)
     {
         _addNpCityService = addNpCityService;
@@ -64,10 +67,11 @@ public class UpdateOrderService : IUpdateOrderService
         _orderNpOptionsSeatRepository = orderNpOptionsSeatRepository;
         _financeEntryRepository = financeEntryRepository;
         _financeCategoryRepository = financeCategoryRepository;
+        _orderTagRepository = orderTagRepository;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
-    public async Task<OrderUpdateResult> UpdateAsync(Order order)
+    public async Task<OrderUpdateResult> UpdateAsync(Order order, List<string> customTags)
     {
         _logger.LogInformation($"Updating order, order items count: {order.OrderItems.Count}");
         try
@@ -178,6 +182,14 @@ public class UpdateOrderService : IUpdateOrderService
 
                 _logger.LogTrace("Updating order in db");
                 await _orderRepository.Update(updatedOrder);
+
+                // Update custom tags: remove existing, attach incoming
+                await _orderTagRepository.DetachAllCustomTagsFromOrderAsync(order.Id);
+                foreach (var tagValue in customTags)
+                {
+                    var customTag = await _orderTagRepository.GetOrCreateCustomTagAsync(tagValue);
+                    await _orderTagRepository.AttachTagToOrderAsync(order.Id, customTag.Id);
+                }
 
                 await ApplyOrderRevenueDeltaAsync(updatedOrder);
 

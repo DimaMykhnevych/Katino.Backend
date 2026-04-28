@@ -63,7 +63,7 @@ public class AddOrderService : IAddOrderService
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
-    public async Task<OrderCreationResult> AddAsync(Order order)
+    public async Task<OrderCreationResult> AddAsync(Order order, List<string> customTags)
     {
         _logger.LogInformation($"Adding order, order items count: {order.OrderItems.Count}");
 
@@ -156,6 +156,14 @@ public class AddOrderService : IAddOrderService
                     _logger.LogTrace("Attaching NotNpOrder tag to order");
                     var tag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.NotNpOrder, canBeDeleted: false);
                     await _orderTagRepository.AttachTagToOrderAsync(insertedOrder.Id, tag.Id);
+                }
+
+                // 4.1 Attach custom tags
+                foreach (var tagValue in customTags)
+                {
+                    _logger.LogTrace("Attaching custom tag '{TagValue}' to order", tagValue);
+                    var customTag = await _orderTagRepository.GetOrCreateCustomTagAsync(tagValue);
+                    await _orderTagRepository.AttachTagToOrderAsync(insertedOrder.Id, customTag.Id);
                 }
 
                 // 5. Update product variant quantities

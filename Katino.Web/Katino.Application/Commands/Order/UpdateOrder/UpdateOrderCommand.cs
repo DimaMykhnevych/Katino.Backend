@@ -29,6 +29,7 @@ public class UpdateOrderCommand : IRequest<OrderUpdateResultDto>
 
     public List<UpdateOrderItemDto> OrderItems { get; set; } = [];
     public List<UpdateOrderNpOptionsSeatDto> OrderNpOptionsSeats { get; set; } = [];
+    public List<string> CustomTags { get; set; } = [];
 
     public UpdateNpCityDto SenderNpCity { get; set; }
     public UpdateNpCityDto RecipientNpCity { get; set; }

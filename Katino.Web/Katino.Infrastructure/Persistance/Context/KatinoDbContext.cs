@@ -290,8 +290,9 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             b.HasKey(t => t.Id);
             b.Property(t => t.Type).IsRequired();
             b.Property(t => t.CanBeDeleted).IsRequired();
+            b.Property(t => t.Value).HasMaxLength(500);
             b.Property(t => t.CreatedAt).IsRequired();
-            b.HasIndex(t => t.Type).IsUnique();
+            b.HasIndex(t => t.Type);
         });
 
         builder.Entity<OrderOrderTag>(b =>

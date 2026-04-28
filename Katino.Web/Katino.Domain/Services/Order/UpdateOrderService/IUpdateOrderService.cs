@@ -5,5 +5,5 @@ namespace Katino.Domain.Services.OrderN.UpdateOrderService;
 
 public interface IUpdateOrderService
 {
-    Task<OrderUpdateResult> UpdateAsync(Order order);
+    Task<OrderUpdateResult> UpdateAsync(Order order, List<string> customTags);
 }

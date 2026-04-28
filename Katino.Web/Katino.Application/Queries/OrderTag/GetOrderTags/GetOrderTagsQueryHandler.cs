@@ -18,7 +18,7 @@ public class GetOrderTagsQueryHandler : IRequestHandler<GetOrderTagsQuery, IEnum
 
     public async Task<IEnumerable<OrderTagDto>> Handle(GetOrderTagsQuery request, CancellationToken cancellationToken)
     {
-        var tags = await _orderTagRepository.GetAll();
+        var tags = await _orderTagRepository.GetFilteredAsync(request.Search, request.CustomOnly);
         return _mapper.Map<IEnumerable<OrderTagDto>>(tags);
     }
 }

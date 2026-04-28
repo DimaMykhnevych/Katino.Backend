@@ -33,7 +33,7 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Ord
         {
             Order order = _mapper.Map<Order>(request);
 
-            OrderUpdateResult updateResult = await _updateOrderService.UpdateAsync(order).ConfigureAwait(false);
+            OrderUpdateResult updateResult = await _updateOrderService.UpdateAsync(order, request.CustomTags).ConfigureAwait(false);
             return _mapper.Map<OrderUpdateResultDto>(updateResult);
         }
         catch (Exception ex)

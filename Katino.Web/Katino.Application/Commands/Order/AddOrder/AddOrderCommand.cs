@@ -28,6 +28,7 @@ public class AddOrderCommand : IRequest<OrderCreationResultDto>
 
     public List<AddOrderItemDto> OrderItems { get; set; } = [];
     public List<AddOrderNpOptionsSeatDto> OrderNpOptionsSeats { get; set; } = [];
+    public List<string> CustomTags { get; set; } = [];
 
     public AddNpCityDto SenderNpCity { get; set; }
     public AddNpCityDto RecipientNpCity { get; set; }

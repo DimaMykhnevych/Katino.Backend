@@ -89,7 +89,7 @@ public class MappingProfile : Profile
             .ForMember(pv => pv.Sewers, m => m.Ignore());
 
         CreateMap<Order, OrderDto>()
-            .ForMember(d => d.Tags, m => m.MapFrom(s => s.OrderTags.Select(ot => ot.OrderTag).ToList()));
+            .ForMember(d => d.Tags, m => m.MapFrom(s => s.OrderTags.Select(ot => ot.OrderTag).OrderBy(t => t.Type).ThenBy(t => t.Value).ToList()));
         CreateMap<OrderTag, OrderTagDto>();
         CreateMap<OrderTagType, OrderTagTypeDto>().ReverseMap();
         CreateMap<AddOrderCommand, Order>();

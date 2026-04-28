@@ -20,9 +20,9 @@ public class OrderTagController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string search = null, [FromQuery] bool? customOnly = null)
     {
-        var result = await _mediator.Send(new GetOrderTagsQuery());
+        var result = await _mediator.Send(new GetOrderTagsQuery { Search = search, CustomOnly = customOnly });
         return Ok(result);
     }
 
