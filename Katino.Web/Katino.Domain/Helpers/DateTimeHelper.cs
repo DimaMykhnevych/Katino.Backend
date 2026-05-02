@@ -5,23 +5,27 @@ public class DateTimeHelper
     public static DateTime GetCurrentKyivDateTime()
     {
         var utcNow = DateTime.UtcNow;
+        return TimeZoneInfo.ConvertTimeFromUtc(utcNow, GetKyivTimeZone());
+    }
 
-        TimeZoneInfo tz;
+    public static DateTime ToKyivDateTime(DateTimeOffset dt)
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(dt.UtcDateTime, GetKyivTimeZone());
+    }
+
+    private static TimeZoneInfo GetKyivTimeZone()
+    {
         try
         {
-            // Linux / IANA
-            tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv");
+            return TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv");
         }
         catch (TimeZoneNotFoundException)
         {
-            // Windows
-            tz = TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
+            return TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
         }
         catch (InvalidTimeZoneException)
         {
-            tz = TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
+            return TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
         }
-
-        return TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
     }
 }

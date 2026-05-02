@@ -117,7 +117,8 @@ public class AddOrderService : IAddOrderService
                 PayerType = order.PayerType,
                 PaymentMethod = order.PaymentMethod,
                 SaleType = order.SaleType,
-                CreationDateTime = utcNow,
+                CreationDateTime = order.CreationDateTime != default ? order.CreationDateTime : utcNow,
+                CreationDateTimeSystem = utcNow,
                 SendUntilDate = order.SendUntilDate,
                 Weight = order.Weight,
                 DeliveryType = order.DeliveryType,
@@ -204,11 +205,9 @@ public class AddOrderService : IAddOrderService
     {
         var revenueCategoryId = await GetRevenueCategoryIdAsync();
 
-        var kyivToday = DateTimeHelper.GetCurrentKyivDateTime().Date;
-
         var revenueEntry = new FinanceEntry
         {
-            EntryDate = kyivToday,
+            EntryDate = DateTimeHelper.ToKyivDateTime(orderToAdd.CreationDateTime).Date,
             Amount = Convert.ToDecimal(orderToAdd.Cost),
             Comment = null,
             SourceType = FinanceEntrySourceType.Order,

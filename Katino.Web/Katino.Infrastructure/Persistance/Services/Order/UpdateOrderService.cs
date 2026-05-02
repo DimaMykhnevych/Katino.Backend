@@ -150,6 +150,7 @@ public class UpdateOrderService : IUpdateOrderService
                     PaymentMethod = order.PaymentMethod,
                     SaleType = currentOrderInDb.SaleType, // SaleType cannot be updated
                     CreationDateTime = currentOrderInDb.CreationDateTime,
+                    CreationDateTimeSystem = currentOrderInDb.CreationDateTimeSystem,
                     SendUntilDate = order.SendUntilDate,
                     Weight = order.Weight,
                     DeliveryType = effectiveDeliveryType, // DeliveryType cannot be changed from NotNovaPost
@@ -324,7 +325,7 @@ public class UpdateOrderService : IUpdateOrderService
         var entry = new FinanceEntry
         {
             Id = Guid.NewGuid(),
-            EntryDate = DateTimeHelper.GetCurrentKyivDateTime().Date,
+            EntryDate = DateTimeHelper.ToKyivDateTime(updatedOrder.CreationDateTime).Date,
             Amount = delta,
             Comment = null,
 

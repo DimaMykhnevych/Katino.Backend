@@ -245,7 +245,7 @@ public class DeleteOrderService : IDeleteOrderService
         var reversal = new FinanceEntry
         {
             Id = Guid.NewGuid(),
-            EntryDate = DateTimeHelper.GetCurrentKyivDateTime().Date,
+            EntryDate = DateTimeHelper.ToKyivDateTime(order.CreationDateTime).Date,
             Amount = -currentTotal,
             Comment = comment,
 

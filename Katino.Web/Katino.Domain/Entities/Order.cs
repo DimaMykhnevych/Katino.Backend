@@ -17,6 +17,7 @@ public class Order
     public PaymentMethod PaymentMethod { get; set; }
     public SaleType SaleType { get; set; }
     public DateTimeOffset CreationDateTime { get; set; }
+    public DateTimeOffset CreationDateTimeSystem { get; set; }
     public DateTime SendUntilDate { get; set; }
     public double Weight { get; set; }
     public DeliveryType DeliveryType { get; set; }
