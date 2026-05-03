@@ -31,10 +31,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore Katino.Web.sln
+        run: dotnet restore Katino.Web/Katino.Web.sln
 
       - name: Build
-        run: dotnet build Katino.Web.sln --no-restore -c Release
+        run: dotnet build Katino.Web/Katino.Web.sln --no-restore -c Release
 
       # ── Database migrations ──────────────────────────────────────────────────
       - name: Install EF Core CLI
@@ -43,8 +43,8 @@ jobs:
       - name: Apply database migrations
         run: |
           dotnet ef database update \
-            --project Katino.Infrastructure/Katino.Infrastructure.csproj \
-            --startup-project Katino.Web/Katino.Web.csproj \
+            --project Katino.Web/Katino.Infrastructure/Katino.Infrastructure.csproj \
+            --startup-project Katino.Web/Katino.Web/Katino.Web.csproj \
             --no-build -c Release
         env:
           ConnectionStrings__Default: ${{ secrets.MYSQL_CONNECTION_STRING }}
@@ -52,7 +52,7 @@ jobs:
       # ── Web API deployment ───────────────────────────────────────────────────
       - name: Publish Web API
         run: |
-          dotnet publish Katino.Web/Katino.Web.csproj \
+          dotnet publish Katino.Web/Katino.Web/Katino.Web.csproj \
             -c Release -r linux-x64 --no-self-contained \
             -o ./publish/web
 
@@ -66,7 +66,7 @@ jobs:
       # ── Functions App deployment ─────────────────────────────────────────────
       - name: Publish Functions App
         run: |
-          dotnet publish Katino.Functions/Katino.Functions.csproj \
+          dotnet publish Katino.Web/Katino.Functions/Katino.Functions.csproj \
             -c Release \
             -o ./publish/functions
 
