@@ -12,6 +12,7 @@ jobs:
   build-migrate-deploy:
     name: Build, Migrate & Deploy
     runs-on: ubuntu-latest
+    environment: Prod
 
     steps:
       - name: Checkout
@@ -45,7 +46,7 @@ jobs:
           dotnet ef database update \
             --project Katino.Web/Katino.Infrastructure/Katino.Infrastructure.csproj \
             --startup-project Katino.Web/Katino.Web/Katino.Web.csproj \
-            --no-build -c Release
+            --configuration Release
         env:
           ConnectionStrings__Default: ${{ secrets.MYSQL_CONNECTION_STRING }}
 
