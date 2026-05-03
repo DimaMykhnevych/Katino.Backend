@@ -58,9 +58,9 @@ jobs:
             -o ./publish/web
 
       - name: Deploy Web API to Azure
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: katino-web-api-a5hwangehqayf8cr
+          app-name: katino-web-api
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish/web
 
@@ -72,8 +72,8 @@ jobs:
             -o ./publish/functions
 
       - name: Deploy Functions App to Azure
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: katino-functions-bpgtfrbsbtddccbb
+          app-name: katino-functions
           publish-profile: ${{ secrets.AZURE_FUNCTIONS_PUBLISH_PROFILE }}
           package: ./publish/functions
