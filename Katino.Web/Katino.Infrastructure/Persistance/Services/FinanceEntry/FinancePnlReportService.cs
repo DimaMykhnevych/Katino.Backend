@@ -173,7 +173,7 @@ public class FinancePnlReportService : IFinancePnlReportService
             }
         }
 
-        _logger.LogInformation($"PnL report for {year} year is ready");
+        _logger.LogInformation($"PnL report for {year} year is ready! Sending to client");
         return new PnlReport { Year = year, Rows = rows };
     }
 
