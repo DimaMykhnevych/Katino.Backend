@@ -1,0 +1,78 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build-migrate-deploy:
+    name: Build, Migrate & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore Katino.Web.sln
+
+      - name: Build
+        run: dotnet build Katino.Web.sln --no-restore -c Release
+
+      # ── Database migrations ──────────────────────────────────────────────────
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Apply database migrations
+        run: |
+          dotnet ef database update \
+            --project Katino.Infrastructure/Katino.Infrastructure.csproj \
+            --startup-project Katino.Web/Katino.Web.csproj \
+            --no-build -c Release
+        env:
+          ConnectionStrings__Default: ${{ secrets.MYSQL_CONNECTION_STRING }}
+
+      # ── Web API deployment ───────────────────────────────────────────────────
+      - name: Publish Web API
+        run: |
+          dotnet publish Katino.Web/Katino.Web.csproj \
+            -c Release -r linux-x64 --no-self-contained \
+            -o ./publish/web
+
+      - name: Deploy Web API to Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: katino-web-api-a5hwangehqayf8cr
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish/web
+
+      # ── Functions App deployment ─────────────────────────────────────────────
+      - name: Publish Functions App
+        run: |
+          dotnet publish Katino.Functions/Katino.Functions.csproj \
+            -c Release \
+            -o ./publish/functions
+
+      - name: Deploy Functions App to Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: katino-functions-bpgtfrbsbtddccbb
+          publish-profile: ${{ secrets.AZURE_FUNCTIONS_PUBLISH_PROFILE }}
+          package: ./publish/functions
