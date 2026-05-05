@@ -15,6 +15,7 @@ public class AzureStorageService : IAzureStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
     private readonly string _containerName;
+    private readonly string _financeReportContainerName;
     private readonly ILogger _logger;
 
     private const int WebpQuality = 80;
@@ -26,6 +27,7 @@ public class AzureStorageService : IAzureStorageService
     {
         _blobServiceClient = blobServiceClient;
         _containerName = configuration[ConfigurationKeys.StoragePhotoContainerName];
+        _financeReportContainerName = configuration[ConfigurationKeys.FinanceReportContainerName];
         _logger = loggerFactory?.CreateLogger(nameof(AzureStorageService));
     }
 
@@ -118,6 +120,15 @@ public class AzureStorageService : IAzureStorageService
             _logger.LogError(ex, "Error deleting photo: {PhotoUrl}", photoUrl);
             throw;
         }
+    }
+
+    public async Task<(Stream Content, string ContentType)> GetFinanceReportScreenshotAsync(int year)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(_financeReportContainerName);
+        var blobClient = containerClient.GetBlobClient($"{year}.png");
+
+        var response = await blobClient.DownloadStreamingAsync();
+        return (response.Value.Content, response.Value.Details.ContentType ?? "image/png");
     }
 
     private static async Task ConvertToWebpAsync(Stream input, Stream output)

@@ -1,5 +1,6 @@
 ﻿using Katino.Application.DTOs.Pnl;
 using Katino.Application.Queries.FinanceEntryN.GetPnlReport;
+using Katino.Application.Queries.FinanceEntryN.GetPnlScreenshot;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -24,5 +25,12 @@ public class FinanceReportController : ControllerBase
     {
         var res = await _mediator.Send(new GetPnlReportQuery { Year = year }, ct);
         return Ok(res);
+    }
+
+    [HttpGet("pnl-screenshot/{year:int}")]
+    public async Task<IActionResult> GetPnlScreenshot(int year, CancellationToken ct)
+    {
+        var (content, contentType) = await _mediator.Send(new GetPnlScreenshotQuery { Year = year }, ct);
+        return File(content, contentType);
     }
 }

@@ -7,6 +7,7 @@ public static class ConfigurationKeys
     public const string DefaultConnectionString = "ConnectionStrings:Default";
     public const string AzureStorageConnectionString = "ConnectionStrings:AzureStorage";
     public const string StoragePhotoContainerName = "AzureStorage:PhotoContainerName";
+    public const string FinanceReportContainerName = "AzureStorage:FinanceReportContainerName";
     public const string ConnectionStrings = "ConnectionStrings";
     public const string SecretKeyOptions = "SecretKeyOptions";
     public const string EmailServiceOptions = "EmailServiceOptions";

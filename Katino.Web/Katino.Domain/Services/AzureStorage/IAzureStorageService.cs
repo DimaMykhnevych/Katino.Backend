@@ -9,4 +9,6 @@ public interface IAzureStorageService
     Task<string> CopyPhotoAsync(string sourceUrl, Guid targetVariantId);
 
     Task DeletePhotoAsync(Guid productVariantId, string photoUrl);
+
+    Task<(Stream Content, string ContentType)> GetFinanceReportScreenshotAsync(int year);
 }
