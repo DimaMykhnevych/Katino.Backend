@@ -9,4 +9,5 @@ public interface IAppUserQueryBuilder : IQueryBuilder<AppUser>
     IAppUserQueryBuilder SetUserId(Guid? userId);
     IAppUserQueryBuilder SetUserEmail(string userEmail);
     IAppUserQueryBuilder SetRole(string role);
+    IAppUserQueryBuilder ExcludeRoles(IEnumerable<string> roles);
 }

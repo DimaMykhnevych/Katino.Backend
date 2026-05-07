@@ -5,14 +5,17 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Katino.Application.Commands.User.ConfirmEmail;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.Commands.User.DeleteUser;
+using Katino.Application.Commands.User.SetUserActivationStatus;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.User;
 using Katino.Domain.Constants;
 using Katino.Domain.Exceptions;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
+using System.Security.Claims;
 using Katino.Application.Queries.User.GetAppUser;
 using Katino.Application.Queries.User.GetSewers;
+using Katino.Application.Queries.User.GetUsersForActivation;
 
 namespace Katino.Web.Controllers;
 
@@ -96,6 +99,44 @@ public class UserController(IMediator mediator) : ControllerBase
 
         if (!isSucceeded)
             return NotFound("User with given email was not found");
+        return Ok(isSucceeded);
+    }
+
+    [HttpGet("manageable")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
+    [SwaggerOperation(Summary = "Gets users available for activation/deactivation",
+        Description = "Admin receives all users except Admins. Owner receives all users except Admins and Owners.")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(IEnumerable<ManageableUserDto>))]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, Description = "User was not authorized")]
+    public async Task<IActionResult> GetManageable()
+    {
+        string callerRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        IEnumerable<ManageableUserDto> users = await _mediator.Send(new GetUsersForActivationQuery { CallerRole = callerRole });
+        return Ok(users);
+    }
+
+    [HttpPut("{id}/activation")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
+    [SwaggerOperation(Summary = "Activates or deactivates a user")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(bool))]
+    [SwaggerResponse((int)HttpStatusCode.NotFound, Description = "User with provided Id was not found")]
+    [SwaggerResponse((int)HttpStatusCode.UnprocessableEntity, Description = "Errors occurred during activation status change. See details in the error response")]
+    [SwaggerResponse((int)HttpStatusCode.Unauthorized, Description = "User was not authorized")]
+    [SwaggerResponse((int)HttpStatusCode.Forbidden, Description = "User is not administrator")]
+    public async Task<IActionResult> SetActivationStatus(Guid id, [FromBody] bool isActive)
+    {
+        bool isSucceeded;
+        try
+        {
+            isSucceeded = await _mediator.Send(new SetUserActivationStatusCommand { UserId = id, IsActive = isActive });
+        }
+        catch (IdentityResultException ex)
+        {
+            return UnprocessableEntity(AddModelStateError("model", ex.Message));
+        }
+
+        if (!isSucceeded)
+            return NotFound("User with given Id was not found");
         return Ok(isSucceeded);
     }
 

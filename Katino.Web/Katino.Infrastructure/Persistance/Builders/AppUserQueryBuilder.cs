@@ -63,4 +63,13 @@ public class AppUserQueryBuilder : IAppUserQueryBuilder
         }
         return this;
     }
+
+    public IAppUserQueryBuilder ExcludeRoles(IEnumerable<string> roles)
+    {
+        if (roles != null && roles.Any())
+        {
+            _query = _query.Where(u => !roles.Contains(u.Role));
+        }
+        return this;
+    }
 }
