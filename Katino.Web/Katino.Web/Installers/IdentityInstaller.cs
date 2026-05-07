@@ -6,6 +6,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 namespace Katino.Web.Installers;
 
@@ -39,6 +40,29 @@ public class IdentityInstaller : IInstaller
                 IssuerSigningKey = options.GetSymmetricSecurityKey(),
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
+            };
+            o.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var userManager = context.HttpContext.RequestServices
+                        .GetRequiredService<UserManager<AppUser>>();
+
+                    var userId = context.Principal.Claims
+                        .FirstOrDefault(c => c.Type == AuthorizationConstants.ID)?.Value;
+
+                    if (userId == null)
+                    {
+                        context.Fail("Unauthorized");
+                        return;
+                    }
+
+                    var user = await userManager.FindByIdAsync(userId);
+                    if (user == null || await userManager.IsLockedOutAsync(user))
+                    {
+                        context.Fail("Unauthorized");
+                    }
+                }
             };
         });
 
