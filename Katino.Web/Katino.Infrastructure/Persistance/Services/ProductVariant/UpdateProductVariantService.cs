@@ -159,7 +159,6 @@ public class UpdateProductVariantService : IUpdateProductVariantService
     {
         var ordersToCheck = await _orderRepository.GetActiveOrdersWithSpecificProductVariantAsync(productVariantId);
         int currentProductVariantQuantity = newQuantity;
-        var pvQuantityChanged = false;
         foreach (var order in ordersToCheck)
         {
             if (currentProductVariantQuantity <= 0)
@@ -210,17 +209,16 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 : currentProductVariantQuantity - previousQuantityToProduce;
 
             currentProductVariantQuantity = newQuantityInStock;
-            pvQuantityChanged = true;
         }
 
-        if (pvQuantityChanged)
+        var productVariantFromDb = await _productVariantRepository.Get(productVariantId);
+        productVariantFromDb.QuantityInStock = currentProductVariantQuantity;
+        if (productVariantFromDb.Status != ProductStatus.Discontinued)
         {
-            var productVariantFromDb = await _productVariantRepository.Get(productVariantId);
-            productVariantFromDb.QuantityInStock = currentProductVariantQuantity;
             productVariantFromDb.Status = currentProductVariantQuantity > 0 ? ProductStatus.InStock : ProductStatus.OnOrder;
-
-            await _productVariantRepository.Update(productVariantFromDb);
-            await _productVariantRepository.Save();
         }
+
+        await _productVariantRepository.Update(productVariantFromDb);
+        await _productVariantRepository.Save();
     }
 }
