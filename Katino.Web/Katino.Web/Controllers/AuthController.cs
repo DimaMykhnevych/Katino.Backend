@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Katino.Application.Commands.Auth.SignIn;
 using Katino.Application.DTOs;
 using Katino.Application.Queries.User.GetAppUser;
@@ -37,6 +38,7 @@ public class AuthController(IMediator mediator) : ControllerBase
     [HttpPost]
     [AllowAnonymous]
     [Route("token")]
+    [EnableRateLimiting("auth")]
     [SwaggerOperation(Summary = "Gets a Bearer token with basic user info in case of successful authorization",
         Description = "As a result returns the model with LoginErrorCode property.\n\nPossible LoginErrorCode values:\n\n" +
         "0 = Invalid userName or password\n\n" +

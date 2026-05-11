@@ -34,6 +34,8 @@ app.UseRouting();
 
 app.UseCors("CorsPolicy");
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 
 app.UseAuthorization();
