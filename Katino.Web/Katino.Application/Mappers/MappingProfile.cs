@@ -35,8 +35,10 @@ using Katino.Domain.Entities;
 using Katino.Application.DTOs.OrderTag;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
+using Katino.Application.DTOs.Statistics;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
+using Katino.Domain.Models.Statistics;
 using Katino.Domain.Models.Pnl;
 using Katino.Application.DTOs.User;
 
@@ -164,6 +166,10 @@ public class MappingProfile : Profile
         CreateMap<PnlRowKind, PnlRowKindDto>();
         CreateMap<PnlRow, PnlRowDto>();
         CreateMap<PnlReport, PnlReportDto>();
+
+        CreateMap<TopSellingProductItem, TopSellingProductDto>();
+        CreateMap<TopSellingProductsResult, GetTopSellingProductsDto>()
+            .ForMember(d => d.ResultsAmount, m => m.MapFrom(s => s.TotalCount));
     }
 }
 

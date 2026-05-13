@@ -32,6 +32,7 @@ using Katino.Domain.Services.CrmUserSettingsN.AddCrmUserSettingsService;
 using Katino.Domain.Services.CrmUserSettingsN.UpdateCrmUserSettingsService;
 using Katino.Domain.Services.Email.SendEmail;
 using Katino.Domain.Services.FinanceEntryN.GenerateFinancePnlReport;
+using Katino.Domain.Services.StatisticsN;
 using Katino.Domain.Services.NovaPost.City;
 using Katino.Domain.Services.NovaPost.ContactPerson;
 using Katino.Domain.Services.NovaPost.InternetDocument;
@@ -83,6 +84,7 @@ using Katino.Infrastructure.Persistance.Services.Article;
 using Katino.Infrastructure.Persistance.Services.AzureStorage;
 using Katino.Infrastructure.Persistance.Services.CrmUserSettingsN;
 using Katino.Infrastructure.Persistance.Services.FinanceEntryN;
+using Katino.Infrastructure.Persistance.Services.StatisticsN;
 using Katino.Infrastructure.Persistance.Services.NovaPost;
 using Katino.Infrastructure.Persistance.Services.NpCityN;
 using Katino.Infrastructure.Persistance.Services.NpContactPersonN;
@@ -132,6 +134,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ISewingQueueService, SewingQueueService>();
         services.AddTransient<ISewingProductionReportService, SewingProductionReportService>();
         services.AddTransient<IFinancePnlReportService, FinancePnlReportService>();
+        services.AddTransient<ITopSellingProductsService, TopSellingProductsService>();
         services.AddTransient<ICreateOrdersScanSheetService, CreateOrdersScanSheetService>();
 
         // hosted services
