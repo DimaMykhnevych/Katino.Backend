@@ -48,6 +48,9 @@ public class OrderItemController : ControllerBase
             item.SubmittedBy = userIdGuid;
         }
 
+        submitSewedReportCommand.IsSewer = User.IsInRole(Role.Sewer);
+        submitSewedReportCommand.SubmitterName = User.Identity?.Name ?? "Невідомо";
+
         var result = await _mediator.Send(submitSewedReportCommand);
         return result ? Ok(result) : BadRequest();
     }

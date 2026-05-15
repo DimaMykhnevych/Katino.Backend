@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Katino.Domain.Models;
 using Katino.Domain.Services.OrderItemN.SewingProductionReportService;
+using Katino.Domain.Services.TelegramN;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,15 +10,18 @@ namespace Katino.Application.Commands.OrderItemN.SubmitSewedReport;
 public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReportCommand, bool>
 {
     private readonly ISewingProductionReportService _sewingProductionReportService;
+    private readonly ITelegramService _telegramService;
     private readonly ILogger _logger;
     private readonly IMapper _mapper;
 
     public SubmitSewedReportCommandHandler(
         ISewingProductionReportService sewingProductionReportService,
+        ITelegramService telegramService,
         ILoggerFactory loggerFactory,
         IMapper mapper)
     {
         _sewingProductionReportService = sewingProductionReportService;
+        _telegramService = telegramService;
         _logger = loggerFactory?.CreateLogger(nameof(SubmitSewedReportCommandHandler));
         _mapper = mapper;
     }
@@ -30,7 +34,14 @@ public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReport
         try
         {
             var report = _mapper.Map<List<SewedReport>>(request.ReportItems);
-             await _sewingProductionReportService.ApplySewedAsync(report, request.ReportItems.First().SubmittedBy).ConfigureAwait(false);
+            await _sewingProductionReportService.ApplySewedAsync(report, request.ReportItems.First().SubmittedBy).ConfigureAwait(false);
+
+            if (request.IsSewer)
+            {
+                await _telegramService.SendSewingReportNotificationAsync(report, request.SubmitterName)
+                    .ConfigureAwait(false);
+            }
+
             return true;
         }
         catch (Exception ex)

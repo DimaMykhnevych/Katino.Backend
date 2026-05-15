@@ -9,4 +9,5 @@ public interface IProductVariantRepository : IRepository<ProductVariant>
     Task<ProductVariant> GetAsNoTracking(Guid id);
     Task<ProductVariant> GetWithPhotos(Guid id);
     void DeleteSewer(ProductVariantSewer sewer);
+    Task<ProductVariant> GetWithProduct(Guid id);
 }

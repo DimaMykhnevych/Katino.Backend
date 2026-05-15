@@ -25,6 +25,8 @@ using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.SewingHistoryRepository;
 using Katino.Domain.Repositories.SizeRepository;
+using Katino.Domain.Repositories.TelegramSettingsRepository;
+using Katino.Infrastructure.Persistance.Repositories.TelegramSettingsRepository;
 using Katino.Domain.Services.AppLogs.GetLogs;
 using Katino.Domain.Services.Article.GenerateArticle;
 using Katino.Domain.Services.AzureStorage;
@@ -53,6 +55,7 @@ using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.TelegramN;
 using Katino.Domain.Services.User.CreateUser;
 using Katino.Infrastructure.Persistance.Builders;
 using Katino.Infrastructure.Persistance.Context;
@@ -93,6 +96,7 @@ using Katino.Infrastructure.Persistance.Services.OrderItemN;
 using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.OrderRecipientN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
+using Katino.Infrastructure.Persistance.Services.TelegramN;
 
 namespace Katino.Web.Installers;
 
@@ -136,6 +140,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IFinancePnlReportService, FinancePnlReportService>();
         services.AddTransient<ITopSellingProductsService, TopSellingProductsService>();
         services.AddTransient<ICreateOrdersScanSheetService, CreateOrdersScanSheetService>();
+        services.AddTransient<ITelegramService, TelegramService>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();
@@ -175,6 +180,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ISewingHistoryRepository, SewingHistoryRepository>();
         services.AddTransient<IFinanceEntryRepository, FinanceEntryRepository>();
         services.AddTransient<IFinanceCategoryRepository, FinanceCategoryRepository>();
+        services.AddTransient<ITelegramSettingsRepository, TelegramSettingsRepository>();
     }
 }
 

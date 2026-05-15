@@ -38,6 +38,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<OrderTag> OrderTags { get; set; }
     public DbSet<OrderOrderTag> OrderOrderTags { get; set; }
     public DbSet<ProductVariantSewer> ProductVariantSewers { get; set; }
+    public DbSet<TelegramSettings> TelegramSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -324,6 +325,13 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
                 .WithMany()
                 .HasForeignKey(pvs => pvs.SewerId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<TelegramSettings>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.BotToken).HasMaxLength(512);
+            b.Property(x => x.ChatId).HasMaxLength(64);
         });
 
         base.OnModelCreating(builder);
