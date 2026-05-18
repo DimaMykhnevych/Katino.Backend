@@ -52,4 +52,14 @@ public class ProductVariantRepository : Repository<ProductVariant>, IProductVari
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<ProductVariant> GetWithProductColorAndSize(Guid id)
+    {
+        return await context.ProductVariants
+            .Include(x => x.Product)
+            .Include(x => x.Color)
+            .Include(x => x.Size)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
 }

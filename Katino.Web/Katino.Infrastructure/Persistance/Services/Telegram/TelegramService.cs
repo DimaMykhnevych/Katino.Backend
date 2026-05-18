@@ -1,4 +1,5 @@
 using Katino.Domain.Models;
+using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.TelegramSettingsRepository;
 using Katino.Domain.Services.TelegramN;
@@ -19,13 +20,16 @@ public class TelegramService : ITelegramService
 
     private readonly ITelegramSettingsRepository _telegramSettingsRepository;
     private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IOrderItemRepository _orderItemRepository;
 
     public TelegramService(
         ITelegramSettingsRepository telegramSettingsRepository,
-        IProductVariantRepository productVariantRepository)
+        IProductVariantRepository productVariantRepository,
+        IOrderItemRepository orderItemRepository)
     {
         _telegramSettingsRepository = telegramSettingsRepository;
         _productVariantRepository = productVariantRepository;
+        _orderItemRepository = orderItemRepository;
     }
 
     public async Task SendSewingReportNotificationAsync(List<SewedReport> report, string sewerName)
@@ -45,13 +49,27 @@ public class TelegramService : ITelegramService
 
         foreach (var item in report.Where(r => r.ActualSewedQuantity > 0))
         {
-            var pv = await _productVariantRepository.GetWithProduct(item.ProductVariantId);
+            var pv = await _productVariantRepository.GetWithProductColorAndSize(item.ProductVariantId);
             var label = pv?.Product?.Name is not null
                 ? $"{pv.Product.Name} ({pv.Article})"
                 : pv?.Article ?? item.ProductVariantId.ToString();
 
+            var sizePart = pv?.Size?.Name;
+            var colorPart = BuildColorPart(pv?.Color?.Name, pv?.Color?.HexCode);
+            var meta = string.Join(" | ", new[] { sizePart, colorPart }.Where(p => p is not null));
+            var metaStr = meta.Length > 0 ? $" | {meta}" : "";
+
             var orderNote = item.OrderItemId.HasValue ? $" <i>[{CustomText}]</i>" : "";
-            sb.AppendLine($"• {label} — {item.ActualSewedQuantity} {QuantityText}{orderNote}");
+            sb.AppendLine($"• {label}{metaStr} — {item.ActualSewedQuantity} {QuantityText}{orderNote}");
+
+            if (item.OrderItemId.HasValue)
+            {
+                var orderItem = await _orderItemRepository.Get(item.OrderItemId.Value);
+                if (!string.IsNullOrWhiteSpace(orderItem?.Comment))
+                {
+                    sb.AppendLine($"  💬 <i>{orderItem.Comment}</i>");
+                }
+            }
         }
 
         var chatId = ResolveChatId(settings.ChatId);
@@ -86,6 +104,17 @@ public class TelegramService : ITelegramService
 
     public async Task<List<TelegramChatInfo>> GetAvailableChatsAsync(string token)
     {
+        if (string.IsNullOrEmpty(token))
+        {
+            var settings = await _telegramSettingsRepository.GetSettingsAsync();
+            token = settings?.BotToken ?? string.Empty;
+        }
+
+        if (string.IsNullOrEmpty(token))
+        {
+            return [];
+        }
+
         var botClient = new TelegramBotClient(token);
         var updates = await botClient.GetUpdates(limit: 100);
 
@@ -100,6 +129,13 @@ public class TelegramService : ITelegramService
                 Type = c.Type.ToString()
             })
             .ToList();
+    }
+
+    private static string BuildColorPart(string name, string hex)
+    {
+        if (name is null) return null;
+        var trimmed = hex?.TrimStart('#');
+        return trimmed is not null ? $"{name} (#{trimmed})" : name;
     }
 
     private static ChatId ResolveChatId(string chatIdString)

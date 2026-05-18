@@ -38,8 +38,15 @@ public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReport
 
             if (request.IsSewer)
             {
-                await _telegramService.SendSewingReportNotificationAsync(report, request.SubmitterName)
-                    .ConfigureAwait(false);
+                try
+                {
+                    await _telegramService.SendSewingReportNotificationAsync(report, request.SubmitterName)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occured when sending sewing report notification");
+                }
             }
 
             return true;
