@@ -2,7 +2,6 @@
 using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
-using Katino.Application.Commands.OrderItemN.SubmitSewedReport;
 using Katino.Application.Commands.OrderN.AddOrder;
 using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.Commands.ProductN.AddProduct;
@@ -25,22 +24,23 @@ using Katino.Application.DTOs.OrderAddressInfo;
 using Katino.Application.DTOs.OrderItem;
 using Katino.Application.DTOs.OrderNpOptionsSeat;
 using Katino.Application.DTOs.OrderRecipient;
+using Katino.Application.DTOs.OrderTag;
 using Katino.Application.DTOs.Pnl;
 using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
 using Katino.Application.DTOs.ProductVariantMeasurement;
 using Katino.Application.DTOs.Size;
+using Katino.Application.DTOs.Statistics;
+using Katino.Application.DTOs.Telegram;
+using Katino.Application.DTOs.User;
 using Katino.Domain.Entities;
-using Katino.Application.DTOs.OrderTag;
 using Katino.Domain.Enums;
 using Katino.Domain.Enums.NovaPost;
-using Katino.Application.DTOs.Statistics;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
-using Katino.Domain.Models.Statistics;
 using Katino.Domain.Models.Pnl;
-using Katino.Application.DTOs.User;
+using Katino.Domain.Models.Statistics;
 
 namespace Katino.Application.Mappers;
 
@@ -170,6 +170,9 @@ public class MappingProfile : Profile
         CreateMap<TopSellingProductItem, TopSellingProductDto>();
         CreateMap<TopSellingProductsResult, GetTopSellingProductsDto>()
             .ForMember(d => d.ResultsAmount, m => m.MapFrom(s => s.TotalCount));
+
+        CreateMap<TelegramNotificationType, TelegramNotificationTypeDto>().ReverseMap();
+        CreateMap<TelegramChatConfig, TelegramChatConfigDto>().ReverseMap();
     }
 }
 

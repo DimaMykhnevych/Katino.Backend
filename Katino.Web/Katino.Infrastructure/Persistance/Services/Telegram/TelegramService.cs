@@ -1,3 +1,4 @@
+using Katino.Domain.Enums;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderItemRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
@@ -36,8 +37,15 @@ public class TelegramService : ITelegramService
     {
         var settings = await _telegramSettingsRepository.GetSettingsAsync();
 
-        if (settings is null || !settings.NotificationsEnabled ||
-            string.IsNullOrEmpty(settings.BotToken) || string.IsNullOrEmpty(settings.ChatId))
+        if (settings is null || string.IsNullOrEmpty(settings.BotToken))
+        {
+            return;
+        }
+
+        var chatConfig = settings.ChatConfigs
+            .FirstOrDefault(c => c.NotificationType == TelegramNotificationType.SewingReport && c.NotificationsEnabled);
+
+        if (chatConfig is null || string.IsNullOrEmpty(chatConfig.ChatId))
         {
             return;
         }
@@ -72,21 +80,30 @@ public class TelegramService : ITelegramService
             }
         }
 
-        var chatId = ResolveChatId(settings.ChatId);
         var botClient = new TelegramBotClient(settings.BotToken);
-        await botClient.SendMessage(chatId, sb.ToString(), parseMode: ParseMode.Html);
+        await botClient.SendMessage(ResolveChatId(chatConfig.ChatId), sb.ToString(), parseMode: ParseMode.Html);
     }
 
     public async Task SendTestMessageAsync()
     {
         var settings = await _telegramSettingsRepository.GetSettingsAsync();
 
-        if (settings is null || string.IsNullOrEmpty(settings.BotToken) || string.IsNullOrEmpty(settings.ChatId))
-            throw new InvalidOperationException("Bot token and chat id should be set");
+        if (settings is null || string.IsNullOrEmpty(settings.BotToken))
+        {
+            throw new InvalidOperationException("Bot token should be set");
+        }
 
-        var chatId = ResolveChatId(settings.ChatId);
+        if (settings.ChatConfigs.Count == 0)
+        {
+            throw new InvalidOperationException("At least one chat should be configured");
+        }
+            
         var botClient = new TelegramBotClient(settings.BotToken);
-        await botClient.SendMessage(chatId, TestMessageText);
+
+        foreach (var chatConfig in settings.ChatConfigs)
+        {
+            await botClient.SendMessage(ResolveChatId(chatConfig.ChatId), TestMessageText);
+        }
     }
 
     public async Task<TelegramBotInfo> ValidateBotTokenAsync(string token)
@@ -133,7 +150,11 @@ public class TelegramService : ITelegramService
 
     private static string BuildColorPart(string name, string hex)
     {
-        if (name is null) return null;
+        if (name is null)
+        {
+            return null;
+        }
+
         var trimmed = hex?.TrimStart('#');
         return trimmed is not null ? $"{name} (#{trimmed})" : name;
     }

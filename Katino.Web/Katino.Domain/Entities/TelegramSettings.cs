@@ -4,6 +4,5 @@ public class TelegramSettings
 {
     public Guid Id { get; set; }
     public string BotToken { get; set; }
-    public string ChatId { get; set; }
-    public bool NotificationsEnabled { get; set; }
+    public ICollection<TelegramChatConfig> ChatConfigs { get; set; } = new List<TelegramChatConfig>();
 }

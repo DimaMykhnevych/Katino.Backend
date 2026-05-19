@@ -36,4 +36,5 @@ public interface IKatinoDbContext
     DbSet<OrderOrderTag> OrderOrderTags { get; set; }
     DbSet<ProductVariantSewer> ProductVariantSewers { get; set; }
     DbSet<TelegramSettings> TelegramSettings { get; set; }
+    DbSet<TelegramChatConfig> TelegramChatConfigs { get; set; }
 }

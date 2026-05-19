@@ -1,3 +1,4 @@
+using AutoMapper;
 using Katino.Domain.Entities;
 using Katino.Domain.Repositories.TelegramSettingsRepository;
 using MediatR;
@@ -7,10 +8,12 @@ namespace Katino.Application.Commands.Telegram.UpdateTelegramSettings;
 public class UpdateTelegramSettingsCommandHandler : IRequestHandler<UpdateTelegramSettingsCommand, bool>
 {
     private readonly ITelegramSettingsRepository _telegramSettingsRepository;
+    private readonly IMapper _mapper;
 
-    public UpdateTelegramSettingsCommandHandler(ITelegramSettingsRepository telegramSettingsRepository)
+    public UpdateTelegramSettingsCommandHandler(ITelegramSettingsRepository telegramSettingsRepository, IMapper mapper)
     {
         _telegramSettingsRepository = telegramSettingsRepository;
+        _mapper = mapper;
     }
 
     public async Task<bool> Handle(UpdateTelegramSettingsCommand request, CancellationToken cancellationToken)
@@ -19,13 +22,20 @@ public class UpdateTelegramSettingsCommandHandler : IRequestHandler<UpdateTelegr
 
         if (settings is null)
         {
-            await _telegramSettingsRepository.Insert(new TelegramSettings
+            var newSettings = new TelegramSettings
             {
                 Id = Guid.NewGuid(),
-                BotToken = request.BotToken,
-                ChatId = request.ChatId,
-                NotificationsEnabled = request.NotificationsEnabled
-            });
+                BotToken = request.BotToken
+            };
+
+            foreach (var dto in request.ChatConfigs)
+            {
+                var chatConfig = _mapper.Map<TelegramChatConfig>(dto);
+                chatConfig.TelegramSettingsId = newSettings.Id;
+                newSettings.ChatConfigs.Add(chatConfig);
+            }
+
+            await _telegramSettingsRepository.Insert(newSettings);
         }
         else
         {
@@ -34,8 +44,14 @@ public class UpdateTelegramSettingsCommandHandler : IRequestHandler<UpdateTelegr
                 settings.BotToken = request.BotToken;
             }
 
-            settings.ChatId = request.ChatId;
-            settings.NotificationsEnabled = request.NotificationsEnabled;
+            settings.ChatConfigs.Clear();
+            foreach (var dto in request.ChatConfigs)
+            {
+                var chatConfig = _mapper.Map<TelegramChatConfig>(dto);
+                chatConfig.TelegramSettingsId = settings.Id;
+                settings.ChatConfigs.Add(chatConfig);
+            }
+
             await _telegramSettingsRepository.Update(settings);
         }
 

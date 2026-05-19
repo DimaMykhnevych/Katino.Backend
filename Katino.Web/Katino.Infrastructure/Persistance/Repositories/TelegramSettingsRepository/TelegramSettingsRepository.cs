@@ -13,6 +13,8 @@ public class TelegramSettingsRepository : Repository<TelegramSettings>, ITelegra
 
     public async Task<TelegramSettings> GetSettingsAsync()
     {
-        return await context.TelegramSettings.FirstOrDefaultAsync();
+        return await context.TelegramSettings
+            .Include(x => x.ChatConfigs)
+            .FirstOrDefaultAsync();
     }
 }
