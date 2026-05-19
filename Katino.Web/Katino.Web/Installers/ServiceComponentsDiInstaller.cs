@@ -141,6 +141,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ITopSellingProductsService, TopSellingProductsService>();
         services.AddTransient<ICreateOrdersScanSheetService, CreateOrdersScanSheetService>();
         services.AddTransient<ITelegramService, TelegramService>();
+        services.AddTransient<ISewingReportNotifier, SewingReportNotifier>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();

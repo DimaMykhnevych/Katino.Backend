@@ -10,18 +10,18 @@ namespace Katino.Application.Commands.OrderItemN.SubmitSewedReport;
 public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReportCommand, bool>
 {
     private readonly ISewingProductionReportService _sewingProductionReportService;
-    private readonly ITelegramService _telegramService;
+    private readonly ISewingReportNotifier _sewingReportNotifier;
     private readonly ILogger _logger;
     private readonly IMapper _mapper;
 
     public SubmitSewedReportCommandHandler(
         ISewingProductionReportService sewingProductionReportService,
-        ITelegramService telegramService,
+        ISewingReportNotifier sewingReportNotifier,
         ILoggerFactory loggerFactory,
         IMapper mapper)
     {
         _sewingProductionReportService = sewingProductionReportService;
-        _telegramService = telegramService;
+        _sewingReportNotifier = sewingReportNotifier;
         _logger = loggerFactory?.CreateLogger(nameof(SubmitSewedReportCommandHandler));
         _mapper = mapper;
     }
@@ -40,8 +40,7 @@ public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReport
             {
                 try
                 {
-                    await _telegramService.SendSewingReportNotificationAsync(report, request.SubmitterName)
-                        .ConfigureAwait(false);
+                    await _sewingReportNotifier.NotifyAsync(report, request.SubmitterName).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

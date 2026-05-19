@@ -1,10 +1,7 @@
 using Katino.Domain.Enums;
 using Katino.Domain.Models;
-using Katino.Domain.Repositories.OrderItemRepository;
-using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.TelegramSettingsRepository;
 using Katino.Domain.Services.TelegramN;
-using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -13,27 +10,16 @@ namespace Katino.Infrastructure.Persistance.Services.TelegramN;
 
 public class TelegramService : ITelegramService
 {
-    // TODO localization in future
-    private const string MessageHeader = "Звіт від швеї:";
-    private const string CustomText = "індивід.";
-    private const string QuantityText = "шт.";
     private const string TestMessageText = "✅ Тестове повідомлення від Katino CRM. Telegram-сповіщення налаштовано успішно!";
 
     private readonly ITelegramSettingsRepository _telegramSettingsRepository;
-    private readonly IProductVariantRepository _productVariantRepository;
-    private readonly IOrderItemRepository _orderItemRepository;
 
-    public TelegramService(
-        ITelegramSettingsRepository telegramSettingsRepository,
-        IProductVariantRepository productVariantRepository,
-        IOrderItemRepository orderItemRepository)
+    public TelegramService(ITelegramSettingsRepository telegramSettingsRepository)
     {
         _telegramSettingsRepository = telegramSettingsRepository;
-        _productVariantRepository = productVariantRepository;
-        _orderItemRepository = orderItemRepository;
     }
 
-    public async Task SendSewingReportNotificationAsync(List<SewedReport> report, string sewerName)
+    public async Task SendAsync(string message, TelegramNotificationType notificationType)
     {
         var settings = await _telegramSettingsRepository.GetSettingsAsync();
 
@@ -43,45 +29,15 @@ public class TelegramService : ITelegramService
         }
 
         var chatConfig = settings.ChatConfigs
-            .FirstOrDefault(c => c.NotificationType == TelegramNotificationType.SewingReport && c.NotificationsEnabled);
+            .FirstOrDefault(c => c.NotificationType == notificationType && c.NotificationsEnabled);
 
         if (chatConfig is null || string.IsNullOrEmpty(chatConfig.ChatId))
         {
             return;
         }
 
-        StringBuilder sb = new();
-        sb.AppendLine($"🧵 <b>{MessageHeader} {sewerName}</b>");
-        sb.AppendLine($"📅 {DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(3)):dd.MM.yyyy HH:mm}");
-        sb.AppendLine();
-
-        foreach (var item in report.Where(r => r.ActualSewedQuantity > 0))
-        {
-            var pv = await _productVariantRepository.GetWithProductColorAndSize(item.ProductVariantId);
-            var label = pv?.Product?.Name is not null
-                ? $"{pv.Product.Name} ({pv.Article})"
-                : pv?.Article ?? item.ProductVariantId.ToString();
-
-            var sizePart = pv?.Size?.Name;
-            var colorPart = BuildColorPart(pv?.Color?.Name, pv?.Color?.HexCode);
-            var meta = string.Join(" | ", new[] { sizePart, colorPart }.Where(p => p is not null));
-            var metaStr = meta.Length > 0 ? $" | {meta}" : "";
-
-            var orderNote = item.OrderItemId.HasValue ? $" <i>[{CustomText}]</i>" : "";
-            sb.AppendLine($"• {label}{metaStr} — {item.ActualSewedQuantity} {QuantityText}{orderNote}");
-
-            if (item.OrderItemId.HasValue)
-            {
-                var orderItem = await _orderItemRepository.Get(item.OrderItemId.Value);
-                if (!string.IsNullOrWhiteSpace(orderItem?.Comment))
-                {
-                    sb.AppendLine($"  💬 <i>{orderItem.Comment}</i>");
-                }
-            }
-        }
-
         var botClient = new TelegramBotClient(settings.BotToken);
-        await botClient.SendMessage(ResolveChatId(chatConfig.ChatId), sb.ToString(), parseMode: ParseMode.Html);
+        await botClient.SendMessage(ResolveChatId(chatConfig.ChatId), message, parseMode: ParseMode.Html);
     }
 
     public async Task SendTestMessageAsync()
@@ -146,17 +102,6 @@ public class TelegramService : ITelegramService
                 Type = c.Type.ToString()
             })
             .ToList();
-    }
-
-    private static string BuildColorPart(string name, string hex)
-    {
-        if (name is null)
-        {
-            return null;
-        }
-
-        var trimmed = hex?.TrimStart('#');
-        return trimmed is not null ? $"{name} (#{trimmed})" : name;
     }
 
     private static ChatId ResolveChatId(string chatIdString)

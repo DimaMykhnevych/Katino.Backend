@@ -1,0 +1,81 @@
+using Katino.Domain.Enums;
+using Katino.Domain.Models;
+using Katino.Domain.Repositories.OrderItemRepository;
+using Katino.Domain.Repositories.ProductVariantRepository;
+using Katino.Domain.Services.TelegramN;
+using System.Text;
+
+namespace Katino.Infrastructure.Persistance.Services.TelegramN;
+
+public class SewingReportNotifier : ISewingReportNotifier
+{
+    private const string MessageHeader = "Звіт від швеї:";
+    private const string CustomText = "індивід.";
+    private const string QuantityText = "шт.";
+
+    private readonly ITelegramService _telegramService;
+    private readonly IProductVariantRepository _productVariantRepository;
+    private readonly IOrderItemRepository _orderItemRepository;
+
+    public SewingReportNotifier(
+        ITelegramService telegramService,
+        IProductVariantRepository productVariantRepository,
+        IOrderItemRepository orderItemRepository)
+    {
+        _telegramService = telegramService;
+        _productVariantRepository = productVariantRepository;
+        _orderItemRepository = orderItemRepository;
+    }
+
+    public async Task NotifyAsync(List<SewedReport> report, string sewerName)
+    {
+        var message = await BuildMessageAsync(report, sewerName);
+        await _telegramService.SendAsync(message, TelegramNotificationType.SewingReport);
+    }
+
+    private async Task<string> BuildMessageAsync(List<SewedReport> report, string sewerName)
+    {
+        StringBuilder sb = new();
+        sb.AppendLine($"🧵 <b>{MessageHeader} {sewerName}</b>");
+        sb.AppendLine($"📅 {DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(3)):dd.MM.yyyy HH:mm}");
+        sb.AppendLine();
+
+        foreach (var item in report.Where(r => r.ActualSewedQuantity > 0))
+        {
+            var pv = await _productVariantRepository.GetWithProductColorAndSize(item.ProductVariantId);
+            var label = pv?.Product?.Name is not null
+                ? $"{pv.Product.Name} ({pv.Article})"
+                : pv?.Article ?? item.ProductVariantId.ToString();
+
+            var sizePart = pv?.Size?.Name;
+            var colorPart = BuildColorPart(pv?.Color?.Name, pv?.Color?.HexCode);
+            var meta = string.Join(" | ", new[] { sizePart, colorPart }.Where(p => p is not null));
+            var metaStr = meta.Length > 0 ? $" | {meta}" : "";
+
+            var orderNote = item.OrderItemId.HasValue ? $" <i>[{CustomText}]</i>" : "";
+            sb.AppendLine($"• {label}{metaStr} — {item.ActualSewedQuantity} {QuantityText}{orderNote}");
+
+            if (item.OrderItemId.HasValue)
+            {
+                var orderItem = await _orderItemRepository.Get(item.OrderItemId.Value);
+                if (!string.IsNullOrWhiteSpace(orderItem?.Comment))
+                {
+                    sb.AppendLine($"  💬 <i>{orderItem.Comment}</i>");
+                }
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static string BuildColorPart(string name, string hex)
+    {
+        if (name is null)
+        {
+            return null;
+        }
+
+        var trimmed = hex?.TrimStart('#');
+        return trimmed is not null ? $"{name} (#{trimmed})" : name;
+    }
+}
