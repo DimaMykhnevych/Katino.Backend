@@ -10,6 +10,7 @@ namespace Katino.Infrastructure.Persistance.Services.TelegramN;
 
 public class TelegramService : ITelegramService
 {
+    // TODO i18n
     private const string TestMessageText = "✅ Тестове повідомлення від Katino CRM. Telegram-сповіщення налаштовано успішно!";
 
     private readonly ITelegramSettingsRepository _telegramSettingsRepository;

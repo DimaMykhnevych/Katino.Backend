@@ -10,11 +10,13 @@ using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
+using Katino.Domain.Repositories.TelegramSettingsRepository;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.TelegramN;
 using Katino.Functions.Services.NpIntDocStatusSyncService;
 using Katino.Domain.Context;
 using Katino.Infrastructure.Persistance.Context;
@@ -27,11 +29,13 @@ using Katino.Infrastructure.Persistance.Repositories.OrderTagRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
+using Katino.Infrastructure.Persistance.Repositories.TelegramSettingsRepository;
 using Katino.Infrastructure.Persistance.Services.AzureStorage;
 using Katino.Infrastructure.Persistance.Services.NovaPost;
 using Katino.Infrastructure.Persistance.Services.OrderItemN;
 using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
+using Katino.Infrastructure.Persistance.Services.TelegramN;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,6 +100,8 @@ var host = new HostBuilder()
         services.AddTransient<IOrderDeliveryHandlerFactory, OrderDeliveryHandlerFactory>();
         services.AddTransient<IAddOrderRecipientService, AddOrderRecipientService>();
         services.AddTransient<IAddNpOptionsSeatService, AddNpOptionsSeatService>();
+        services.AddTransient<ITelegramService, TelegramService>();
+        services.AddTransient<IOrderRejectionNotifier, OrderRejectionNotifier>();
 
         string connectionString = context.Configuration[ConfigurationKeys.DefaultConnectionString];
         services.AddDbContext<KatinoDbContext>(opt =>
@@ -117,6 +123,7 @@ var host = new HostBuilder()
         services.AddTransient<IFinanceCategoryRepository, FinanceCategoryRepository>();
         services.AddTransient<IOrderRecipientRepository, OrderRecipientRepository>();
         services.AddTransient<INpOptionsSeatRepository, NpOptionsSeatRepository>();
+        services.AddTransient<ITelegramSettingsRepository, TelegramSettingsRepository>();
     })
     .Build();
 

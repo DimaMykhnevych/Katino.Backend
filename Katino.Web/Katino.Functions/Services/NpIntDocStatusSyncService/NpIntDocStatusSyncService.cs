@@ -9,6 +9,7 @@ using Katino.Domain.Services.NovaPost.InternetDocument;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.TelegramN;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Functions.Services.NpIntDocStatusSyncService;
@@ -37,6 +38,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
     private readonly IDeleteOrderService _deleteOrderService;
     private readonly IOrderTagRepository _orderTagRepository;
     private readonly IKatinoDbContext _dbContext;
+    private readonly IOrderRejectionNotifier _orderRejectionNotifier;
     private readonly ILogger _logger;
 
     public NpIntDocStatusSyncService(
@@ -48,6 +50,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         IDeleteOrderService deleteOrderService,
         IOrderTagRepository orderTagRepository,
         IKatinoDbContext dbContext,
+        IOrderRejectionNotifier orderRejectionNotifier,
         ILoggerFactory loggerFactory)
     {
         _internetDocumentService = internetDocumentService;
@@ -58,6 +61,7 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
         _deleteOrderService = deleteOrderService;
         _orderTagRepository = orderTagRepository;
         _dbContext = dbContext;
+        _orderRejectionNotifier = orderRejectionNotifier;
         _logger = loggerFactory?.CreateLogger(nameof(NpIntDocStatusSyncService));
     }
 
@@ -140,6 +144,15 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
                 else
                 {
                     _logger.LogInformation("RefundMoney tag to order {OrderId} is not attached, it has AfterpaymentOnGoodsCost, {Cost}", order.Id, order.AfterpaymentOnGoodsCost);
+                }
+
+                try
+                {
+                    await _orderRejectionNotifier.NotifyAsync(order);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send rejection notification for order {OrderId}", order.Id);
                 }
             }
             else

@@ -18,4 +18,12 @@ public class OrderRecipientRepository : Repository<OrderRecipient>, IOrderRecipi
             .AsNoTracking()
             .FirstOrDefaultAsync(or => or.NpContactPerson.Phones == phoneNumber);
     }
+
+    public async Task<OrderRecipient> GetWithNpContactPersonAsync(Guid id)
+    {
+        return await context.OrderRecipients
+            .Include(or => or.NpContactPerson)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(or => or.Id == id);
+    }
 }

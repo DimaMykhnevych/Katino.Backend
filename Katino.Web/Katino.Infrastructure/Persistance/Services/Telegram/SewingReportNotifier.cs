@@ -7,11 +7,10 @@ using System.Text;
 
 namespace Katino.Infrastructure.Persistance.Services.TelegramN;
 
-public class SewingReportNotifier : ISewingReportNotifier
+public class SewingReportNotifier : BaseNotifier, ISewingReportNotifier
 {
+    // TODO i18n
     private const string MessageHeader = "Звіт від швеї:";
-    private const string CustomText = "індивід.";
-    private const string QuantityText = "шт.";
 
     private readonly ITelegramService _telegramService;
     private readonly IProductVariantRepository _productVariantRepository;
@@ -43,14 +42,8 @@ public class SewingReportNotifier : ISewingReportNotifier
         foreach (var item in report.Where(r => r.ActualSewedQuantity > 0))
         {
             var pv = await _productVariantRepository.GetWithProductColorAndSize(item.ProductVariantId);
-            var label = pv?.Product?.Name is not null
-                ? $"{pv.Product.Name} ({pv.Article})"
-                : pv?.Article ?? item.ProductVariantId.ToString();
-
-            var sizePart = pv?.Size?.Name;
-            var colorPart = BuildColorPart(pv?.Color?.Name, pv?.Color?.HexCode);
-            var meta = string.Join(" | ", new[] { sizePart, colorPart }.Where(p => p is not null));
-            var metaStr = meta.Length > 0 ? $" | {meta}" : "";
+            var label = BuildProductLabel(pv, item.ProductVariantId);
+            var metaStr = BuildProductMetaSuffix(pv);
 
             var orderNote = item.OrderItemId.HasValue ? $" <i>[{CustomText}]</i>" : "";
             sb.AppendLine($"• {label}{metaStr} — {item.ActualSewedQuantity} {QuantityText}{orderNote}");
@@ -66,16 +59,5 @@ public class SewingReportNotifier : ISewingReportNotifier
         }
 
         return sb.ToString();
-    }
-
-    private static string BuildColorPart(string name, string hex)
-    {
-        if (name is null)
-        {
-            return null;
-        }
-
-        var trimmed = hex?.TrimStart('#');
-        return trimmed is not null ? $"{name} (#{trimmed})" : name;
     }
 }
