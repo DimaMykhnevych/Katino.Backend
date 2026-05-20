@@ -5,6 +5,7 @@ using Katino.Application.Commands.OrderN.UpdateOrder;
 using Katino.Application.DTOs.Order;
 using Katino.Application.Queries.OrderN.GetNextOrderStatus;
 using Katino.Application.Queries.OrderN.GetOrder;
+using Katino.Application.Queries.OrderN.GetOrderById;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,14 @@ public class OrderController : ControllerBase
     {
         var result = await _mediator.Send(getOrderQuery);
         return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetOrderByIdQuery { Id = id });
+        return result is null ? NotFound() : Ok(result);
     }
 
     [HttpPost]
