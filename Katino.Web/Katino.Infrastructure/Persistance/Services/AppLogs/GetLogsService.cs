@@ -6,13 +6,6 @@ namespace Katino.Infrastructure.Persistance.Services.AppLogs;
 
 public class GetLogsService : IGetLogsService
 {
-    private readonly string _fullLogsPath =
-        Environment.GetEnvironmentVariable(EnvVariables.LogsDir)
-        ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Katino",
-            "logs");
-
     private readonly ILogger _logger;
 
     public GetLogsService(ILoggerFactory loggerFactory)
@@ -20,24 +13,25 @@ public class GetLogsService : IGetLogsService
         _logger = loggerFactory?.CreateLogger(nameof(GetLogsService));
     }
 
-    public async Task<(string, Stream)> GetFileLogs(DateTime date)
+    public async Task<(string, Stream)> GetFileLogs(DateTime date, string directoryName)
     {
         _logger.LogDebug("Getting file logs by {date}", date.ToString("yyyy-MM-dd"));
-        var (fileName, logs) = await GetPlainTextLogsInternal(date);
+        var (fileName, logs) = await GetPlainTextLogsInternal(date, directoryName);
         return (fileName, GenerateStreamFromString(logs));
     }
 
-    public async Task<(string, string)> GetPlainTextLogs(DateTime date)
+    public async Task<(string, string)> GetPlainTextLogs(DateTime date, string directoryName)
     {
         _logger.LogDebug("Getting plain text logs by {date}", date.ToString("yyyy-MM-dd"));
-        return await GetPlainTextLogsInternal(date);
+        return await GetPlainTextLogsInternal(date, directoryName);
     }
 
-    private async Task<(string, string)> GetPlainTextLogsInternal(DateTime date)
+    private async Task<(string, string)> GetPlainTextLogsInternal(DateTime date, string directoryName)
     {
-        if (!Directory.Exists(_fullLogsPath))
+        var fullLogsPath = GetLogsPath(directoryName);
+        if (!Directory.Exists(fullLogsPath))
         {
-            Directory.CreateDirectory(_fullLogsPath);
+            Directory.CreateDirectory(fullLogsPath);
         }
 
         if (date == DateTime.MinValue)
@@ -45,7 +39,7 @@ public class GetLogsService : IGetLogsService
             date = DateTime.UtcNow;
         }
 
-        string[] fileEntries = Directory.GetFiles(_fullLogsPath);
+        string[] fileEntries = Directory.GetFiles(fullLogsPath);
         string pattern = $"{date:yyyyMMdd}";
         string neededDateLogsFilePath = fileEntries.FirstOrDefault(f => f.Contains(pattern));
         if (string.IsNullOrEmpty(neededDateLogsFilePath))
@@ -59,6 +53,27 @@ public class GetLogsService : IGetLogsService
         using var sr = new StreamReader(fs);
         content += await sr.ReadToEndAsync();
         return (Path.GetFileName(neededDateLogsFilePath), content);
+    }
+
+    private static string GetLogsPath(string directoryName)
+    {
+        var logsDirFromEnv = Environment.GetEnvironmentVariable(EnvVariables.LogsDir);
+        if (!string.IsNullOrEmpty(logsDirFromEnv))
+        {
+            return logsDirFromEnv;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                directoryName,
+                "logs");
+        }
+        else
+        {
+            return $"/home/LogFiles/{directoryName}";
+        }
     }
 
     private static Stream GenerateStreamFromString(string s)

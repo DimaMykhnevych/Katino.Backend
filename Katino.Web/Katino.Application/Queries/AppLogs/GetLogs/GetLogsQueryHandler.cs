@@ -8,6 +8,7 @@ namespace Katino.Application.Queries.AppLogs.GetLogs;
 
 public class GetLogsQueryHandler : IRequestHandler<GetLogsQuery, LogsDto>
 {
+    private const string LogsFolder = "Katino";
     private readonly IGetLogsService _getLogsService;
     private readonly ILogger _logger;
 
@@ -27,12 +28,12 @@ public class GetLogsQueryHandler : IRequestHandler<GetLogsQuery, LogsDto>
         switch (request.GetLogsMode)
         {
             case GetLogsMode.PlainText:
-                var plainTextResult = await _getLogsService.GetPlainTextLogs(request.Date);
+                var plainTextResult = await _getLogsService.GetPlainTextLogs(request.Date, LogsFolder);
                 logsResult.PlainTextContent = plainTextResult.Item2;
                 logsResult.FileName = plainTextResult.Item1;
                 break;
             case GetLogsMode.File:
-                var fileResult = await _getLogsService.GetFileLogs(request.Date);
+                var fileResult = await _getLogsService.GetFileLogs(request.Date, LogsFolder);
                 logsResult.LogsStream = fileResult.Item2;
                 logsResult.FileName = fileResult.Item1;
                 break;
