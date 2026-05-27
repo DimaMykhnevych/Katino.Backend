@@ -1,8 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.11.35327.3
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11801.241
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "crm", "crm", "{C9E2F3A1-8B4D-4E6F-9A3B-5C7D8E9F0A1B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{D4E5F6A7-B8C9-4D0E-1F2A-3B4C5D6E7F8A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "site", "site", "{279DEF5E-99AD-4369-8307-42E97E6B58F0}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Katino.Web", "Katino.Web\Katino.Web.csproj", "{48833703-249E-40E9-A47E-B2A2B31181BD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Katino.Migrator", "Katino.Migrator\Katino.Migrator.csproj", "{10016010-AD5F-470B-A12F-CAEEC59A7356}"
@@ -14,6 +20,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Katino.Application", "Katino.Application\Katino.Application.csproj", "{00710A51-7C48-4C76-B95E-9478A34869EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Katino.Functions", "Katino.Functions\Katino.Functions.csproj", "{60F7CB97-8C51-47FC-9703-C62C389BE4AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Katino.Store.Web", "site\Katino.Store.Web\Katino.Store.Web.csproj", "{1D46EC9D-F3F5-401F-8840-CAB104C627CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Katino.Store.Application", "site\Katino.Store.Application\Katino.Store.Application.csproj", "{4C1B3641-1189-40C8-A595-952C932DB5F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,9 +55,27 @@ Global
 		{60F7CB97-8C51-47FC-9703-C62C389BE4AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60F7CB97-8C51-47FC-9703-C62C389BE4AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60F7CB97-8C51-47FC-9703-C62C389BE4AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D46EC9D-F3F5-401F-8840-CAB104C627CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D46EC9D-F3F5-401F-8840-CAB104C627CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D46EC9D-F3F5-401F-8840-CAB104C627CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D46EC9D-F3F5-401F-8840-CAB104C627CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C1B3641-1189-40C8-A595-952C932DB5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C1B3641-1189-40C8-A595-952C932DB5F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C1B3641-1189-40C8-A595-952C932DB5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C1B3641-1189-40C8-A595-952C932DB5F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{48833703-249E-40E9-A47E-B2A2B31181BD} = {C9E2F3A1-8B4D-4E6F-9A3B-5C7D8E9F0A1B}
+		{10016010-AD5F-470B-A12F-CAEEC59A7356} = {C9E2F3A1-8B4D-4E6F-9A3B-5C7D8E9F0A1B}
+		{F860F7A1-A091-4503-8215-D7EF44F21DA9} = {D4E5F6A7-B8C9-4D0E-1F2A-3B4C5D6E7F8A}
+		{6F3FB78C-FCC1-4F71-9909-573F72CD8004} = {D4E5F6A7-B8C9-4D0E-1F2A-3B4C5D6E7F8A}
+		{00710A51-7C48-4C76-B95E-9478A34869EC} = {C9E2F3A1-8B4D-4E6F-9A3B-5C7D8E9F0A1B}
+		{60F7CB97-8C51-47FC-9703-C62C389BE4AF} = {C9E2F3A1-8B4D-4E6F-9A3B-5C7D8E9F0A1B}
+		{1D46EC9D-F3F5-401F-8840-CAB104C627CA} = {279DEF5E-99AD-4369-8307-42E97E6B58F0}
+		{4C1B3641-1189-40C8-A595-952C932DB5F4} = {279DEF5E-99AD-4369-8307-42E97E6B58F0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FB02DF3A-6C48-4E1B-BF42-18F38BCFB16C}
