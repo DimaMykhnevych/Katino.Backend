@@ -1,4 +1,5 @@
 using Katino.Domain.Builders;
+using Katino.Domain.Enums;
 using Katino.Store.Application.DTOs.Products;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
             CategoryId = p.CategoryId,
             Price = p.Price,
             PhotoUrl = p.Variants
-                .FirstOrDefault()?.Photos
+                .FirstOrDefault(v => v.Status != ProductStatus.Discontinued)?.Photos
                 .OrderBy(ph => ph.DisplayOrder)
                 .FirstOrDefault()?.PhotoUrl
         }).ToList();

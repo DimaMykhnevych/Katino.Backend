@@ -1,5 +1,6 @@
 using Katino.Domain.Builders;
 using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ public class ProductQueryBuilder : IProductQueryBuilder
         _query = _dbContext.Products
             .AsNoTracking()
             .AsSplitQuery()
+            .Where(p => p.Variants.Any(v => v.DeletedAt == null && v.Status != ProductStatus.Discontinued))
             .Include(p => p.Variants.Where(v => v.DeletedAt == null))
                 .ThenInclude(v => v.Photos)
             .OrderByDescending(p => p.CreatedAt);
