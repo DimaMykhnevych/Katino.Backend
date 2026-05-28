@@ -1,5 +1,6 @@
 using Katino.Store.Application.DTOs.Products;
 using Katino.Store.Application.Queries.Products.GetProducts;
+using Katino.Store.Application.Queries.Products.GetRecentProducts;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -24,6 +25,15 @@ public class ProductController : ControllerBase
     public async Task<IActionResult> GetProducts([FromQuery] GetProductsQuery query)
     {
         GetProductsDto result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpGet("recent")]
+    [SwaggerOperation(Summary = "Gets the 20 most recently added products. Response is cached for 10 minutes.")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(IEnumerable<ProductListItemDto>))]
+    public async Task<IActionResult> GetRecentProducts()
+    {
+        IEnumerable<ProductListItemDto> result = await _mediator.Send(new GetRecentProductsQuery());
         return Ok(result);
     }
 }

@@ -13,6 +13,8 @@ public class ServiceComponentsDiInstaller : IInstaller
 {
     public void InstallServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddMemoryCache();
+
         // contexts
         services.AddScoped<IKatinoDbContext>(sp => sp.GetRequiredService<KatinoDbContext>());
 

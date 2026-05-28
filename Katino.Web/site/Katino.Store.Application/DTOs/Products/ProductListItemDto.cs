@@ -8,4 +8,5 @@ public class ProductListItemDto
     public Guid CategoryId { get; set; }
     public decimal Price { get; set; }
     public string PhotoUrl { get; set; }
+    public List<ProductColorDto> Colors { get; set; }
 }

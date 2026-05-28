@@ -3,38 +3,43 @@ using Katino.Domain.Enums;
 using Katino.Store.Application.DTOs.Products;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace Katino.Store.Application.Queries.Products.GetProducts;
+namespace Katino.Store.Application.Queries.Products.GetRecentProducts;
 
-public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProductsDto>
+public class GetRecentProductsQueryHandler : IRequestHandler<GetRecentProductsQuery, IEnumerable<ProductListItemDto>>
 {
+    private const string CacheKey = "recent-products";
+    private const int PageSize = 20;
+
     private readonly IProductQueryBuilder _productQueryBuilder;
+    private readonly IMemoryCache _memoryCache;
     private readonly ILogger _logger;
 
-    public GetProductsQueryHandler(
+    public GetRecentProductsQueryHandler(
         IProductQueryBuilder productQueryBuilder,
+        IMemoryCache memoryCache,
         ILoggerFactory loggerFactory)
     {
         _productQueryBuilder = productQueryBuilder;
-        _logger = loggerFactory.CreateLogger(nameof(GetProductsQueryHandler));
+        _memoryCache = memoryCache;
+        _logger = loggerFactory.CreateLogger(nameof(GetRecentProductsQueryHandler));
     }
 
-    public async Task<GetProductsDto> Handle(GetProductsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ProductListItemDto>> Handle(GetRecentProductsQuery request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        _logger.LogInformation("Handling get products request. Search = {search}, Page = {page}", request.Search, request.Page);
+        if (_memoryCache.TryGetValue(CacheKey, out IEnumerable<ProductListItemDto> cached))
+        {
+            _logger.LogInformation("Returning recent products from cache");
+            return cached;
+        }
 
-        int totalCount = await _productQueryBuilder
-            .SetBaseQuery()
-            .ApplySearch(request.Search)
-            .Build()
-            .CountAsync(cancellationToken);
+        _logger.LogInformation("Fetching recent products from database");
 
         var products = await _productQueryBuilder
             .SetBaseQuery()
-            .ApplySearch(request.Search)
-            .ApplyPaging(request.Page, request.PageSize)
+            .ApplyPaging(1, PageSize)
             .Build()
             .ToListAsync(cancellationToken);
 
@@ -56,10 +61,8 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
                 .Select(c => new ProductColorDto { Name = c.Name, HexCode = c.HexCode })]
         }).ToList();
 
-        return new GetProductsDto
-        {
-            Items = items,
-            TotalCount = totalCount
-        };
+        _memoryCache.Set(CacheKey, items, TimeSpan.FromMinutes(10));
+
+        return items;
     }
 }
