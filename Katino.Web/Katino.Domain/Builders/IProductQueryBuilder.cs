@@ -6,5 +6,6 @@ public interface IProductQueryBuilder : IQueryBuilder<Product>
 {
     IProductQueryBuilder SetBaseQuery();
     IProductQueryBuilder ApplySearch(string search);
+    IProductQueryBuilder ApplyCategoryFilter(IEnumerable<Guid> categoryIds);
     IProductQueryBuilder ApplyPaging(int page, int pageSize);
 }

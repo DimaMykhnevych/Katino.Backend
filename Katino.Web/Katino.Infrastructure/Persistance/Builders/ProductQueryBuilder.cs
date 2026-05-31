@@ -32,6 +32,20 @@ public class ProductQueryBuilder : IProductQueryBuilder
         return this;
     }
 
+    public IProductQueryBuilder ApplyCategoryFilter(IEnumerable<Guid> categoryIds)
+    {
+        EnsureQuery();
+
+        var ids = categoryIds?.ToList();
+        if (ids is null or [])
+        {
+            return this;
+        }
+
+        _query = _query.Where(p => ids.Contains(p.CategoryId));
+        return this;
+    }
+
     public IProductQueryBuilder ApplySearch(string search)
     {
         EnsureQuery();

@@ -28,12 +28,14 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
         int totalCount = await _productQueryBuilder
             .SetBaseQuery()
             .ApplySearch(request.Search)
+            .ApplyCategoryFilter(request.CategoryIds)
             .Build()
             .CountAsync(cancellationToken);
 
         var products = await _productQueryBuilder
             .SetBaseQuery()
             .ApplySearch(request.Search)
+            .ApplyCategoryFilter(request.CategoryIds)
             .ApplyPaging(request.Page, request.PageSize)
             .Build()
             .ToListAsync(cancellationToken);
