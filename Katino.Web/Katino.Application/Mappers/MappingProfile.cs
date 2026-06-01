@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Katino.Application.Commands.CollectionN.AddCollection;
 using Katino.Application.Commands.CategoryN.AddCategory;
 using Katino.Application.Commands.ColorN.AddColor;
 using Katino.Application.Commands.MeasurementTypeN.AddMeasurementType;
@@ -8,6 +9,7 @@ using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
+using Katino.Application.DTOs.Collection;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.CrmUserSettings;
 using Katino.Application.DTOs.FinanceCategory;
@@ -173,6 +175,12 @@ public class MappingProfile : Profile
 
         CreateMap<TelegramNotificationType, TelegramNotificationTypeDto>().ReverseMap();
         CreateMap<TelegramChatConfig, TelegramChatConfigDto>().ReverseMap();
+
+        CreateMap<AddCollectionCommand, Collection>();
+        CreateMap<Product, ProductInCollectionDto>();
+        CreateMap<Collection, CollectionDto>()
+            .ForMember(d => d.Products, m => m.MapFrom(s =>
+                s.ProductCollections.Select(pc => pc.Product).OrderBy(p => p.Name).ToList()));
     }
 }
 

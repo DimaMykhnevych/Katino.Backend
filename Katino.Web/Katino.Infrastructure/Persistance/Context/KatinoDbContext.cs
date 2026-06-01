@@ -40,6 +40,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<ProductVariantSewer> ProductVariantSewers { get; set; }
     public DbSet<TelegramSettings> TelegramSettings { get; set; }
     public DbSet<TelegramChatConfig> TelegramChatConfigs { get; set; }
+    public DbSet<Collection> Collections { get; set; }
+    public DbSet<ProductCollection> ProductCollections { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -345,6 +347,29 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             b.HasOne(x => x.TelegramSettings)
                 .WithMany(x => x.ChatConfigs)
                 .HasForeignKey(x => x.TelegramSettingsId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Collection>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Description).HasMaxLength(1000);
+            b.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+        });
+
+        builder.Entity<ProductCollection>(b =>
+        {
+            b.HasKey(pc => new { pc.CollectionId, pc.ProductId });
+
+            b.HasOne(pc => pc.Collection)
+                .WithMany(c => c.ProductCollections)
+                .HasForeignKey(pc => pc.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(pc => pc.Product)
+                .WithMany()
+                .HasForeignKey(pc => pc.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -3,6 +3,7 @@ using Katino.Application.Services.AuthorizationService;
 using Katino.Domain.Builders;
 using Katino.Domain.Context;
 using Katino.Domain.Repositories.CategoryRepository;
+using Katino.Domain.Repositories.CollectionRepository;
 using Katino.Domain.Repositories.ColorRepository;
 using Katino.Domain.Repositories.CrmUserSettingsRepository;
 using Katino.Domain.Repositories.FinanceCategoryRepository;
@@ -60,6 +61,7 @@ using Katino.Domain.Services.User.CreateUser;
 using Katino.Infrastructure.Persistance.Builders;
 using Katino.Infrastructure.Persistance.Context;
 using Katino.Infrastructure.Persistance.Repositories.CategoryRepository;
+using Katino.Infrastructure.Persistance.Repositories.CollectionRepository;
 using Katino.Infrastructure.Persistance.Repositories.ColorRepository;
 using Katino.Infrastructure.Persistance.Repositories.CrmUserSettingsRepository;
 using Katino.Infrastructure.Persistance.Repositories.FinanceCategoryRepository;
@@ -161,6 +163,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         // repositories
         services.AddTransient<IProductRepository, ProductRepository>();
         services.AddTransient<ICategoryRepository, CategoryRepository>();
+        services.AddTransient<ICollectionRepository, CollectionRepository>();
         services.AddTransient<ISizeRepository, SizeRepository>();
         services.AddTransient<IColorRepository, ColorRepository>();
         services.AddTransient<IMeasurementTypeRepository, MeasurementTypeRepository>();
