@@ -23,9 +23,9 @@ public class CollectionController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> Get([FromQuery] GetCollectionsQuery getCollectionsQuery)
     {
-        List<CollectionDto> collections = await _mediator.Send(new GetCollectionsQuery());
+        List<CollectionDto> collections = await _mediator.Send(getCollectionsQuery);
         return Ok(collections);
     }
 

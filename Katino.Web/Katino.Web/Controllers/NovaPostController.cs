@@ -45,7 +45,7 @@ public class NovaPostController : ControllerBase
     }
 
     [HttpPost("scan-sheet")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner},{Role.DirectManager}")]
     public async Task<IActionResult> CreateScanSheet()
     {
         var result = await _mediator.Send(new CreateScanSheetCommand());

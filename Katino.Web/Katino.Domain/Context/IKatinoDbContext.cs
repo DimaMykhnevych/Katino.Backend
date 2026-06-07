@@ -39,4 +39,8 @@ public interface IKatinoDbContext
     DbSet<TelegramChatConfig> TelegramChatConfigs { get; set; }
     DbSet<Collection> Collections { get; set; }
     DbSet<ProductCollection> ProductCollections { get; set; }
+    DbSet<Discount> Discounts { get; set; }
+    DbSet<DiscountProduct> DiscountProducts { get; set; }
+    DbSet<DiscountCollection> DiscountCollections { get; set; }
+    DbSet<DiscountBundleProduct> DiscountBundleProducts { get; set; }
 }

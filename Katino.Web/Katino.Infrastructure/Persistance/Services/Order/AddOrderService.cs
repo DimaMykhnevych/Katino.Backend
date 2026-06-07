@@ -15,6 +15,7 @@ using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.OrderN.OrderDeliveryHandler;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Katino.Domain.Services.OrderN.AddOrderService;
+using Katino.Domain.Services.OrderN.OrderPricingService;
 using Katino.Domain.Services.OrderN.UrgentOrderRedistributionService;
 using Microsoft.Extensions.Logging;
 
@@ -33,6 +34,7 @@ public class AddOrderService : IAddOrderService
     private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly IUrgentOrderRedistributionService _urgentOrderRedistributionService;
+    private readonly IOrderPricingService _orderPricingService;
     private readonly ILogger _logger;
 
     public AddOrderService(
@@ -47,6 +49,7 @@ public class AddOrderService : IAddOrderService
         IFinanceCategoryRepository financeCategoryRepository,
         IKatinoDbContext katinoDbContext,
         IUrgentOrderRedistributionService urgentOrderRedistributionService,
+        IOrderPricingService orderPricingService,
         ILoggerFactory loggerFactory)
     {
         _addNpCityService = addNpCityService;
@@ -60,10 +63,11 @@ public class AddOrderService : IAddOrderService
         _financeEntryRepository = financeEntryRepository;
         _financeCategoryRepository = financeCategoryRepository;
         _urgentOrderRedistributionService = urgentOrderRedistributionService;
+        _orderPricingService = orderPricingService;
         _logger = loggerFactory?.CreateLogger(nameof(AddOrderService));
     }
 
-    public async Task<OrderCreationResult> AddAsync(Order order, List<string> customTags)
+    public async Task<OrderCreationResult> AddAsync(Order order, List<string> customTags, bool recalculateCost = false)
     {
         _logger.LogInformation($"Adding order, order items count: {order.OrderItems.Count}");
 
@@ -90,7 +94,26 @@ public class AddOrderService : IAddOrderService
             _logger.LogTrace("Resolving NP options seats");
             var npOptionSeats = await deliveryHandler.ResolveNpOptionSeatsAsync(order.OrderNpOptionsSeats);
 
-            // 1. Process orderItems (set quantity to produce + order item statuses)
+            // 1. Resolve order cost
+            decimal finalCost;
+            double? finalAfterpayment = order.AfterpaymentOnGoodsCost;
+
+            if (recalculateCost)
+            {
+                _logger.LogTrace("Calculating order cost with discounts");
+                var pricingResult = await _orderPricingService.CalculateAsync(order.OrderItems, order.SaleType);
+                _logger.LogDebug("Order pricing: base={Base}, discount={Discount}, final={Final}",
+                    pricingResult.BaseTotal, pricingResult.TotalDiscount, pricingResult.FinalTotal);
+                finalCost = pricingResult.FinalTotal;
+                if (order.AfterpaymentOnGoodsCost.HasValue)
+                    finalAfterpayment = (double)(pricingResult.FinalTotal - 200m);
+            }
+            else
+            {
+                finalCost = (decimal)order.Cost;
+            }
+
+            // 2. Process orderItems (set quantity to produce + order item statuses)
             _logger.LogTrace("Processing order items statuses");
 
             List<ProductVariant> productVariantsRelatedToCurrentOrder = [];
@@ -124,8 +147,8 @@ public class AddOrderService : IAddOrderService
                 DeliveryType = order.DeliveryType,
                 SeatsAmount = order.SeatsAmount,
                 Description = order.Description,
-                Cost = order.Cost,
-                AfterpaymentOnGoodsCost = order.AfterpaymentOnGoodsCost,
+                Cost = (double)finalCost,
+                AfterpaymentOnGoodsCost = finalAfterpayment,
                 OrderItems = order.OrderItems,
                 OrderNpOptionsSeats = npOptionSeats,
                 AddressInfo = order.AddressInfo,
@@ -192,7 +215,7 @@ public class AddOrderService : IAddOrderService
             // 5. Handle internet document (NP: create TTN; non-NP: no-op)
             var npInternetDocCreated = await deliveryHandler.HandleInternetDocumentOnAddAsync(insertedOrder);
 
-            return new() { OrderAddedSuccessfully = true, NpInternetDocCreatedSuccessfully = npInternetDocCreated };
+            return new() { OrderAddedSuccessfully = true, NpInternetDocCreatedSuccessfully = npInternetDocCreated, CalculatedCost = finalCost };
         }
         catch (Exception ex)
         {

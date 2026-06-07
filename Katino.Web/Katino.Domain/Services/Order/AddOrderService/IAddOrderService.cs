@@ -5,5 +5,5 @@ namespace Katino.Domain.Services.OrderN.AddOrderService;
 
 public interface IAddOrderService
 {
-    Task<OrderCreationResult> AddAsync(Order order, List<string> customTags);
+    Task<OrderCreationResult> AddAsync(Order order, List<string> customTags, bool recalculateCost = false);
 }

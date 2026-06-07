@@ -16,6 +16,7 @@ using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
 using Katino.Domain.Services.OrderN.OrderDeliveryHandler;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
+using Katino.Domain.Services.OrderN.OrderPricingService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
 using Microsoft.Extensions.Logging;
@@ -37,6 +38,7 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IFinanceEntryRepository _financeEntryRepository;
     private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IOrderTagRepository _orderTagRepository;
+    private readonly IOrderPricingService _orderPricingService;
     private readonly ILogger _logger;
 
     public UpdateOrderService(
@@ -53,6 +55,7 @@ public class UpdateOrderService : IUpdateOrderService
         IFinanceEntryRepository financeEntryRepository,
         IFinanceCategoryRepository financeCategoryRepository,
         IOrderTagRepository orderTagRepository,
+        IOrderPricingService orderPricingService,
         ILoggerFactory loggerFactory)
     {
         _addNpCityService = addNpCityService;
@@ -68,10 +71,11 @@ public class UpdateOrderService : IUpdateOrderService
         _financeEntryRepository = financeEntryRepository;
         _financeCategoryRepository = financeCategoryRepository;
         _orderTagRepository = orderTagRepository;
+        _orderPricingService = orderPricingService;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
 
-    public async Task<OrderUpdateResult> UpdateAsync(Order order, List<string> customTags)
+    public async Task<OrderUpdateResult> UpdateAsync(Order order, List<string> customTags, bool recalculateCost = false)
     {
         _logger.LogInformation($"Updating order, order items count: {order.OrderItems.Count}");
         try
@@ -131,6 +135,24 @@ public class UpdateOrderService : IUpdateOrderService
 
             await using var transaction = await _katinoDbContext.Database.BeginTransactionAsync();
 
+            decimal finalCost;
+            double? finalAfterpayment = order.AfterpaymentOnGoodsCost;
+
+            if (recalculateCost)
+            {
+                _logger.LogTrace("Calculating order cost with discounts");
+                var pricingResult = await _orderPricingService.CalculateAsync(order.OrderItems, currentOrderInDb.SaleType);
+                _logger.LogDebug("Order pricing: base={Base}, discount={Discount}, final={Final}",
+                    pricingResult.BaseTotal, pricingResult.TotalDiscount, pricingResult.FinalTotal);
+                finalCost = pricingResult.FinalTotal;
+                if (order.AfterpaymentOnGoodsCost.HasValue)
+                    finalAfterpayment = (double)(pricingResult.FinalTotal - 200m);
+            }
+            else
+            {
+                finalCost = (decimal)order.Cost;
+            }
+
             Order updatedOrder;
             try
             {
@@ -156,8 +178,8 @@ public class UpdateOrderService : IUpdateOrderService
                     DeliveryType = effectiveDeliveryType, // DeliveryType cannot be changed from NotNovaPost
                     SeatsAmount = order.SeatsAmount,
                     Description = order.Description,
-                    Cost = order.Cost,
-                    AfterpaymentOnGoodsCost = order.AfterpaymentOnGoodsCost,
+                    Cost = (double)finalCost,
+                    AfterpaymentOnGoodsCost = finalAfterpayment,
                     OrderItems = order.OrderItems,
                     OrderNpOptionsSeats = npOptionSeats,
                     AddressInfo = order.AddressInfo,
@@ -238,7 +260,7 @@ public class UpdateOrderService : IUpdateOrderService
                 _logger.LogError(ex, "An error occurred during handling product variant quantity change");
             }
 
-            return new() { OrderUpdatedSuccessfully = true, NpInternetDocUpdatedSuccessfully = npInternetDocUpdatedSuccessfully };
+            return new() { OrderUpdatedSuccessfully = true, NpInternetDocUpdatedSuccessfully = npInternetDocUpdatedSuccessfully, CalculatedCost = finalCost };
         }
         catch (Exception ex)
         {

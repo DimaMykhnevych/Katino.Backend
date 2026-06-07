@@ -9,6 +9,7 @@ using Katino.Application.Commands.ProductN.AddProduct;
 using Katino.Application.Commands.User.CreateUser;
 using Katino.Application.DTOs;
 using Katino.Application.DTOs.Category;
+using Katino.Application.DTOs.Discount;
 using Katino.Application.DTOs.Collection;
 using Katino.Application.DTOs.Color;
 using Katino.Application.DTOs.CrmUserSettings;
@@ -42,6 +43,7 @@ using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Models;
 using Katino.Domain.Models.NovaPost;
 using Katino.Domain.Models.Pnl;
+using Katino.Domain.Models.Pricing;
 using Katino.Domain.Models.Statistics;
 
 namespace Katino.Application.Mappers;
@@ -181,6 +183,17 @@ public class MappingProfile : Profile
         CreateMap<Collection, CollectionDto>()
             .ForMember(d => d.Products, m => m.MapFrom(s =>
                 s.ProductCollections.Select(pc => pc.Product).OrderBy(p => p.Name).ToList()));
+
+        CreateMap<DiscountType, DiscountTypeDto>().ReverseMap();
+        CreateMap<DiscountValueType, DiscountValueTypeDto>().ReverseMap();
+        CreateMap<Collection, DiscountCollectionDto>();
+        CreateMap<Discount, DiscountDto>()
+            .ForMember(d => d.Products, m => m.MapFrom(s => s.DiscountProducts.Select(dp => dp.Product).ToList()))
+            .ForMember(d => d.Collections, m => m.MapFrom(s => s.DiscountCollections.Select(dc => dc.Collection).ToList()))
+            .ForMember(d => d.BundleProducts, m => m.MapFrom(s => s.BundleProducts.Select(bp => bp.Product).ToList()));
+        CreateMap<OrderPricingRequestDto, OrderPricingRequest>();
+        CreateMap<ItemPricingResult, ItemPricingResultDto>();
+        CreateMap<OrderPricingResult, OrderPricingResultDto>();
     }
 }
 

@@ -11,4 +11,5 @@ public interface IProductVariantRepository : IRepository<ProductVariant>
     void DeleteSewer(ProductVariantSewer sewer);
     Task<ProductVariant> GetWithProduct(Guid id);
     Task<ProductVariant> GetWithProductColorAndSize(Guid id);
+    Task<List<ProductVariant>> GetManyWithProductAndCollectionAsync(IEnumerable<Guid> ids);
 }

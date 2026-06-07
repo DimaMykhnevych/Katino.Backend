@@ -16,4 +16,5 @@ public class Product
     // Navigation properties
     public Category Category { get; set; }
     public List<ProductVariant> Variants { get; set; } = [];
+    public List<ProductCollection> ProductCollections { get; set; } = [];
 }

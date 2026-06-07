@@ -185,6 +185,92 @@ namespace Katino.Infrastructure.Migrations
                     b.ToTable("CrmUserSettings");
                 });
 
+            modelBuilder.Entity("Katino.Domain.Entities.Discount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("ValueType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("Discounts");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.DiscountBundleProduct", b =>
+                {
+                    b.Property<Guid>("DiscountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("DiscountId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("DiscountBundleProducts");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.DiscountCollection", b =>
+                {
+                    b.Property<Guid>("DiscountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("DiscountId", "CollectionId");
+
+                    b.HasIndex("CollectionId");
+
+                    b.ToTable("DiscountCollections");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.DiscountProduct", b =>
+                {
+                    b.Property<Guid>("DiscountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("DiscountId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("DiscountProducts");
+                });
+
             modelBuilder.Entity("Katino.Domain.Entities.FinanceCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1171,6 +1257,63 @@ namespace Katino.Infrastructure.Migrations
                     b.Navigation("NpWarehouse");
                 });
 
+            modelBuilder.Entity("Katino.Domain.Entities.DiscountBundleProduct", b =>
+                {
+                    b.HasOne("Katino.Domain.Entities.Discount", "Discount")
+                        .WithMany("BundleProducts")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Katino.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Discount");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.DiscountCollection", b =>
+                {
+                    b.HasOne("Katino.Domain.Entities.Collection", "Collection")
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Katino.Domain.Entities.Discount", "Discount")
+                        .WithMany("DiscountCollections")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Discount");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.DiscountProduct", b =>
+                {
+                    b.HasOne("Katino.Domain.Entities.Discount", "Discount")
+                        .WithMany("DiscountProducts")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Katino.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Discount");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Katino.Domain.Entities.FinanceEntry", b =>
                 {
                     b.HasOne("Katino.Domain.Entities.FinanceCategory", "Category")
@@ -1537,6 +1680,15 @@ namespace Katino.Infrastructure.Migrations
             modelBuilder.Entity("Katino.Domain.Entities.Color", b =>
                 {
                     b.Navigation("ProductVariants");
+                });
+
+            modelBuilder.Entity("Katino.Domain.Entities.Discount", b =>
+                {
+                    b.Navigation("BundleProducts");
+
+                    b.Navigation("DiscountCollections");
+
+                    b.Navigation("DiscountProducts");
                 });
 
             modelBuilder.Entity("Katino.Domain.Entities.FinanceCategory", b =>

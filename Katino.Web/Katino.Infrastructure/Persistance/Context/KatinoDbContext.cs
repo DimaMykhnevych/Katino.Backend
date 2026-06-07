@@ -42,6 +42,10 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<TelegramChatConfig> TelegramChatConfigs { get; set; }
     public DbSet<Collection> Collections { get; set; }
     public DbSet<ProductCollection> ProductCollections { get; set; }
+    public DbSet<Discount> Discounts { get; set; }
+    public DbSet<DiscountProduct> DiscountProducts { get; set; }
+    public DbSet<DiscountCollection> DiscountCollections { get; set; }
+    public DbSet<DiscountBundleProduct> DiscountBundleProducts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -368,8 +372,65 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
                 .OnDelete(DeleteBehavior.Cascade);
 
             b.HasOne(pc => pc.Product)
-                .WithMany()
+                .WithMany(p => p.ProductCollections)
                 .HasForeignKey(pc => pc.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Discount>(b =>
+        {
+            b.HasKey(d => d.Id);
+            b.Property(d => d.Name).IsRequired().HasMaxLength(200);
+            b.Property(d => d.Type).IsRequired();
+            b.Property(d => d.ValueType).IsRequired();
+            b.Property(d => d.Value).HasColumnType("decimal(10,2)").IsRequired();
+            b.Property(d => d.IsActive).IsRequired();
+            b.Property(d => d.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+            b.HasIndex(d => d.IsActive);
+        });
+
+        builder.Entity<DiscountProduct>(b =>
+        {
+            b.HasKey(dp => new { dp.DiscountId, dp.ProductId });
+
+            b.HasOne(dp => dp.Discount)
+                .WithMany(d => d.DiscountProducts)
+                .HasForeignKey(dp => dp.DiscountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(dp => dp.Product)
+                .WithMany()
+                .HasForeignKey(dp => dp.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DiscountCollection>(b =>
+        {
+            b.HasKey(dc => new { dc.DiscountId, dc.CollectionId });
+
+            b.HasOne(dc => dc.Discount)
+                .WithMany(d => d.DiscountCollections)
+                .HasForeignKey(dc => dc.DiscountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(dc => dc.Collection)
+                .WithMany()
+                .HasForeignKey(dc => dc.CollectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DiscountBundleProduct>(b =>
+        {
+            b.HasKey(dbp => new { dbp.DiscountId, dbp.ProductId });
+
+            b.HasOne(dbp => dbp.Discount)
+                .WithMany(d => d.BundleProducts)
+                .HasForeignKey(dbp => dbp.DiscountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(dbp => dbp.Product)
+                .WithMany()
+                .HasForeignKey(dbp => dbp.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

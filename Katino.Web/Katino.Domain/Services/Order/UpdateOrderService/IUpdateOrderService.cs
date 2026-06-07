@@ -5,5 +5,5 @@ namespace Katino.Domain.Services.OrderN.UpdateOrderService;
 
 public interface IUpdateOrderService
 {
-    Task<OrderUpdateResult> UpdateAsync(Order order, List<string> customTags);
+    Task<OrderUpdateResult> UpdateAsync(Order order, List<string> customTags, bool recalculateCost = false);
 }

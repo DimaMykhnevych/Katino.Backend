@@ -6,6 +6,7 @@ using Katino.Application.DTOs.Order;
 using Katino.Application.Queries.OrderN.GetNextOrderStatus;
 using Katino.Application.Queries.OrderN.GetOrder;
 using Katino.Application.Queries.OrderN.GetOrderById;
+using Katino.Application.Queries.OrderN.PreviewOrderCost;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -79,5 +80,13 @@ public class OrderController : ControllerBase
     {
         bool result = await _mediator.Send(setOrderManualStatusCommand);
         return result ? Ok(result) : BadRequest();
+    }
+
+    [HttpPost("preview-cost")]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
+    public async Task<IActionResult> PreviewCost([FromBody] PreviewOrderCostQuery previewOrderCostQuery)
+    {
+        OrderPricingResultDto result = await _mediator.Send(previewOrderCostQuery);
+        return Ok(result);
     }
 }

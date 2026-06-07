@@ -29,13 +29,20 @@ public class GetCollectionsQueryHandler : IRequestHandler<GetCollectionsQuery, L
         _logger.LogInformation("Handling get collections");
         ArgumentNullException.ThrowIfNull(request);
 
-        List<Collection> collections = await _katinoDbContext.Collections
+        IQueryable<Collection> collections = _katinoDbContext.Collections
             .Include(c => c.ProductCollections)
                 .ThenInclude(pc => pc.Product)
-            .AsNoTracking()
+            .AsNoTracking();
+
+        if (!string.IsNullOrEmpty(request.Name))
+        {
+            collections = collections.Where(p => p.Name.Contains(request.Name));
+        }
+
+        var resultCollections = await collections
             .OrderBy(c => c.Name)
             .ToListAsync(cancellationToken);
 
-        return _mapper.Map<List<CollectionDto>>(collections);
+        return _mapper.Map<List<CollectionDto>>(resultCollections);
     }
 }

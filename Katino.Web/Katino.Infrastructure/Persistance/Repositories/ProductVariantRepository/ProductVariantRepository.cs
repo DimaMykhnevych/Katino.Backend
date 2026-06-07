@@ -62,4 +62,15 @@ public class ProductVariantRepository : Repository<ProductVariant>, IProductVari
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<List<ProductVariant>> GetManyWithProductAndCollectionAsync(IEnumerable<Guid> ids)
+    {
+        var idList = ids.ToList();
+        return await context.ProductVariants
+            .Where(pv => idList.Contains(pv.Id))
+            .Include(pv => pv.Product)
+                .ThenInclude(p => p.ProductCollections)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }

@@ -5,4 +5,5 @@ namespace Katino.Application.Queries.CollectionN.GetCollections;
 
 public class GetCollectionsQuery : IRequest<List<CollectionDto>>
 {
+    public string Name { get; set; }
 }
