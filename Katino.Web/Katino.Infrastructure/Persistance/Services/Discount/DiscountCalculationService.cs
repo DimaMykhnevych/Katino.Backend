@@ -95,12 +95,18 @@ public class DiscountCalculationService : IDiscountCalculationService
             }
 
             // The bundle fixed amount is distributed evenly across bundle items for record-keeping,
-            // but the total deducted is exactly bundle.Value
+            // but the total deducted is exactly bundle.Value multiplied by the number of complete sets
             var bundleItems = itemResults
                 .Where(r => r.DiscountId == bundle.Id && r.AppliedDiscountType == DiscountType.Bundle)
                 .ToList();
 
-            DistributeBundleDiscount(bundle.Value, bundleItems);
+            var quantityByProduct = bundleItems
+                .GroupBy(r => items.First(i => i.ProductVariantId == r.ProductVariantId).ProductId)
+                .ToDictionary(g => g.Key, g => g.Sum(r => items.First(i => i.ProductVariantId == r.ProductVariantId).Quantity));
+
+            var setsCount = bundleProductIds.Min(pid => quantityByProduct.GetValueOrDefault(pid, 0));
+
+            DistributeBundleDiscount(bundle.Value * setsCount, bundleItems);
 
             // Bundle products are no longer candidates for other bundles
             foreach (var pid in bundleProductIds)
@@ -143,7 +149,7 @@ public class DiscountCalculationService : IDiscountCalculationService
     private static decimal CalculateDiscountAmount(Discount discount, decimal unitPrice, int quantity) =>
         discount.ValueType == DiscountValueType.Percentage
             ? Math.Round(unitPrice * quantity * discount.Value / 100m, 2)
-            : Math.Min(discount.Value, unitPrice * quantity);
+            : Math.Min(discount.Value * quantity, unitPrice * quantity);
 
     private static void DistributeBundleDiscount(decimal bundleTotal, List<ItemPricingResult> bundleItems)
     {
