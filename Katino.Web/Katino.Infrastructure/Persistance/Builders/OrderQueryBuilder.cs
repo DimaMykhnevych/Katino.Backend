@@ -185,8 +185,8 @@ public class OrderQueryBuilder : IOrderQueryBuilder
 
         _query = sort switch
         {
-            OrderSort.ByUrgency => _query!.OrderBy(o => o.SendUntilDate),
-            _ => _query!.OrderByDescending(o => o.CreationDateTime),
+            OrderSort.ByUrgency => _query!.OrderBy(o => o.SendUntilDate).ThenBy(o => o.Id),
+            _ => _query!.OrderByDescending(o => o.CreationDateTime).ThenBy(o => o.Id),
         };
 
         return this;
