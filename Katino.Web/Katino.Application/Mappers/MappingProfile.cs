@@ -175,6 +175,10 @@ public class MappingProfile : Profile
         CreateMap<TopSellingProductsResult, GetTopSellingProductsDto>()
             .ForMember(d => d.ResultsAmount, m => m.MapFrom(s => s.TotalCount));
 
+        CreateMap<SewingStatisticsItem, SewingStatisticsItemDto>();
+        CreateMap<SewingStatisticsResult, GetSewingStatisticsDto>()
+            .ForMember(d => d.ResultsAmount, m => m.MapFrom(s => s.TotalCount));
+
         CreateMap<TelegramNotificationType, TelegramNotificationTypeDto>().ReverseMap();
         CreateMap<TelegramChatConfig, TelegramChatConfigDto>().ReverseMap();
 
