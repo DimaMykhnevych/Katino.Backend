@@ -21,19 +21,19 @@ public class OrderItemController : ControllerBase
 
     [HttpGet("sewing-queue")]
     [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
-    public async Task<IActionResult> GetSewingQueue()
+    public async Task<IActionResult> GetSewingQueue([FromQuery] Guid? sewerId)
     {
-        Guid? sewerId = ResolveSewerId();
-        var result = await _mediator.Send(new GetSewingQueueQuery { SewerId = sewerId });
+        var resolvedSewerId = ResolveSewerId(sewerId);
+        var result = await _mediator.Send(new GetSewingQueueQuery { SewerId = resolvedSewerId });
         return Ok(result);
     }
 
     [HttpGet("sewing-queue-grouped")]
     [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
-    public async Task<IActionResult> GetSewingQueueGrouped()
+    public async Task<IActionResult> GetSewingQueueGrouped([FromQuery] Guid? sewerId)
     {
-        Guid? sewerId = ResolveSewerId();
-        var result = await _mediator.Send(new GetGroupedSewingQueueQuery { SewerId = sewerId });
+        var resolvedSewerId = ResolveSewerId(sewerId);
+        var result = await _mediator.Send(new GetGroupedSewingQueueQuery { SewerId = resolvedSewerId });
         return Ok(result);
     }
 
@@ -55,10 +55,10 @@ public class OrderItemController : ControllerBase
         return result ? Ok(result) : BadRequest();
     }
 
-    private Guid? ResolveSewerId()
+    private Guid? ResolveSewerId(Guid? requestedSewerId)
     {
         if (!User.IsInRole(Role.Sewer))
-            return null;
+            return requestedSewerId;
 
         var userIdString = User.Claims.FirstOrDefault(c => c.Type == AuthorizationConstants.ID)?.Value;
         return userIdString != null ? Guid.Parse(userIdString) : null;
