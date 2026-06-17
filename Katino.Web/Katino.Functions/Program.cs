@@ -40,6 +40,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Microsoft.ApplicationInsights.Extensibility;
 using Katino.Domain.Services.NovaPost.ContactPerson;
@@ -85,7 +86,11 @@ var host = new HostBuilder()
         services.Configure<NovaPostOptions>(context.Configuration.GetSection(ConfigurationKeys.NovaPostOptions));
 
         // HTTP clients
-        services.AddHttpClient<IInternetDocumentService, InternetDocumentService>();
+        services.AddHttpClient<IInternetDocumentService, InternetDocumentService>((sp, client) =>
+        {
+            var novaPostOptions = sp.GetRequiredService<IOptions<NovaPostOptions>>().Value;
+            client.Timeout = TimeSpan.FromSeconds(novaPostOptions.InternetDocumentTimeoutSeconds);
+        });
         services.AddHttpClient<IContactPersonService, ContactPersonService>();
 
         // Services
