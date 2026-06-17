@@ -2,6 +2,7 @@
 using Katino.Application.Services.AuthorizationService;
 using Katino.Domain.Builders;
 using Katino.Domain.Context;
+using Katino.Domain.Options;
 using Katino.Domain.Repositories.CategoryRepository;
 using Katino.Domain.Repositories.CollectionRepository;
 using Katino.Domain.Repositories.ColorRepository;
@@ -106,6 +107,7 @@ using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.OrderRecipientN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
 using Katino.Infrastructure.Persistance.Services.TelegramN;
+using Microsoft.Extensions.Options;
 
 namespace Katino.Web.Installers;
 
@@ -162,7 +164,11 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();
 
         // HTTP clients
-        services.AddHttpClient<IInternetDocumentService, InternetDocumentService>();
+        services.AddHttpClient<IInternetDocumentService, InternetDocumentService>((sp, client) =>
+        {
+            var novaPostOptions = sp.GetRequiredService<IOptions<NovaPostOptions>>().Value;
+            client.Timeout = TimeSpan.FromSeconds(novaPostOptions.InternetDocumentTimeoutSeconds);
+        });
         services.AddHttpClient<IWarehouseService, WarehouseService>();
         services.AddHttpClient<INpCityService, NpCityService>();
         services.AddHttpClient<IContactPersonService, ContactPersonService>();
