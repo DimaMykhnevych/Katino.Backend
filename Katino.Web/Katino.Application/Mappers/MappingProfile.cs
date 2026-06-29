@@ -33,6 +33,7 @@ using Katino.Application.DTOs.Product;
 using Katino.Application.DTOs.ProductPhoto;
 using Katino.Application.DTOs.ProductVariant;
 using Katino.Application.DTOs.ProductVariantMeasurement;
+using Katino.Application.DTOs.ProductVariantRedistributionHistory;
 using Katino.Application.DTOs.Size;
 using Katino.Application.DTOs.Statistics;
 using Katino.Application.DTOs.Telegram;
@@ -98,6 +99,11 @@ public class MappingProfile : Profile
             .ForMember(d => d.Tags, m => m.MapFrom(s => s.OrderTags.Select(ot => ot.OrderTag).OrderBy(t => t.Type).ThenBy(t => t.Value).ToList()));
         CreateMap<OrderTag, OrderTagDto>();
         CreateMap<OrderTagType, OrderTagTypeDto>().ReverseMap();
+        CreateMap<ProductVariantQuantityChangeReason, ProductVariantQuantityChangeReasonDto>();
+        CreateMap<ProductVariantRedistributionHistory, ProductVariantRedistributionHistoryDto>()
+            .ForMember(d => d.ProductVariantArticle, m => m.MapFrom(s => s.ProductVariant.Article))
+            .ForMember(d => d.SourceOrderTtn, m => m.MapFrom(s => s.SourceOrderTtnSnapshot))
+            .ForMember(d => d.TargetOrderTtn, m => m.MapFrom(s => s.TargetOrder != null ? s.TargetOrder.InternetDocumentIntDocNumber : null));
         CreateMap<AddOrderCommand, Order>();
         CreateMap<UpdateOrderCommand, Order>();
 

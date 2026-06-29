@@ -162,7 +162,12 @@ public class DeleteOrderService : IDeleteOrderService
                     {
                         _logger.LogDebug($"Product variant quantity change detected (due to order deletion), product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
                         await _updateProductVariantService
-                            .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, id);
+                            .HandleProductVariantQuantityChange(
+                                currentQuantity.Key,
+                                updatedQuantity,
+                                id,
+                                ProductVariantQuantityChangeReason.OrderDeleted,
+                                existingOrder.InternetDocumentIntDocNumber);
                     }
                 }
             }
@@ -219,7 +224,12 @@ public class DeleteOrderService : IDeleteOrderService
             {
                 _logger.LogDebug($"Product variant quantity change detected (due to order rejection), product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
                 await _updateProductVariantService
-                    .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
+                    .HandleProductVariantQuantityChange(
+                        currentQuantity.Key,
+                        updatedQuantity,
+                        order.Id,
+                        ProductVariantQuantityChangeReason.OrderRejected,
+                        order.InternetDocumentIntDocNumber);
             }
         }
     }

@@ -44,6 +44,12 @@ public class OrderTagRepository : Repository<OrderTag>, IOrderTagRepository
         });
     }
 
+    public async Task<bool> IsTagAttachedToOrderAsync(Guid orderId, Guid tagId)
+    {
+        return await context.OrderOrderTags
+            .AnyAsync(t => t.OrderId == orderId && t.OrderTagId == tagId);
+    }
+
     public async Task DetachTagFromOrderAsync(Guid orderId, Guid tagId)
     {
         var orderOrderTag = await context.OrderOrderTags

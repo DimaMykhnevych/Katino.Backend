@@ -4,6 +4,7 @@ using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Katino.Infrastructure.Migrations
 {
     [DbContext(typeof(KatinoDbContext))]
-    partial class KatinoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260628164335_AddedProductsRedistributionTables")]
+    partial class AddedProductsRedistributionTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -994,7 +997,7 @@ namespace Katino.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                    b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("ProductVariantId")
@@ -1007,9 +1010,6 @@ namespace Katino.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<Guid?>("SourceOrderId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("SourceOrderItemId")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("SourceOrderTtnSnapshot")

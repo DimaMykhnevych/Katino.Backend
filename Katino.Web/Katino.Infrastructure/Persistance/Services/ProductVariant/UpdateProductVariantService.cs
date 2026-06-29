@@ -2,12 +2,14 @@
 using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Helpers;
+using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.ProductVariantRedistributionN.ProductVariantRedistributionRecorder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -21,6 +23,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
     private readonly IProductPhotoRepository _productPhotoRepository;
     private readonly IAzureStorageService _azureStorageService;
     private readonly IKatinoDbContext _katinoDbContext;
+    private readonly IProductVariantRedistributionRecorder _redistributionRecorder;
     private readonly ILogger _logger;
 
     public UpdateProductVariantService(
@@ -30,6 +33,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         IProductPhotoRepository productPhotoRepository,
         IAzureStorageService azureStorageService,
         IKatinoDbContext katinoDbContext,
+        IProductVariantRedistributionRecorder redistributionRecorder,
         ILoggerFactory loggerFactory)
     {
         _productVariantRepository = productVariantRepository;
@@ -38,6 +42,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         _productPhotoRepository = productPhotoRepository;
         _azureStorageService = azureStorageService;
         _katinoDbContext = katinoDbContext;
+        _redistributionRecorder = redistributionRecorder;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateProductVariantService));
     }
 
@@ -155,10 +160,16 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         }
     }
 
-    public async Task HandleProductVariantQuantityChange(Guid productVariantId, int newQuantity, Guid? orderIdToSkipFromProcessing = null)
+    public async Task HandleProductVariantQuantityChange(
+        Guid productVariantId,
+        int newQuantity,
+        Guid? orderIdToSkipFromProcessing = null,
+        ProductVariantQuantityChangeReason reason = ProductVariantQuantityChangeReason.ManualEdit,
+        string sourceOrderTtnSnapshot = null)
     {
         var ordersToCheck = await _orderRepository.GetActiveOrdersWithSpecificProductVariantAsync(productVariantId);
         int currentProductVariantQuantity = newQuantity;
+        List<ProductVariantRedistributionLine> redistributionLines = [];
         foreach (var order in ordersToCheck)
         {
             if (currentProductVariantQuantity <= 0)
@@ -204,6 +215,14 @@ public class UpdateProductVariantService : IUpdateProductVariantService
 
             await _orderRepository.Save();
 
+            var quantityAssignedToOrder = previousQuantityToProduce - newOderItemQuantityToProduce;
+            redistributionLines.Add(new ProductVariantRedistributionLine
+            {
+                TargetOrderId = order.Id,
+                TargetOrderItemId = requiredOrderItem.Id,
+                Quantity = quantityAssignedToOrder
+            });
+
             var newQuantityInStock = currentProductVariantQuantity < previousQuantityToProduce
                 ? 0
                 : currentProductVariantQuantity - previousQuantityToProduce;
@@ -220,5 +239,27 @@ public class UpdateProductVariantService : IUpdateProductVariantService
 
         await _productVariantRepository.Update(productVariantFromDb);
         await _productVariantRepository.Save();
+
+        if (currentProductVariantQuantity > 0)
+        {
+            redistributionLines.Add(new ProductVariantRedistributionLine
+            {
+                TargetOrderId = null,
+                TargetOrderItemId = null,
+                Quantity = currentProductVariantQuantity
+            });
+        }
+
+        await _redistributionRecorder.RecordAsync(new ProductVariantRedistributionEvent
+        {
+            ProductVariantId = productVariantId,
+            Reason = reason,
+            // For OrderDeleted the source order row is already gone from the DB by this point
+            // (DeleteOrderService removes it before redistributing), so the FK would dangle.
+            // The TTN snapshot is what keeps that order identifiable for display.
+            SourceOrderId = reason == ProductVariantQuantityChangeReason.OrderDeleted ? null : orderIdToSkipFromProcessing,
+            SourceOrderTtnSnapshot = sourceOrderTtnSnapshot,
+            Lines = redistributionLines
+        });
     }
 }

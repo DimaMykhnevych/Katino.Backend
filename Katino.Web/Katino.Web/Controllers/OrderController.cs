@@ -7,6 +7,7 @@ using Katino.Application.Queries.OrderN.GetNextOrderStatus;
 using Katino.Application.Queries.OrderN.GetOrder;
 using Katino.Application.Queries.OrderN.GetOrderById;
 using Katino.Application.Queries.OrderN.PreviewOrderCost;
+using Katino.Application.Queries.ProductVariantRedistributionHistoryN.GetOrderRedistributionHistory;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -87,6 +88,14 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> PreviewCost([FromBody] PreviewOrderCostQuery previewOrderCostQuery)
     {
         OrderPricingResultDto result = await _mediator.Send(previewOrderCostQuery);
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/redistribution-history")]
+    [Authorize(Roles = $"{Role.Admin},{Role.DirectManager},{Role.Owner}")]
+    public async Task<IActionResult> GetRedistributionHistory(Guid id)
+    {
+        var result = await _mediator.Send(new GetOrderRedistributionHistoryQuery { OrderId = id });
         return Ok(result);
     }
 }

@@ -33,6 +33,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     public DbSet<OrderAddressInfo> OrderAddressInfo { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<SewingHistory> SewingHistory { get; set; }
+    public DbSet<ProductVariantRedistributionHistory> ProductVariantRedistributionHistory { get; set; }
     public DbSet<FinanceCategory> FinanceCategories { get; set; }
     public DbSet<FinanceEntry> FinanceEntries { get; set; }
     public DbSet<OrderTag> OrderTags { get; set; }
@@ -239,6 +240,34 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             .WithMany()
             .HasForeignKey(x => x.SewedBy)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ProductVariantRedistributionHistory>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Reason).IsRequired();
+            b.Property(x => x.Quantity).IsRequired();
+            b.Property(x => x.SourceOrderTtnSnapshot).HasMaxLength(50);
+            b.Property(x => x.CreatedAtUtc).IsRequired();
+
+            b.HasOne(x => x.ProductVariant)
+                .WithMany()
+                .HasForeignKey(x => x.ProductVariantId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.SourceOrder)
+                .WithMany()
+                .HasForeignKey(x => x.SourceOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.HasOne(x => x.TargetOrder)
+                .WithMany()
+                .HasForeignKey(x => x.TargetOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.HasIndex(x => x.SourceOrderId);
+            b.HasIndex(x => x.TargetOrderId);
+            b.HasIndex(x => x.ProductVariantId);
+        });
 
         builder.Entity<FinanceCategory>(b =>
         {

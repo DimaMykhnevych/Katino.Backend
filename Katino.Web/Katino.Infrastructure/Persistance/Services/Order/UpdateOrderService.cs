@@ -251,7 +251,12 @@ public class UpdateOrderService : IUpdateOrderService
                     {
                         _logger.LogDebug($"Product variant quantity change detected, product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
                         await _updateProductVariantService
-                            .HandleProductVariantQuantityChange(currentQuantity.Key, updatedQuantity, order.Id);
+                            .HandleProductVariantQuantityChange(
+                                currentQuantity.Key,
+                                updatedQuantity,
+                                order.Id,
+                                ProductVariantQuantityChangeReason.OrderEdited,
+                                updatedOrder.InternetDocumentIntDocNumber);
                     }
                 }
             }

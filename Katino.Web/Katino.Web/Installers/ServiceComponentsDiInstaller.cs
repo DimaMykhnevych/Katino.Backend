@@ -25,6 +25,7 @@ using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
+using Katino.Domain.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.SewingHistoryRepository;
 using Katino.Domain.Repositories.SizeRepository;
@@ -62,6 +63,7 @@ using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.ProductVariantRedistributionN.ProductVariantRedistributionRecorder;
 using Katino.Domain.Services.TelegramN;
 using Katino.Domain.Services.User.CreateUser;
 using Katino.Infrastructure.Persistance.Builders;
@@ -88,6 +90,7 @@ using Katino.Infrastructure.Persistance.Repositories.OrderTagRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductPhotoRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantMeasurementRepository;
+using Katino.Infrastructure.Persistance.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.ProductVariantRepository;
 using Katino.Infrastructure.Persistance.Repositories.SewingHistoryRepository;
 using Katino.Infrastructure.Persistance.Repositories.SizeRepository;
@@ -106,6 +109,7 @@ using Katino.Infrastructure.Persistance.Services.OrderItemN;
 using Katino.Infrastructure.Persistance.Services.OrderN;
 using Katino.Infrastructure.Persistance.Services.OrderRecipientN;
 using Katino.Infrastructure.Persistance.Services.ProductVariantN;
+using Katino.Infrastructure.Persistance.Services.ProductVariantRedistributionN;
 using Katino.Infrastructure.Persistance.Services.TelegramN;
 using Microsoft.Extensions.Options;
 
@@ -159,6 +163,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ITelegramService, TelegramService>();
         services.AddTransient<ISewingReportNotifier, SewingReportNotifier>();
         services.AddTransient<IOrderRejectionNotifier, OrderRejectionNotifier>();
+        services.AddTransient<IProductVariantRedistributionRecorder, ProductVariantRedistributionRecorder>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();
@@ -202,6 +207,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<IOrderAddressInfoRepository, OrderAddressInfoRepository>();
         services.AddTransient<IOrderNpOptionsSeatRepository, OrderNpOptionsSeatRepository>();
         services.AddTransient<ISewingHistoryRepository, SewingHistoryRepository>();
+        services.AddTransient<IProductVariantRedistributionHistoryRepository, ProductVariantRedistributionHistoryRepository>();
         services.AddTransient<IFinanceEntryRepository, FinanceEntryRepository>();
         services.AddTransient<IFinanceCategoryRepository, FinanceCategoryRepository>();
         services.AddTransient<ITelegramSettingsRepository, TelegramSettingsRepository>();

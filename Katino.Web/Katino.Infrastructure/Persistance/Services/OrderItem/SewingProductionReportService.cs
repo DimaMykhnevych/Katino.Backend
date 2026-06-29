@@ -7,6 +7,7 @@ using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Repositories.SewingHistoryRepository;
 using Katino.Domain.Services.OrderItemN.SewingProductionReportService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.ProductVariantRedistributionN.ProductVariantRedistributionRecorder;
 using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.OrderItemN;
@@ -17,6 +18,7 @@ public class SewingProductionReportService : ISewingProductionReportService
     private readonly IOrderRepository _orderRepository;
     private readonly ISewingHistoryRepository _sewingHistoryRepository;
     private readonly IUpdateProductVariantService _updateProductVariantService;
+    private readonly IProductVariantRedistributionRecorder _redistributionRecorder;
     private readonly ILogger _logger;
 
     public SewingProductionReportService(
@@ -24,12 +26,14 @@ public class SewingProductionReportService : ISewingProductionReportService
         IOrderRepository orderRepository,
         ISewingHistoryRepository sewingHistoryRepository,
         IUpdateProductVariantService updateProductVariantService,
+        IProductVariantRedistributionRecorder redistributionRecorder,
         ILoggerFactory loggerFactory)
     {
         _productVariantRepository = productVariantRepository;
         _orderRepository = orderRepository;
         _sewingHistoryRepository = sewingHistoryRepository;
         _updateProductVariantService = updateProductVariantService;
+        _redistributionRecorder = redistributionRecorder;
         _logger = loggerFactory?.CreateLogger(nameof(SewingProductionReportService));
     }
 
@@ -72,7 +76,10 @@ public class SewingProductionReportService : ISewingProductionReportService
 
         var pv = await _productVariantRepository.Get(productVariantId);
         var newAvailable = pv.QuantityInStock + actualSewedQuantity;
-        await _updateProductVariantService.HandleProductVariantQuantityChange(productVariantId, newAvailable);
+        await _updateProductVariantService.HandleProductVariantQuantityChange(
+            productVariantId,
+            newAvailable,
+            reason: ProductVariantQuantityChangeReason.Sewing);
     }
 
     private async Task ApplyCustomSewedAsync(Guid productVariantId, Guid orderItemId, int actualSewedQuantity)
@@ -120,5 +127,19 @@ public class SewingProductionReportService : ISewingProductionReportService
         }
 
         await _orderRepository.Save();
+
+        await _redistributionRecorder.RecordAsync(new ProductVariantRedistributionEvent
+        {
+            ProductVariantId = productVariantId,
+            Reason = ProductVariantQuantityChangeReason.Sewing,
+            Lines = [
+                new ProductVariantRedistributionLine
+                {
+                    TargetOrderId = order.Id,
+                    TargetOrderItemId = orderItemId,
+                    Quantity = actualSewedQuantity
+                }
+            ]
+        });
     }
 }

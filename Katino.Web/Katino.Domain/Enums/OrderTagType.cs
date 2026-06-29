@@ -4,5 +4,6 @@ public enum OrderTagType
 {
     NotNpOrder,
     RefundMoney,
-    Custom
+    Custom,
+    PendingIncomingReturn
 }
