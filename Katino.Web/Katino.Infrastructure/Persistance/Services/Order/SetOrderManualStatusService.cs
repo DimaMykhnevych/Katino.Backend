@@ -139,6 +139,13 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 order.UpdatedAt = DateTimeOffset.UtcNow;
                 order.UpdateReasonDetails = updateReason;
 
+                var pendingIncomingReturnTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.PendingIncomingReturn, canBeDeleted: true);
+                if (await _orderTagRepository.IsTagAttachedToOrderAsync(order.Id, pendingIncomingReturnTag.Id))
+                {
+                    _logger.LogTrace("Detaching PendingIncomingReturn tag from order");
+                    await _orderTagRepository.DetachTagFromOrderAsync(order.Id, pendingIncomingReturnTag.Id);
+                }
+
                 await _orderRepository.Save();
 
                 return true;

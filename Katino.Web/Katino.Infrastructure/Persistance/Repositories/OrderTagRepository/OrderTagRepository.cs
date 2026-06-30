@@ -3,7 +3,6 @@ using Katino.Domain.Enums;
 using Katino.Domain.Repositories.OrderTagRepository;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace Katino.Infrastructure.Persistance.Repositories.OrderTagRepository;
 
