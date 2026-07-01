@@ -138,8 +138,11 @@ public class NpIntDocStatusSyncService : INpIntDocStatusSyncService
                 {
                     _logger.LogTrace("Attaching RefundMoney tag to order {OrderId}", order.Id);
                     var refundTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.RefundMoney, canBeDeleted: true);
-                    await _orderTagRepository.AttachTagToOrderAsync(order.Id, refundTag.Id);
-                    await _orderTagRepository.Save();
+                    if (!await _orderTagRepository.IsTagAttachedToOrderAsync(order.Id, refundTag.Id))
+                    {
+                        await _orderTagRepository.AttachTagToOrderAsync(order.Id, refundTag.Id);
+                        await _orderTagRepository.Save();
+                    }
                 }
                 else
                 {

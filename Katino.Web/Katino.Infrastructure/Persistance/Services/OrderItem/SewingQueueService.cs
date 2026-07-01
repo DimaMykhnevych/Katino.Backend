@@ -75,21 +75,46 @@ public class SewingQueueService : ISewingQueueService
 
         return items.ToDictionary(
             x => x.Key,
-            x => x.Value
-                .Select(oi => new SewingQueueItem
-                {
-                    ProductVariantId = oi.ProductVariantId,
-                    ProductVariant = oi.ProductVariant,
-                    QuantityToProduce = oi.QuantityToProduce,
-                    IsCustomTailoring = oi.IsCustomTailoring,
-                    Comment = oi.Comment,
-                    OrderItemId = oi.Id
-                })
-                .OrderBy(i => i.ProductVariant.Product.Name)
-                .ThenBy(i => i.ProductVariant.Color.Name)
-                .ThenBy(i => SortHelper.GetSizeSortGroup(i.ProductVariant.Size.Name))
-                .ThenBy(i => SortHelper.GetSizeSortValue(i.ProductVariant.Size.Name))
-                .ThenBy(i => SortHelper.NormalizeSizeName(i.ProductVariant.Size.Name))
-                .ToList());
+            x =>
+            {
+                var custom = x.Value
+                    .Where(oi => oi.IsCustomTailoring)
+                    .Select(oi => new SewingQueueItem
+                    {
+                        ProductVariantId = oi.ProductVariantId,
+                        ProductVariant = oi.ProductVariant,
+                        QuantityToProduce = oi.QuantityToProduce,
+                        IsCustomTailoring = true,
+                        Comment = oi.Comment,
+                        OrderItemId = oi.Id
+                    })
+                    .ToList();
+
+                var grouped = x.Value
+                    .Where(oi => !oi.IsCustomTailoring)
+                    .GroupBy(oi => oi.ProductVariantId)
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        return new SewingQueueItem
+                        {
+                            ProductVariantId = g.Key,
+                            ProductVariant = first.ProductVariant,
+                            QuantityToProduce = g.Sum(oi => oi.QuantityToProduce),
+                            IsCustomTailoring = false,
+                            Comment = null,
+                            OrderItemId = null
+                        };
+                    })
+                    .ToList();
+
+                return grouped.Concat(custom)
+                    .OrderBy(i => i.ProductVariant.Product.Name)
+                    .ThenBy(i => i.ProductVariant.Color.Name)
+                    .ThenBy(i => SortHelper.GetSizeSortGroup(i.ProductVariant.Size.Name))
+                    .ThenBy(i => SortHelper.GetSizeSortValue(i.ProductVariant.Size.Name))
+                    .ThenBy(i => SortHelper.NormalizeSizeName(i.ProductVariant.Size.Name))
+                    .ToList();
+            });
     }
 }
