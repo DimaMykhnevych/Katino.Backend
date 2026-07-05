@@ -63,6 +63,7 @@ using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Katino.Domain.Services.OrderN.UpdateOrderService;
 using Katino.Domain.Services.OrderRecipientN.AddOrderRecipientService;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
+using Katino.Domain.Services.ProductVariantRedistributionN.IncomingReturnQueueService;
 using Katino.Domain.Services.ProductVariantRedistributionN.ProductVariantRedistributionRecorder;
 using Katino.Domain.Services.TelegramN;
 using Katino.Domain.Services.User.CreateUser;
@@ -164,6 +165,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ISewingReportNotifier, SewingReportNotifier>();
         services.AddTransient<IOrderRejectionNotifier, OrderRejectionNotifier>();
         services.AddTransient<IProductVariantRedistributionRecorder, ProductVariantRedistributionRecorder>();
+        services.AddTransient<IIncomingReturnQueueService, IncomingReturnQueueService>();
 
         // hosted services
         services.AddHostedService<NovaPoshtaSyncBackgroundService>();

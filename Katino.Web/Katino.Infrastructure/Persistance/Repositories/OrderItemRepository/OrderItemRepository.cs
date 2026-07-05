@@ -60,4 +60,14 @@ public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
             .OrderBy(g => g.Key)
             .ToDictionary(g => g.Key, g => g.ToList());
     }
+
+    public async Task<Dictionary<Guid, OrderItem>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        var idsList = ids.Distinct().ToList();
+
+        return await context.OrderItems
+            .AsNoTracking()
+            .Where(oi => idsList.Contains(oi.Id))
+            .ToDictionaryAsync(oi => oi.Id, ct);
+    }
 }

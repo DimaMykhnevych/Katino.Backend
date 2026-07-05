@@ -1,6 +1,7 @@
 ﻿using Katino.Application.Commands.OrderItemN.SubmitSewedReport;
 using Katino.Application.Queries.OrderItemN.GetGroupedSewingQueue;
 using Katino.Application.Queries.OrderItemN.GetSewingQueue;
+using Katino.Application.Queries.ProductVariantRedistributionHistoryN.GetIncomingReturnQueue;
 using Katino.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -34,6 +35,14 @@ public class OrderItemController : ControllerBase
     {
         var resolvedSewerId = ResolveSewerId(sewerId);
         var result = await _mediator.Send(new GetGroupedSewingQueueQuery { SewerId = resolvedSewerId });
+        return Ok(result);
+    }
+
+    [HttpGet("incoming-return-queue")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
+    public async Task<IActionResult> GetIncomingReturnQueue()
+    {
+        var result = await _mediator.Send(new GetIncomingReturnQueueQuery());
         return Ok(result);
     }
 
