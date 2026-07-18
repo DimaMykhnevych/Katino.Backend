@@ -6,6 +6,7 @@ using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.ProductPhotoRepository;
 using Katino.Domain.Repositories.ProductVariantMeasurementRepository;
+using Katino.Domain.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.AzureStorage;
 using Katino.Domain.Services.ProductVariantN.UpdateProductVariantService;
@@ -24,6 +25,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
     private readonly IAzureStorageService _azureStorageService;
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly IProductVariantRedistributionRecorder _redistributionRecorder;
+    private readonly IProductVariantRedistributionHistoryRepository _redistributionHistoryRepository;
     private readonly ILogger _logger;
 
     public UpdateProductVariantService(
@@ -34,6 +36,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         IAzureStorageService azureStorageService,
         IKatinoDbContext katinoDbContext,
         IProductVariantRedistributionRecorder redistributionRecorder,
+        IProductVariantRedistributionHistoryRepository redistributionHistoryRepository,
         ILoggerFactory loggerFactory)
     {
         _productVariantRepository = productVariantRepository;
@@ -43,6 +46,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         _azureStorageService = azureStorageService;
         _katinoDbContext = katinoDbContext;
         _redistributionRecorder = redistributionRecorder;
+        _redistributionHistoryRepository = redistributionHistoryRepository;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateProductVariantService));
     }
 
@@ -160,12 +164,50 @@ public class UpdateProductVariantService : IUpdateProductVariantService
         }
     }
 
+    public async Task HandleProductVariantQuantityChangeSplit(
+        Guid productVariantId,
+        int originalQuantityInStock,
+        int realDelta,
+        int phantomDelta,
+        Guid? orderIdToSkipFromProcessing,
+        ProductVariantQuantityChangeReason reason,
+        string sourceOrderTtnSnapshot = null)
+    {
+        var currentBase = originalQuantityInStock;
+
+        if (realDelta > 0)
+        {
+            await HandleProductVariantQuantityChange(
+                productVariantId,
+                currentBase + realDelta,
+                orderIdToSkipFromProcessing,
+                reason,
+                sourceOrderTtnSnapshot,
+                isPendingPhysicalArrival: false);
+
+            var productVariantAfterRealPass = await _productVariantRepository.GetAsNoTracking(productVariantId);
+            currentBase = productVariantAfterRealPass.QuantityInStock;
+        }
+
+        if (phantomDelta > 0)
+        {
+            await HandleProductVariantQuantityChange(
+                productVariantId,
+                currentBase + phantomDelta,
+                orderIdToSkipFromProcessing,
+                reason,
+                sourceOrderTtnSnapshot,
+                isPendingPhysicalArrival: true);
+        }
+    }
+
     public async Task HandleProductVariantQuantityChange(
         Guid productVariantId,
         int newQuantity,
         Guid? orderIdToSkipFromProcessing = null,
         ProductVariantQuantityChangeReason reason = ProductVariantQuantityChangeReason.ManualEdit,
-        string sourceOrderTtnSnapshot = null)
+        string sourceOrderTtnSnapshot = null,
+        bool isPendingPhysicalArrival = false)
     {
         var ordersToCheck = await _orderRepository.GetActiveOrdersWithSpecificProductVariantAsync(productVariantId);
         int currentProductVariantQuantity = newQuantity;
@@ -182,24 +224,55 @@ public class UpdateProductVariantService : IUpdateProductVariantService
                 continue;
             }
 
-            var requiredOrderItem = order.OrderItems.FirstOrDefault(i => i.ProductVariantId == productVariantId && !i.IsCustomTailoring);
-            if (requiredOrderItem == null || requiredOrderItem.OrderItemStatus == OrderItemStatus.Ready)
+            // An order can have several items of the same product variant (e.g. one already covered by
+            // real stock, another still needing coverage) - all of them must be considered, not just the
+            // first match, otherwise a genuinely needy sibling item can be silently skipped.
+            var requiredOrderItems = order.OrderItems
+                .Where(i => i.ProductVariantId == productVariantId && !i.IsCustomTailoring && i.OrderItemStatus != OrderItemStatus.Ready)
+                .ToList();
+
+            if (requiredOrderItems.Count == 0)
             {
                 continue;
             }
 
-            var newOderItemQuantityToProduce = currentProductVariantQuantity < requiredOrderItem.QuantityToProduce
-                ? requiredOrderItem.QuantityToProduce - currentProductVariantQuantity
-                : 0;
+            foreach (var requiredOrderItem in requiredOrderItems)
+            {
+                if (currentProductVariantQuantity <= 0)
+                {
+                    break;
+                }
 
-            var newOrderItemStatus = newOderItemQuantityToProduce > 0
-                ? OrderItemStatus.ForSewing
-                : OrderItemStatus.Ready;
+                var newOderItemQuantityToProduce = currentProductVariantQuantity < requiredOrderItem.QuantityToProduce
+                    ? requiredOrderItem.QuantityToProduce - currentProductVariantQuantity
+                    : 0;
 
-            var previousQuantityToProduce = requiredOrderItem.QuantityToProduce;
+                var newOrderItemStatus = newOderItemQuantityToProduce > 0
+                    ? OrderItemStatus.ForSewing
+                    : OrderItemStatus.Ready;
 
-            requiredOrderItem.QuantityToProduce = newOderItemQuantityToProduce;
-            requiredOrderItem.OrderItemStatus = newOrderItemStatus;
+                var previousQuantityToProduce = requiredOrderItem.QuantityToProduce;
+
+                requiredOrderItem.QuantityToProduce = newOderItemQuantityToProduce;
+                requiredOrderItem.OrderItemStatus = newOrderItemStatus;
+
+                var pendingRemaining = await _redistributionHistoryRepository.GetPendingReturnRemainingAsync(requiredOrderItem.Id);
+                PendingReturnInvariantHelper.CheckOrderItemInvariant(requiredOrderItem, pendingRemaining, _logger);
+
+                var quantityAssignedToOrder = previousQuantityToProduce - newOderItemQuantityToProduce;
+                redistributionLines.Add(new ProductVariantRedistributionLine
+                {
+                    TargetOrderId = order.Id,
+                    TargetOrderItemId = requiredOrderItem.Id,
+                    Quantity = quantityAssignedToOrder
+                });
+
+                var newQuantityInStock = currentProductVariantQuantity < previousQuantityToProduce
+                    ? 0
+                    : currentProductVariantQuantity - previousQuantityToProduce;
+
+                currentProductVariantQuantity = newQuantityInStock;
+            }
 
             var newOrderStatus = order.OrderItems.Any(i => i.OrderItemStatus == OrderItemStatus.ForSewing)
                 ? OrderStatus.InProgress
@@ -214,20 +287,6 @@ public class UpdateProductVariantService : IUpdateProductVariantService
             }
 
             await _orderRepository.Save();
-
-            var quantityAssignedToOrder = previousQuantityToProduce - newOderItemQuantityToProduce;
-            redistributionLines.Add(new ProductVariantRedistributionLine
-            {
-                TargetOrderId = order.Id,
-                TargetOrderItemId = requiredOrderItem.Id,
-                Quantity = quantityAssignedToOrder
-            });
-
-            var newQuantityInStock = currentProductVariantQuantity < previousQuantityToProduce
-                ? 0
-                : currentProductVariantQuantity - previousQuantityToProduce;
-
-            currentProductVariantQuantity = newQuantityInStock;
         }
 
         var productVariantFromDb = await _productVariantRepository.Get(productVariantId);
@@ -259,6 +318,7 @@ public class UpdateProductVariantService : IUpdateProductVariantService
             // The TTN snapshot is what keeps that order identifiable for display.
             SourceOrderId = reason == ProductVariantQuantityChangeReason.OrderDeleted ? null : orderIdToSkipFromProcessing,
             SourceOrderTtnSnapshot = sourceOrderTtnSnapshot,
+            IsPendingPhysicalArrival = isPendingPhysicalArrival,
             Lines = redistributionLines
         });
     }

@@ -4,6 +4,7 @@ using Katino.Domain.Enums.NovaPost;
 using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.OrderTagRepository;
+using Katino.Domain.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Domain.Services.OrderN.DeleteOrderService;
 using Katino.Domain.Services.OrderN.SetOrderManualStatusService;
 using Microsoft.Extensions.Logging;
@@ -15,17 +16,20 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
     private readonly IOrderRepository _orderRepository;
     private readonly IDeleteOrderService _deleteOrderService;
     private readonly IOrderTagRepository _orderTagRepository;
+    private readonly IProductVariantRedistributionHistoryRepository _redistributionHistoryRepository;
     private readonly ILogger _logger;
 
     public SetOrderManualStatusService(
         IOrderRepository orderRepository,
         IDeleteOrderService deleteOrderService,
         IOrderTagRepository orderTagRepository,
+        IProductVariantRedistributionHistoryRepository redistributionHistoryRepository,
         ILoggerFactory loggerFactory)
     {
         _orderRepository = orderRepository;
         _deleteOrderService = deleteOrderService;
         _orderTagRepository = orderTagRepository;
+        _redistributionHistoryRepository = redistributionHistoryRepository;
         _logger = loggerFactory?.CreateLogger(nameof(SetOrderManualStatusService));
     }
 
@@ -141,6 +145,20 @@ public class SetOrderManualStatusService : ISetOrderManualStatusService
                 order.OrderStatus = orderStatus;
                 order.UpdatedAt = DateTimeOffset.UtcNow;
                 order.UpdateReasonDetails = updateReason;
+
+                // The goods physically arrived (that's what packing confirms) - resolve any still-open
+                // pending-return ledger rows for this order's items, not just the tag. Otherwise the tag
+                // and the ledger fall out of sync: the order stops showing as "pending" but a later
+                // delete/edit/donor-selection on the same item would still find the stale open amount and
+                // wrongly propagate it as still-in-transit to someone else.
+                foreach (var orderItem in order.OrderItems)
+                {
+                    var pendingRemaining = await _redistributionHistoryRepository.GetPendingReturnRemainingAsync(orderItem.Id);
+                    if (pendingRemaining > 0)
+                    {
+                        await _redistributionHistoryRepository.ConsumePendingReturnAsync(orderItem.Id, pendingRemaining);
+                    }
+                }
 
                 var pendingIncomingReturnTag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.PendingIncomingReturn, canBeDeleted: true);
                 if (await _orderTagRepository.IsTagAttachedToOrderAsync(order.Id, pendingIncomingReturnTag.Id))

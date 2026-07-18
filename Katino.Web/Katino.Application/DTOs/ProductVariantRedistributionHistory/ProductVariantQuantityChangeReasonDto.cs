@@ -7,5 +7,6 @@ public enum ProductVariantQuantityChangeReasonDto
     OrderDeleted,
     OrderEdited,
     Sewing,
-    UrgentReallocation
+    UrgentReallocation,
+    ReturnCoveredBySewing
 }

@@ -27,31 +27,33 @@ public class IncomingReturnQueueService : IIncomingReturnQueueService
     {
         _logger.LogInformation("Getting incoming return queue grouped by date");
 
-        var history = await _historyRepository.GetPendingIncomingReturnsAsync(ct);
-        if (history.Count == 0)
+        var pendingReturns = await _historyRepository.GetPendingIncomingReturnsAsync(sewerId: null, ct: ct);
+        if (pendingReturns.Count == 0)
         {
             return new Dictionary<DateTime, List<SewingQueueItem>>();
         }
 
-        var targetOrderItemIds = history.Select(h => h.TargetOrderItemId.Value);
+        var targetOrderItemIds = pendingReturns.Select(h => h.TargetOrderItemId);
         var orderItemsById = await _orderItemRepository.GetByIdsAsync(targetOrderItemIds, ct);
 
-        var entries = history
-            .Where(h => orderItemsById.ContainsKey(h.TargetOrderItemId.Value))
+        var entries = pendingReturns
+            .Where(h => orderItemsById.ContainsKey(h.TargetOrderItemId))
             .Select(h =>
             {
-                var orderItem = orderItemsById[h.TargetOrderItemId.Value];
+                var orderItem = orderItemsById[h.TargetOrderItemId];
                 var item = new SewingQueueItem
                 {
                     ProductVariantId = h.ProductVariantId,
                     ProductVariant = h.ProductVariant,
-                    QuantityToProduce = h.Quantity,
+                    QuantityToProduce = h.RemainingQuantity,
                     IsCustomTailoring = orderItem.IsCustomTailoring,
+                    IsIncomingReturn = true,
+                    SendUntil = h.SendUntilDate,
                     Comment = orderItem.Comment,
                     OrderItemId = orderItem.Id
                 };
 
-                return (Date: h.TargetOrder.SendUntilDate.Date, Item: item);
+                return (Date: h.SendUntilDate.Date, Item: item);
             });
 
         return SewingQueueGroupingHelper.GroupByDate(entries);

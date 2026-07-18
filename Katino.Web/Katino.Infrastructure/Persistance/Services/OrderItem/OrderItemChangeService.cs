@@ -1,6 +1,8 @@
 ﻿using Katino.Domain.Entities;
 using Katino.Domain.Enums;
+using Katino.Domain.Helpers;
 using Katino.Domain.Repositories.OrderItemRepository;
+using Katino.Domain.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.OrderItemN.OrderItemChangeService;
 using Microsoft.Extensions.Logging;
@@ -11,15 +13,18 @@ public class OrderItemChangeService : IOrderItemChangeService
 {
     private readonly IProductVariantRepository _productVariantRepository;
     private readonly IOrderItemRepository _orderItemRepository;
+    private readonly IProductVariantRedistributionHistoryRepository _redistributionHistoryRepository;
     private readonly ILogger _logger;
 
     public OrderItemChangeService(
         IProductVariantRepository productVariantRepository,
         IOrderItemRepository orderItemRepository,
+        IProductVariantRedistributionHistoryRepository redistributionHistoryRepository,
         ILoggerFactory loggerFactory)
     {
         _productVariantRepository = productVariantRepository;
         _orderItemRepository = orderItemRepository;
+        _redistributionHistoryRepository = redistributionHistoryRepository;
         _logger = loggerFactory?.CreateLogger(nameof(OrderItemChangeService));
     }
 
@@ -45,7 +50,8 @@ public class OrderItemChangeService : IOrderItemChangeService
         SaleType saleType,
         List<OrderItem> deletedItems,
         Dictionary<Guid, int> productQuantitiesAfterProcessing,
-        List<ProductVariant> productVariants, 
+        Dictionary<Guid, int> phantomQuantitiesFreed,
+        List<ProductVariant> productVariants,
         bool deleteOrderItems = true)
     {
         if (!deletedItems.Any())
@@ -66,7 +72,7 @@ public class OrderItemChangeService : IOrderItemChangeService
                 continue;
             }
 
-            await ProcessOrderItemProductVariantDeletion(productVariant, saleType, orderItem, productQuantitiesAfterProcessing);
+            await ProcessOrderItemProductVariantDeletion(productVariant, saleType, orderItem, productQuantitiesAfterProcessing, phantomQuantitiesFreed);
 
             if (deleteOrderItems)
             {
@@ -82,6 +88,7 @@ public class OrderItemChangeService : IOrderItemChangeService
         List<OrderItem> itemsToUpdate,
         List<OrderItem> existingOrderItemsFromDb,
         Dictionary<Guid, int> productQuantitiesAfterProcessing,
+        Dictionary<Guid, int> phantomQuantitiesFreed,
         List<ProductVariant> productVariants)
     {
         _logger.LogInformation($"Handling updated order items ({itemsToUpdate.Count})");
@@ -92,11 +99,18 @@ public class OrderItemChangeService : IOrderItemChangeService
             var productVariantNew = productVariants.First(pv => pv.Id == item.ProductVariantId);
             var productVariantExisting = productVariants.First(pv => pv.Id == existingOrderItem.ProductVariantId);
 
+            // The item survives under the same Id if the product variant didn't change - only then should
+            // any leftover pending-return coverage stay attached to it instead of being released whole.
+            var survivingQuantity = item.ProductVariantId == existingOrderItem.ProductVariantId ? item.Quantity : 0;
+
             // In ProcessOrderItemProductVariantDeletion there may be addtion of product variant quantities
-            await ProcessOrderItemProductVariantDeletion(productVariantExisting, saleType, existingOrderItem, productQuantitiesAfterProcessing);
+            await ProcessOrderItemProductVariantDeletion(productVariantExisting, saleType, existingOrderItem, productQuantitiesAfterProcessing, phantomQuantitiesFreed, survivingQuantity);
 
             // We calculate the status considering added quantities
             ProcessExistingOrderItemsStatus(item, existingOrderItem, productVariantNew);
+
+            var pendingRemaining = await _redistributionHistoryRepository.GetPendingReturnRemainingAsync(item.Id);
+            PendingReturnInvariantHelper.CheckOrderItemInvariant(item, pendingRemaining, _logger);
 
             // Now decreasing quantities
             await ProcessOrderItemProductVariantAddition(productVariantNew, saleType, item, productQuantitiesAfterProcessing);
@@ -108,7 +122,8 @@ public class OrderItemChangeService : IOrderItemChangeService
     public async Task HandleOrderItemsReturn(
         Order order,
         Dictionary<Guid, int> currentProductQuantities,
-        Dictionary<Guid, int> productQuantitiesAfterProcessing)
+        Dictionary<Guid, int> productQuantitiesAfterProcessing,
+        Dictionary<Guid, int> phantomQuantitiesFreed)
     {
         HashSet<Guid> currentOrderProductVariants = order.OrderItems
             .Select(x => x.ProductVariantId)
@@ -126,7 +141,7 @@ public class OrderItemChangeService : IOrderItemChangeService
         }
 
         _logger.LogDebug($"Handling rejected order items");
-        await HandleDeletedOrderItems(order.SaleType, order.OrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder, false);
+        await HandleDeletedOrderItems(order.SaleType, order.OrderItems, productQuantitiesAfterProcessing, phantomQuantitiesFreed, productVariantsRelatedToCurrentOrder, false);
     }
 
     public void ProcessExistingOrderItemsStatus(
@@ -201,7 +216,7 @@ public class OrderItemChangeService : IOrderItemChangeService
             }
         }
 
-        _logger.LogDebug("Orde item statuses processed successfully");
+        _logger.LogDebug("Order item statuses processed successfully");
     }
 
     public void ProcessNewOrderItemsStatuses(
@@ -295,7 +310,9 @@ public class OrderItemChangeService : IOrderItemChangeService
         ProductVariant productVariant,
         SaleType saleType,
         OrderItem orderItem,
-        Dictionary<Guid, int> productQuantitiesAfterProcessing)
+        Dictionary<Guid, int> productQuantitiesAfterProcessing,
+        Dictionary<Guid, int> phantomQuantitiesFreed,
+        int survivingQuantity = 0)
     {
         if (saleType == SaleType.Retail)
         {
@@ -314,16 +331,37 @@ public class OrderItemChangeService : IOrderItemChangeService
             return;
         }
 
-        var oldProductVariantQuantityInStock = productVariant.QuantityInStock;
+        var freedQuantity = orderItem.OrderItemStatus switch
+        {
+            OrderItemStatus.Ready => orderItem.Quantity,
+            OrderItemStatus.ForSewing => orderItem.Quantity - orderItem.QuantityToProduce,
+            _ => 0
+        };
 
-        if (orderItem.OrderItemStatus == OrderItemStatus.Ready)
+        if (freedQuantity > 0)
         {
-            productVariant.QuantityInStock += orderItem.Quantity;
-        }
-        else if (orderItem.OrderItemStatus == OrderItemStatus.ForSewing)
-        {
-            var actualAddedQuantity = orderItem.Quantity - orderItem.QuantityToProduce;
-            productVariant.QuantityInStock += actualAddedQuantity;
+            // Some (or all) of this item's coverage may itself still be an unresolved pending return
+            // (this order became Ready/ForSewing-partial via an earlier redistribution that hasn't
+            // physically arrived yet). That part must travel with the freed quantity as phantom, not
+            // be treated as genuinely available stock.
+            //
+            // When called for an update (survivingQuantity > 0) rather than a real removal, only release
+            // pending coverage for the portion of the reduction that actually eats into what was covered
+            // (freedQuantity) - not the raw Quantity delta. The uncovered part of the old quantity
+            // (QuantityToProduce) has nothing to release in the first place; shrinking it just means less
+            // production is needed, it never touches the pending ledger. Using the raw Quantity delta here
+            // would release pending coverage that should have stayed untouched whenever the item already
+            // had some genuinely-uncovered portion before the edit.
+            var phantomRemaining = await _redistributionHistoryRepository.GetPendingReturnRemainingAsync(orderItem.Id);
+            var coverageReduction = Math.Max(0, freedQuantity - survivingQuantity);
+            var phantomPart = Math.Min(coverageReduction, phantomRemaining);
+            if (phantomPart > 0)
+            {
+                await _redistributionHistoryRepository.ConsumePendingReturnAsync(orderItem.Id, phantomPart);
+                phantomQuantitiesFreed[productVariant.Id] = phantomQuantitiesFreed.GetValueOrDefault(productVariant.Id) + phantomPart;
+            }
+
+            productVariant.QuantityInStock += freedQuantity;
         }
 
         productVariant.Status = productVariant.QuantityInStock > 0 ? ProductStatus.InStock : ProductStatus.OnOrder;

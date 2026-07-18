@@ -7,6 +7,8 @@ public class SewingQueueItemDto
     public Guid ProductVariantId { get; set; }
     public int QuantityToProduce { get; set; }
     public bool IsCustomTailoring { get; set; }
+    public bool IsIncomingReturn { get; set; }
+    public DateTime? SendUntil { get; set; }
     public string Comment { get; set; }
     public Guid? OrderItemId { get; set; }
 

@@ -109,6 +109,7 @@ public class DeleteOrderService : IDeleteOrderService
 
             Dictionary<Guid, int> currentProductQuantities = [];
             Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
+            Dictionary<Guid, int> phantomQuantitiesFreed = [];
 
             HashSet<Guid> currentOrderProductVariants = existingOrder.OrderItems
                 .Select(x => x.ProductVariantId)
@@ -132,7 +133,7 @@ public class DeleteOrderService : IDeleteOrderService
 
             _logger.LogDebug($"Handling deleted order items");
             await _orderItemChangeService
-                .HandleDeletedOrderItems(existingOrder.SaleType, existingOrder.OrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+                .HandleDeletedOrderItems(existingOrder.SaleType, existingOrder.OrderItems, productQuantitiesAfterProcessing, phantomQuantitiesFreed, productVariantsRelatedToCurrentOrder);
 
             if (existingOrder.AddressInfo != null)
             {
@@ -160,11 +161,17 @@ public class DeleteOrderService : IDeleteOrderService
                     var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
                     if (updatedQuantity > currentQuantity.Value)
                     {
+                        var totalDelta = updatedQuantity - currentQuantity.Value;
+                        var phantomDelta = Math.Min(phantomQuantitiesFreed.GetValueOrDefault(currentQuantity.Key), totalDelta);
+                        var realDelta = totalDelta - phantomDelta;
+
                         _logger.LogDebug($"Product variant quantity change detected (due to order deletion), product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
                         await _updateProductVariantService
-                            .HandleProductVariantQuantityChange(
+                            .HandleProductVariantQuantityChangeSplit(
                                 currentQuantity.Key,
-                                updatedQuantity,
+                                currentQuantity.Value,
+                                realDelta,
+                                phantomDelta,
                                 id,
                                 ProductVariantQuantityChangeReason.OrderDeleted,
                                 existingOrder.InternetDocumentIntDocNumber);
@@ -198,9 +205,10 @@ public class DeleteOrderService : IDeleteOrderService
 
         Dictionary<Guid, int> currentProductQuantities = [];
         Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
+        Dictionary<Guid, int> phantomQuantitiesFreed = [];
 
         _logger.LogInformation($"[HandleOrderRejectionAsync] Handling order items return {order.Id}");
-        await _orderItemChangeService.HandleOrderItemsReturn(order, currentProductQuantities, productQuantitiesAfterProcessing);
+        await _orderItemChangeService.HandleOrderItemsReturn(order, currentProductQuantities, productQuantitiesAfterProcessing, phantomQuantitiesFreed);
 
         var commentText = isManualExchange
             ? "Manual exchnage of already received order"
@@ -223,13 +231,17 @@ public class DeleteOrderService : IDeleteOrderService
             if (updatedQuantity > currentQuantity.Value)
             {
                 _logger.LogDebug($"Product variant quantity change detected (due to order rejection), product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
+                // The whole freed batch is physically in transit back to the warehouse regardless of
+                // whether the rejected order's own coverage was real or itself still-phantom, so it's
+                // always redistributed as a single pending-arrival event (not split like OrderDeleted/OrderEdited).
                 await _updateProductVariantService
                     .HandleProductVariantQuantityChange(
                         currentQuantity.Key,
                         updatedQuantity,
                         order.Id,
                         ProductVariantQuantityChangeReason.OrderRejected,
-                        order.InternetDocumentIntDocNumber);
+                        order.InternetDocumentIntDocNumber,
+                        isPendingPhysicalArrival: true);
             }
         }
     }

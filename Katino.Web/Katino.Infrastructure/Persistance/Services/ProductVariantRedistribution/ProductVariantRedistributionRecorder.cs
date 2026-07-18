@@ -35,6 +35,7 @@ public class ProductVariantRedistributionRecorder : IProductVariantRedistributio
                 ProductVariantId = redistributionEvent.ProductVariantId,
                 Reason = redistributionEvent.Reason,
                 Quantity = line.Quantity,
+                IsPendingPhysicalArrival = redistributionEvent.IsPendingPhysicalArrival,
                 SourceOrderId = redistributionEvent.SourceOrderId,
                 SourceOrderItemId = redistributionEvent.SourceOrderItemId,
                 SourceOrderTtnSnapshot = redistributionEvent.SourceOrderTtnSnapshot,
@@ -46,9 +47,9 @@ public class ProductVariantRedistributionRecorder : IProductVariantRedistributio
 
         await _historyRepository.Save();
 
-        // The item from a rejected order is physically still in transit back to the warehouse,
-        // so orders it gets redistributed to need a visible marker that it's not in stock yet.
-        if (redistributionEvent.Reason == ProductVariantQuantityChangeReason.OrderRejected)
+        // The item is physically still in transit (not yet produced/received), so orders it gets
+        // redistributed to need a visible marker that it's not in stock yet.
+        if (redistributionEvent.IsPendingPhysicalArrival)
         {
             var targetOrderIds = redistributionEvent.Lines
                 .Where(l => l.TargetOrderId.HasValue)

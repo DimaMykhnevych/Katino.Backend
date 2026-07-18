@@ -11,6 +11,7 @@ using Katino.Domain.Repositories.OrderAddressInfoRepository;
 using Katino.Domain.Repositories.OrderNpOptionsSeatRepository;
 using Katino.Domain.Repositories.OrderRepository;
 using Katino.Domain.Repositories.OrderTagRepository;
+using Katino.Domain.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Domain.Services.NpCityN.AddNpCityService;
 using Katino.Domain.Services.NpContactPersonN.AddNpContactPersonService;
@@ -38,6 +39,7 @@ public class UpdateOrderService : IUpdateOrderService
     private readonly IFinanceEntryRepository _financeEntryRepository;
     private readonly IFinanceCategoryRepository _financeCategoryRepository;
     private readonly IOrderTagRepository _orderTagRepository;
+    private readonly IProductVariantRedistributionHistoryRepository _redistributionHistoryRepository;
     private readonly IOrderPricingService _orderPricingService;
     private readonly ILogger _logger;
 
@@ -55,6 +57,7 @@ public class UpdateOrderService : IUpdateOrderService
         IFinanceEntryRepository financeEntryRepository,
         IFinanceCategoryRepository financeCategoryRepository,
         IOrderTagRepository orderTagRepository,
+        IProductVariantRedistributionHistoryRepository redistributionHistoryRepository,
         IOrderPricingService orderPricingService,
         ILoggerFactory loggerFactory)
     {
@@ -71,6 +74,7 @@ public class UpdateOrderService : IUpdateOrderService
         _financeEntryRepository = financeEntryRepository;
         _financeCategoryRepository = financeCategoryRepository;
         _orderTagRepository = orderTagRepository;
+        _redistributionHistoryRepository = redistributionHistoryRepository;
         _orderPricingService = orderPricingService;
         _logger = loggerFactory?.CreateLogger(nameof(UpdateOrderService));
     }
@@ -130,6 +134,7 @@ public class UpdateOrderService : IUpdateOrderService
 
             Dictionary<Guid, int> currentProductQuantities = [];
             Dictionary<Guid, int> productQuantitiesAfterProcessing = [];
+            Dictionary<Guid, int> phantomQuantitiesFreed = [];
 
             // ---------------------- Order processing and save ----------------------
 
@@ -156,7 +161,7 @@ public class UpdateOrderService : IUpdateOrderService
             Order updatedOrder;
             try
             {
-                await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing);
+                await HandleOrderItemsUpdate(order.OrderItems, currentOrderInDb.OrderItems, order.SaleType, currentProductQuantities, productQuantitiesAfterProcessing, phantomQuantitiesFreed);
 
                 // TODO all properties should be copied on update
                 updatedOrder = new()
@@ -249,11 +254,17 @@ public class UpdateOrderService : IUpdateOrderService
                     var updatedQuantity = productQuantitiesAfterProcessing[currentQuantity.Key];
                     if (updatedQuantity > currentQuantity.Value)
                     {
+                        var totalDelta = updatedQuantity - currentQuantity.Value;
+                        var phantomDelta = Math.Min(phantomQuantitiesFreed.GetValueOrDefault(currentQuantity.Key), totalDelta);
+                        var realDelta = totalDelta - phantomDelta;
+
                         _logger.LogDebug($"Product variant quantity change detected, product variant id: {currentQuantity.Key}, quantity: {updatedQuantity}");
                         await _updateProductVariantService
-                            .HandleProductVariantQuantityChange(
+                            .HandleProductVariantQuantityChangeSplit(
                                 currentQuantity.Key,
-                                updatedQuantity,
+                                currentQuantity.Value,
+                                realDelta,
+                                phantomDelta,
                                 order.Id,
                                 ProductVariantQuantityChangeReason.OrderEdited,
                                 updatedOrder.InternetDocumentIntDocNumber);
@@ -263,6 +274,26 @@ public class UpdateOrderService : IUpdateOrderService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during handling product variant quantity change");
+            }
+
+            // The edit may have consumed part (or all) of this order's own pending-return coverage
+            // (e.g. the item it was covering got reduced/removed) - drop the tag if nothing is left open.
+            try
+            {
+                var hasOpenPendingReturns = await _redistributionHistoryRepository.HasOpenPendingReturnsForOrderAsync(order.Id);
+                if (!hasOpenPendingReturns)
+                {
+                    var tag = await _orderTagRepository.GetOrCreateByTypeAsync(OrderTagType.PendingIncomingReturn, canBeDeleted: true);
+                    if (await _orderTagRepository.IsTagAttachedToOrderAsync(order.Id, tag.Id))
+                    {
+                        await _orderTagRepository.DetachTagFromOrderAsync(order.Id, tag.Id);
+                        await _orderTagRepository.Save();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while reconciling the PendingIncomingReturn tag after order update");
             }
 
             return new() { OrderUpdatedSuccessfully = true, NpInternetDocUpdatedSuccessfully = npInternetDocUpdatedSuccessfully, CalculatedCost = finalCost };
@@ -279,7 +310,8 @@ public class UpdateOrderService : IUpdateOrderService
         List<OrderItem> existingOrderItemsFromDb,
         SaleType saleType,
         Dictionary<Guid, int> currentQuantities,
-        Dictionary<Guid, int> productQuantitiesAfterProcessing)
+        Dictionary<Guid, int> productQuantitiesAfterProcessing,
+        Dictionary<Guid, int> phantomQuantitiesFreed)
     {
         _logger.LogTrace("Handling order items update");
         var addedOrderItems = newOrderItems.Where(i => i.Id == Guid.Empty).ToList();
@@ -325,8 +357,8 @@ public class UpdateOrderService : IUpdateOrderService
         // Secondly - HandleUpdatedOrderItems, because some quantities may be added or subtracted. Here the existing order item statuses are updated.
         // Finally - new order items, quantities only can be subtracted
 
-        await _orderItemChangeService.HandleDeletedOrderItems(saleType, deletedOrderItems, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
-        await _orderItemChangeService.HandleUpdatedOrderItems(saleType, existingOrderItems, existingOrderItemsFromDb, productQuantitiesAfterProcessing, productVariantsRelatedToCurrentOrder);
+        await _orderItemChangeService.HandleDeletedOrderItems(saleType, deletedOrderItems, productQuantitiesAfterProcessing, phantomQuantitiesFreed, productVariantsRelatedToCurrentOrder);
+        await _orderItemChangeService.HandleUpdatedOrderItems(saleType, existingOrderItems, existingOrderItemsFromDb, productQuantitiesAfterProcessing, phantomQuantitiesFreed, productVariantsRelatedToCurrentOrder);
 
         // ProcessNewOrderItemsStatuses should be called before HandleAddedOrderItems, because in
         // HandleAddedOrderItems product variant quantities are changed and because of that

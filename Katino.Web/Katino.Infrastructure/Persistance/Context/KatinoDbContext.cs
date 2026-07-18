@@ -246,6 +246,8 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
             b.HasKey(x => x.Id);
             b.Property(x => x.Reason).IsRequired();
             b.Property(x => x.Quantity).IsRequired();
+            b.Property(x => x.IsPendingPhysicalArrival).IsRequired().HasDefaultValue(false);
+            b.Property(x => x.QuantityResolved).IsRequired().HasDefaultValue(0);
             b.Property(x => x.SourceOrderTtnSnapshot).HasMaxLength(50);
             b.Property(x => x.CreatedAtUtc).IsRequired();
 

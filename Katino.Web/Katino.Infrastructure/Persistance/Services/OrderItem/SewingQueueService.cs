@@ -1,7 +1,8 @@
-﻿using Katino.Domain.Entities;
+using Katino.Domain.Entities;
 using Katino.Domain.Helpers;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderItemRepository;
+using Katino.Domain.Repositories.ProductVariantRedistributionHistoryRepository;
 using Katino.Domain.Services.OrderItemN.SewingQueueService;
 using Microsoft.Extensions.Logging;
 
@@ -10,13 +11,16 @@ namespace Katino.Infrastructure.Persistance.Services.OrderItemN;
 public class SewingQueueService : ISewingQueueService
 {
     private readonly IOrderItemRepository _orderItemRepository;
+    private readonly IProductVariantRedistributionHistoryRepository _historyRepository;
     private readonly ILogger _logger;
 
     public SewingQueueService(
         IOrderItemRepository orderItemRepository,
+        IProductVariantRedistributionHistoryRepository historyRepository,
         ILoggerFactory loggerFactory)
     {
         _orderItemRepository = orderItemRepository;
+        _historyRepository = historyRepository;
         _logger = loggerFactory?.CreateLogger(nameof(SewingQueueService));
     }
 
@@ -24,18 +28,23 @@ public class SewingQueueService : ISewingQueueService
     {
         _logger.LogInformation("Getting sewing queue");
         var items = await _orderItemRepository.GetOrderItemsForSewingAsync(sewerId, ct);
+        var pendingReturns = await _historyRepository.GetPendingIncomingReturnsAsync(sewerId, ct);
 
-        return SewingQueueGroupingHelper.Group(items.Select(ToSewingQueueItem));
+        var combined = items.Select(ToSewingQueueItem).Concat(pendingReturns.Select(ToSewingQueueItem));
+        return SewingQueueGroupingHelper.Group(combined);
     }
 
     public async Task<Dictionary<DateTime, List<SewingQueueItem>>> GetSewingQueueGroupedByDateAsync(Guid? sewerId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("Getting sewing queue grouped by date");
-        var items = await _orderItemRepository.GetOrderItemsForSewingGroupedByDateAsync(sewerId, ct);
+        var itemsByDate = await _orderItemRepository.GetOrderItemsForSewingGroupedByDateAsync(sewerId, ct);
+        var pendingReturns = await _historyRepository.GetPendingIncomingReturnsAsync(sewerId, ct);
 
-        return items.ToDictionary(
-            x => x.Key,
-            x => SewingQueueGroupingHelper.Group(x.Value.Select(ToSewingQueueItem)));
+        var entries = itemsByDate
+            .SelectMany(g => g.Value.Select(oi => (g.Key, ToSewingQueueItem(oi))))
+            .Concat(pendingReturns.Select(h => (h.SendUntilDate.Date, ToSewingQueueItem(h))));
+
+        return SewingQueueGroupingHelper.GroupByDate(entries);
     }
 
     private static SewingQueueItem ToSewingQueueItem(OrderItem orderItem)
@@ -48,6 +57,21 @@ public class SewingQueueService : ISewingQueueService
             IsCustomTailoring = orderItem.IsCustomTailoring,
             Comment = orderItem.Comment,
             OrderItemId = orderItem.Id
+        };
+    }
+
+    private static SewingQueueItem ToSewingQueueItem(PendingIncomingReturnSummary pendingReturn)
+    {
+        return new SewingQueueItem
+        {
+            ProductVariantId = pendingReturn.ProductVariantId,
+            ProductVariant = pendingReturn.ProductVariant,
+            QuantityToProduce = pendingReturn.RemainingQuantity,
+            IsCustomTailoring = false,
+            IsIncomingReturn = true,
+            SendUntil = pendingReturn.SendUntilDate,
+            Comment = null,
+            OrderItemId = pendingReturn.TargetOrderItemId
         };
     }
 }

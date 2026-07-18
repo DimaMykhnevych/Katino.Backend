@@ -14,12 +14,14 @@ public static class SewingQueueGroupingHelper
 
     public static List<SewingQueueItem> Group(IEnumerable<SewingQueueItem> items)
     {
-        var custom = items
-            .Where(i => i.IsCustomTailoring)
+        // Custom-tailoring and incoming-return items are tied to one specific order item each,
+        // so they must stay separate rather than being merged into a per-ProductVariantId total.
+        var ungrouped = items
+            .Where(i => i.IsCustomTailoring || i.IsIncomingReturn)
             .ToList();
 
         var grouped = items
-            .Where(i => !i.IsCustomTailoring)
+            .Where(i => !i.IsCustomTailoring && !i.IsIncomingReturn)
             .GroupBy(i => i.ProductVariantId)
             .Select(g =>
             {
@@ -30,13 +32,14 @@ public static class SewingQueueGroupingHelper
                     ProductVariant = first.ProductVariant,
                     QuantityToProduce = g.Sum(i => i.QuantityToProduce),
                     IsCustomTailoring = false,
+                    IsIncomingReturn = false,
                     Comment = null,
                     OrderItemId = null
                 };
             })
             .ToList();
 
-        return grouped.Concat(custom)
+        return grouped.Concat(ungrouped)
             .OrderBy(i => i.ProductVariant.Product.Name)
             .ThenBy(i => i.ProductVariant.Color.Name)
             .ThenBy(i => SortHelper.GetSizeSortGroup(i.ProductVariant.Size.Name))
