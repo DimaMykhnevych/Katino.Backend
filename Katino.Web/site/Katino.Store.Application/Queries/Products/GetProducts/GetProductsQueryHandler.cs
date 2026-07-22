@@ -29,6 +29,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
             .SetBaseQuery()
             .ApplySearch(request.Search)
             .ApplyCategoryFilter(request.CategoryIds)
+            .ApplyDiscountFilter(request.ReturnSpecificDiscountProducts)
             .Build()
             .CountAsync(cancellationToken);
 
@@ -36,6 +37,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
             .SetBaseQuery()
             .ApplySearch(request.Search)
             .ApplyCategoryFilter(request.CategoryIds)
+            .ApplyDiscountFilter(request.ReturnSpecificDiscountProducts)
             .ApplyPaging(request.Page, request.PageSize)
             .Build()
             .ToListAsync(cancellationToken);

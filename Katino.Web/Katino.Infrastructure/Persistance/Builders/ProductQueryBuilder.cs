@@ -46,6 +46,28 @@ public class ProductQueryBuilder : IProductQueryBuilder
         return this;
     }
 
+    public IProductQueryBuilder ApplyDiscountFilter(bool? returnSpecificDiscountProducts)
+    {
+        EnsureQuery();
+
+        if (returnSpecificDiscountProducts != true)
+        {
+            return this;
+        }
+
+        var now = DateTime.UtcNow;
+        _query = _query.Where(p => _dbContext.Discounts.Any(d =>
+            d.IsActive
+            && (d.StartDate == null || d.StartDate <= now)
+            && (d.EndDate == null || d.EndDate >= now)
+            && (
+                (d.Type == DiscountType.ProductSpecific && d.DiscountProducts.Any(dp => dp.ProductId == p.Id))
+                || (d.Type == DiscountType.Collection && d.DiscountCollections.Any(dc => p.ProductCollections.Any(pc => pc.CollectionId == dc.CollectionId)))
+            )));
+
+        return this;
+    }
+
     public IProductQueryBuilder ApplySearch(string search)
     {
         EnsureQuery();
