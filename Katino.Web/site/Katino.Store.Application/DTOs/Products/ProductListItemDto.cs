@@ -7,6 +7,8 @@ public class ProductListItemDto
     public string Description { get; set; }
     public Guid CategoryId { get; set; }
     public decimal Price { get; set; }
+    public bool HasDiscount { get; set; }
+    public decimal? DiscountPrice { get; set; }
     public string PhotoUrl { get; set; }
     public List<ProductColorDto> Colors { get; set; }
 }

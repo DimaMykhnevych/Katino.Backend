@@ -1,6 +1,8 @@
 using Katino.Domain.Builders;
 using Katino.Domain.Enums;
+using Katino.Domain.Repositories.DiscountRepository;
 using Katino.Store.Application.DTOs.Products;
+using Katino.Store.Application.Services.Discounts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,13 +12,16 @@ namespace Katino.Store.Application.Queries.Products.GetProducts;
 public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProductsDto>
 {
     private readonly IProductQueryBuilder _productQueryBuilder;
+    private readonly IDiscountRepository _discountRepository;
     private readonly ILogger _logger;
 
     public GetProductsQueryHandler(
         IProductQueryBuilder productQueryBuilder,
+        IDiscountRepository discountRepository,
         ILoggerFactory loggerFactory)
     {
         _productQueryBuilder = productQueryBuilder;
+        _discountRepository = discountRepository;
         _logger = loggerFactory.CreateLogger(nameof(GetProductsQueryHandler));
     }
 
@@ -42,22 +47,31 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, GetProd
             .Build()
             .ToListAsync(cancellationToken);
 
-        var items = products.Select(p => new ProductListItemDto
+        var activeDiscounts = await _discountRepository.GetActiveWithDetailsAsync();
+
+        var items = products.Select(p =>
         {
-            Id = p.Id,
-            Name = p.Name,
-            Description = p.Description,
-            CategoryId = p.CategoryId,
-            Price = p.Price,
-            PhotoUrl = p.Variants
-                .FirstOrDefault(v => v.Status != ProductStatus.Discontinued)?.Photos
-                .OrderBy(ph => ph.DisplayOrder)
-                .FirstOrDefault()?.PhotoUrl,
-            Colors = [.. p.Variants
-                .Where(v => v.Status != ProductStatus.Discontinued)
-                .Select(v => v.Color)
-                .DistinctBy(c => c.Id)
-                .Select(c => new ProductColorDto { Name = c.Name, HexCode = c.HexCode })]
+            var (hasDiscount, discountPrice) = ProductDiscountResolver.Resolve(p, activeDiscounts);
+
+            return new ProductListItemDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                CategoryId = p.CategoryId,
+                Price = p.Price,
+                HasDiscount = hasDiscount,
+                DiscountPrice = discountPrice,
+                PhotoUrl = p.Variants
+                    .FirstOrDefault(v => v.Status != ProductStatus.Discontinued)?.Photos
+                    .OrderBy(ph => ph.DisplayOrder)
+                    .FirstOrDefault()?.PhotoUrl,
+                Colors = [.. p.Variants
+                    .Where(v => v.Status != ProductStatus.Discontinued)
+                    .Select(v => v.Color)
+                    .DistinctBy(c => c.Id)
+                    .Select(c => new ProductColorDto { Name = c.Name, HexCode = c.HexCode })]
+            };
         }).ToList();
 
         return new GetProductsDto

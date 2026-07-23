@@ -27,6 +27,7 @@ public class ProductQueryBuilder : IProductQueryBuilder
                 .ThenInclude(v => v.Photos)
             .Include(p => p.Variants.Where(v => v.DeletedAt == null))
                 .ThenInclude(v => v.Color)
+            .Include(p => p.ProductCollections)
             .OrderByDescending(p => p.CreatedAt);
 
         return this;
