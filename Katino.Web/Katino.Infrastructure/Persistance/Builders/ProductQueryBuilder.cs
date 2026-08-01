@@ -47,6 +47,20 @@ public class ProductQueryBuilder : IProductQueryBuilder
         return this;
     }
 
+    public IProductQueryBuilder ApplyCollectionFilter(IEnumerable<Guid> collectionIds)
+    {
+        EnsureQuery();
+
+        var ids = collectionIds?.ToList();
+        if (ids is null or [])
+        {
+            return this;
+        }
+
+        _query = _query.Where(p => p.ProductCollections.Any(pc => ids.Contains(pc.CollectionId)));
+        return this;
+    }
+
     public IProductQueryBuilder ApplyDiscountFilter(bool? returnSpecificDiscountProducts)
     {
         EnsureQuery();
