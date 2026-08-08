@@ -10,4 +10,7 @@ public interface IProductQueryBuilder : IQueryBuilder<Product>
     IProductQueryBuilder ApplyCollectionFilter(IEnumerable<Guid> collectionIds);
     IProductQueryBuilder ApplyDiscountFilter(bool? returnSpecificDiscountProducts);
     IProductQueryBuilder ApplyPaging(int page, int pageSize);
+    IProductQueryBuilder ApplyIdFilter(Guid id);
+    IProductQueryBuilder IncludeCategory();
+    IProductQueryBuilder IncludeVariantDetails();
 }

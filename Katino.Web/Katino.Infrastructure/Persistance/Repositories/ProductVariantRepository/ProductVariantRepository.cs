@@ -1,4 +1,5 @@
 ﻿using Katino.Domain.Entities;
+using Katino.Domain.Enums;
 using Katino.Domain.Repositories.ProductVariantRepository;
 using Katino.Infrastructure.Persistance.Context;
 using Microsoft.EntityFrameworkCore;
@@ -72,5 +73,15 @@ public class ProductVariantRepository : Repository<ProductVariant>, IProductVari
                 .ThenInclude(p => p.ProductCollections)
             .AsNoTracking()
             .ToListAsync();
+    }
+
+    public async Task<bool> ExistsActiveBySizeAndColorAsync(Guid productId, Guid sizeId, Guid colorId)
+    {
+        return await context.ProductVariants.AnyAsync(v =>
+            v.ProductId == productId &&
+            v.SizeId == sizeId &&
+            v.ColorId == colorId &&
+            v.DeletedAt == null &&
+            v.Status != ProductStatus.Discontinued);
     }
 }

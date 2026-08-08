@@ -1,4 +1,5 @@
 using Katino.Store.Application.DTOs.Products;
+using Katino.Store.Application.Queries.Products.GetProductCard;
 using Katino.Store.Application.Queries.Products.GetProducts;
 using Katino.Store.Application.Queries.Products.GetRecentProducts;
 using MediatR;
@@ -35,5 +36,15 @@ public class ProductController : ControllerBase
     {
         IEnumerable<ProductListItemDto> result = await _mediator.Send(new GetRecentProductsQuery());
         return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    [SwaggerOperation(Summary = "Gets full product details for the product card, including all non-discontinued variants with photos and measurements.")]
+    [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(ProductCardDto))]
+    [SwaggerResponse((int)HttpStatusCode.NotFound)]
+    public async Task<IActionResult> GetProductCard(Guid id)
+    {
+        ProductCardDto result = await _mediator.Send(new GetProductCardQuery { Id = id });
+        return result is null ? NotFound() : Ok(result);
     }
 }

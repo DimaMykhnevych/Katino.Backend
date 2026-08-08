@@ -40,6 +40,17 @@ public class AddProductVariantCommandHandler : IRequestHandler<AddProductVariant
         try
         {
             ProductVariant productVariant = _mapper.Map<ProductVariant>(request.ProductVariant);
+
+            bool variantAlreadyExists = await _productVariantRepository.ExistsActiveBySizeAndColorAsync(
+                productVariant.ProductId, productVariant.SizeId, productVariant.ColorId);
+            if (variantAlreadyExists)
+            {
+                _logger.LogWarning(
+                    "An active product variant with ProductId = {productId}, SizeId = {sizeId}, ColorId = {colorId} already exists",
+                    productVariant.ProductId, productVariant.SizeId, productVariant.ColorId);
+                return false;
+            }
+
             if (productVariant.QuantityInStock <= 0 && productVariant.Status != ProductStatus.Discontinued)
             {
                 productVariant.Status = ProductStatus.OnOrder;

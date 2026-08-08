@@ -114,6 +114,36 @@ public class ProductQueryBuilder : IProductQueryBuilder
         return this;
     }
 
+    public IProductQueryBuilder ApplyIdFilter(Guid id)
+    {
+        EnsureQuery();
+
+        _query = _query.Where(p => p.Id == id);
+        return this;
+    }
+
+    public IProductQueryBuilder IncludeCategory()
+    {
+        EnsureQuery();
+
+        _query = _query.Include(p => p.Category);
+        return this;
+    }
+
+    public IProductQueryBuilder IncludeVariantDetails()
+    {
+        EnsureQuery();
+
+        _query = _query
+            .Include(p => p.Variants.Where(v => v.DeletedAt == null))
+                .ThenInclude(v => v.Size)
+            .Include(p => p.Variants.Where(v => v.DeletedAt == null))
+                .ThenInclude(v => v.Measurements)
+                    .ThenInclude(m => m.MeasurementType);
+
+        return this;
+    }
+
     public IQueryable<Product> Build()
     {
         IQueryable<Product> result = _query;

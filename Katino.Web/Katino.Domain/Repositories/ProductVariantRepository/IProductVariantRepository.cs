@@ -12,4 +12,5 @@ public interface IProductVariantRepository : IRepository<ProductVariant>
     Task<ProductVariant> GetWithProduct(Guid id);
     Task<ProductVariant> GetWithProductColorAndSize(Guid id);
     Task<List<ProductVariant>> GetManyWithProductAndCollectionAsync(IEnumerable<Guid> ids);
+    Task<bool> ExistsActiveBySizeAndColorAsync(Guid productId, Guid sizeId, Guid colorId);
 }
