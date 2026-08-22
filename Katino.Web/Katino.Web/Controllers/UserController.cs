@@ -37,7 +37,7 @@ public class UserController(IMediator mediator) : ControllerBase
     }
 
     [HttpGet("sewers")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Owner}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Owner},{Role.DirectManager}")]
     [SwaggerOperation(Summary = "Gets all users with Sewer role")]
     [SwaggerResponse((int)HttpStatusCode.OK, Type = typeof(List<SewerDto>))]
     [SwaggerResponse((int)HttpStatusCode.Unauthorized, Description = "User was not authorized")]
