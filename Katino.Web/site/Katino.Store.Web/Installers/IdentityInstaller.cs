@@ -33,7 +33,7 @@ public class IdentityInstaller : IInstaller
             {
                 ValidateActor = false,
                 ValidIssuer = AuthOptions.ISSUER,
-                ValidAudience = AuthOptions.AUDIENCE,
+                ValidAudiences = [AuthOptions.AUDIENCE, AuthOptions.CUSTOMER_AUDIENCE],
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = options.GetSymmetricSecurityKey(),
                 ValidateLifetime = true,

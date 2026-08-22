@@ -7,4 +7,8 @@ public static class ErrorMessagesConstants
 
     public const string USERNAME_ALREADY_TAKEN = "usernameAlreadyTaken";
     public const string INVALID_PASSWORD = "invalidPassword";
+    public const string EMAIL_ALREADY_TAKEN = "emailAlreadyTaken";
+    public const string EMAIL_CONFIRMATION_TOKEN_INVALID = "emailConfirmationTokenInvalid";
+    public const string PASSWORD_MISMATCH = "passwordMismatch";
+    public const string PASSWORD_TOO_WEAK = "passwordTooWeak";
 }

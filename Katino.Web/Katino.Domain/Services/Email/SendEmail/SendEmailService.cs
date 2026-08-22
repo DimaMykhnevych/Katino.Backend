@@ -21,16 +21,26 @@ public class SendEmailService : ISendEmailService
     public async Task SendAccountConfirmationEmail(AppUser user, string url)
     {
         _logger.LogDebug("Sending account confirmation email to {userName}", user.UserName);
+        await SendAccountConfirmationEmailCore(user.Email, user.UserName, url);
+    }
 
+    public async Task SendAccountConfirmationEmail(Customer customer, string url)
+    {
+        _logger.LogDebug("Sending account confirmation email to {email}", customer.Email);
+        await SendAccountConfirmationEmailCore(customer.Email, customer.Email, url);
+    }
+
+    private async Task SendAccountConfirmationEmailCore(string toEmail, string displayName, string url)
+    {
         MailAddress addressFrom = new(_emailServiceDetails.EmailAddress, "Katino");
-        MailAddress addressTo = new(user.Email);
+        MailAddress addressTo = new(toEmail);
         MailMessage message = new(addressFrom, addressTo);
 
         // TODO localization
         message.Subject = "Підтвердження облікового запису - Katino";
         message.IsBodyHtml = true;
 
-        string htmlString = GetModernEmailTemplate(user.UserName, url);
+        string htmlString = GetModernEmailTemplate(displayName, url);
         message.Body = htmlString;
 
         SmtpClient smtp = new("smtp.gmail.com", 587)

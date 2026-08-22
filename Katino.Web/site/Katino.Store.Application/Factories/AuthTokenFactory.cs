@@ -9,15 +9,17 @@ namespace Katino.Store.Application.Factories;
 
 public class AuthTokenFactory(IOptions<SecretKeyOptions> secretKeyOptions) : IAuthTokenFactory
 {
+    private static readonly TimeSpan DefaultTokenLifetime = TimeSpan.FromDays(30);
+
     private readonly SecretKeyOptions _secretKeyOptions = secretKeyOptions.Value;
 
-    public JwtSecurityToken CreateToken(string username, IEnumerable<Claim> businessClaims)
+    public JwtSecurityToken CreateToken(string username, IEnumerable<Claim> businessClaims, TimeSpan? tokenLifetime = null)
     {
         var authOptions = new AuthOptions(_secretKeyOptions);
-        return CreateToken(username, authOptions.GetSymmetricSecurityKey(), AuthOptions.ISSUER, AuthOptions.AUDIENCE, businessClaims);
+        return CreateToken(username, authOptions.GetSymmetricSecurityKey(), AuthOptions.ISSUER, AuthOptions.AUDIENCE, businessClaims, tokenLifetime);
     }
 
-    public JwtSecurityToken CreateToken(string username, SymmetricSecurityKey secret, string issuer, string audience, IEnumerable<Claim> businessClaims)
+    public JwtSecurityToken CreateToken(string username, SymmetricSecurityKey secret, string issuer, string audience, IEnumerable<Claim> businessClaims, TimeSpan? tokenLifetime = null)
     {
         List<Claim> claims =
             [
@@ -33,7 +35,7 @@ public class AuthTokenFactory(IOptions<SecretKeyOptions> secretKeyOptions) : IAu
             issuer: issuer,
             audience: audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(30),
+            expires: DateTime.UtcNow.Add(tokenLifetime ?? DefaultTokenLifetime),
             signingCredentials: signinCredentials);
 
         return jwtSecurityToken;

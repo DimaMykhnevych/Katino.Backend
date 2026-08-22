@@ -13,6 +13,7 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
     }
 
     public DbSet<AppUser> AppUsers { get; set; }
+    public DbSet<Customer> Customers { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductVariant> ProductVariants { get; set; }
     public DbSet<Size> Sizes { get; set; }
@@ -463,6 +464,15 @@ public class KatinoDbContext : IdentityDbContext<AppUser, UserRole, Guid>, IKati
                 .WithMany()
                 .HasForeignKey(dbp => dbp.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Customer>(entity =>
+        {
+            entity.ToTable("Customers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired();
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.PasswordHash).IsRequired();
         });
 
         base.OnModelCreating(builder);

@@ -7,6 +7,7 @@ public class Role
     public const string User = "User";
     public const string Sewer = "Sewer";
     public const string DirectManager = "DirectManager";
+    public const string Customer = "Customer";
 
     public static bool IsAdminRole(string role)
     {

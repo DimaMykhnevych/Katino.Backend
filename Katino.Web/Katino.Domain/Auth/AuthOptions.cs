@@ -9,6 +9,7 @@ public class AuthOptions(SecretKeyOptions options)
 {
     public const string ISSUER = "Katino.App.API";
     public const string AUDIENCE = "Katino.App.User";
+    public const string CUSTOMER_AUDIENCE = "Katino.App.Customer";
 
     private readonly SecretKeyOptions _secretKeyOptions = options;
 

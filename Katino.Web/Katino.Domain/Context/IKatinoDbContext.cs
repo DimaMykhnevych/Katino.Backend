@@ -9,6 +9,7 @@ public interface IKatinoDbContext
     DatabaseFacade Database { get; }
 
     DbSet<AppUser> AppUsers { get; set; }
+    DbSet<Customer> Customers { get; set; }
     DbSet<Product> Products { get; set; }
     DbSet<ProductVariant> ProductVariants { get; set; }
     DbSet<Size> Sizes { get; set; }
