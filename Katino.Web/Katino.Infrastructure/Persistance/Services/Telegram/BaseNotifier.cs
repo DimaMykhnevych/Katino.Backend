@@ -6,6 +6,7 @@ public abstract class BaseNotifier
 {
     // TODO i18n
     protected const string CustomText = "індивід.";
+    protected const string ReturnText = "пошили з повернення";
     protected const string QuantityText = "шт.";
 
     protected static string BuildProductLabel(ProductVariant pv, Guid fallbackId)

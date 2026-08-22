@@ -1,3 +1,4 @@
+using Katino.Domain.Entities;
 using Katino.Domain.Enums;
 using Katino.Domain.Models;
 using Katino.Domain.Repositories.OrderItemRepository;
@@ -45,12 +46,18 @@ public class SewingReportNotifier : BaseNotifier, ISewingReportNotifier
             var label = BuildProductLabel(pv, item.ProductVariantId);
             var metaStr = BuildProductMetaSuffix(pv);
 
-            var orderNote = item.OrderItemId.HasValue ? $" <i>[{CustomText}]</i>" : "";
+            var orderNote = "";
+            OrderItem orderItem = null;
+            if (item.OrderItemId.HasValue)
+            {
+                orderItem = await _orderItemRepository.Get(item.OrderItemId.Value);
+                orderNote = orderItem.IsCustomTailoring ? $" <i>[{CustomText}]</i>" : $" <i>[{ReturnText}]</i>";
+            }
+
             sb.AppendLine($"• {label}{metaStr} — {item.ActualSewedQuantity} {QuantityText}{orderNote}");
 
             if (item.OrderItemId.HasValue)
             {
-                var orderItem = await _orderItemRepository.Get(item.OrderItemId.Value);
                 if (!string.IsNullOrWhiteSpace(orderItem?.Comment))
                 {
                     sb.AppendLine($"  💬 <i>{orderItem.Comment}</i>");

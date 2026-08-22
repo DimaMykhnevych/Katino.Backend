@@ -36,7 +36,7 @@ public class SubmitSewedReportCommandHandler : IRequestHandler<SubmitSewedReport
             var report = _mapper.Map<List<SewedReport>>(request.ReportItems);
             await _sewingProductionReportService.ApplySewedAsync(report, request.ReportItems.First().SubmittedBy).ConfigureAwait(false);
 
-            if (request.IsSewer)
+            //if (request.IsSewer)
             {
                 try
                 {

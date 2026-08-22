@@ -21,7 +21,7 @@ public class OrderItemController : ControllerBase
     }
 
     [HttpGet("sewing-queue")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner},{Role.DirectManager}")]
     public async Task<IActionResult> GetSewingQueue([FromQuery] Guid? sewerId)
     {
         var resolvedSewerId = ResolveSewerId(sewerId);
@@ -30,7 +30,7 @@ public class OrderItemController : ControllerBase
     }
 
     [HttpGet("sewing-queue-grouped")]
-    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner}")]
+    [Authorize(Roles = $"{Role.Admin},{Role.Sewer},{Role.Owner},{Role.DirectManager}")]
     public async Task<IActionResult> GetSewingQueueGrouped([FromQuery] Guid? sewerId)
     {
         var resolvedSewerId = ResolveSewerId(sewerId);
