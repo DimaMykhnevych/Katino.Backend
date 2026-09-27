@@ -86,6 +86,20 @@ public class ProductVariantQueryBuilder : IProductVariantQueryBuilder
         return this;
     }
 
+    public IProductVariantQueryBuilder ApplyExcludedStatusesFilter(ProductStatus[] productStatusesToExclude)
+    {
+        EnsureQuery();
+
+        if (productStatusesToExclude == null || productStatusesToExclude.Length == 0)
+        {
+            return this;
+        }
+
+        _query = _query.Where(pv => !productStatusesToExclude.Contains(pv.Status));
+
+        return this;
+    }
+
     public IProductVariantQueryBuilder ApplyPaging(int page, int pageSize)
     {
         EnsureQuery();

@@ -1,5 +1,4 @@
 using Katino.Domain.Context;
-using Katino.Domain.Enums;
 using Katino.Domain.Models.Statistics;
 using Katino.Domain.Services.StatisticsN;
 using Microsoft.EntityFrameworkCore;
@@ -7,31 +6,40 @@ using Microsoft.Extensions.Logging;
 
 namespace Katino.Infrastructure.Persistance.Services.StatisticsN;
 
-public class TopSellingProductsService : ITopSellingProductsService
+public class ProductSalesRankingService : IProductSalesRankingService
 {
     private readonly IKatinoDbContext _katinoDbContext;
     private readonly ILogger _logger;
 
-    public TopSellingProductsService(
+    public ProductSalesRankingService(
         IKatinoDbContext katinoDbContext,
         ILoggerFactory loggerFactory)
     {
         _katinoDbContext = katinoDbContext;
-        _logger = loggerFactory?.CreateLogger(nameof(TopSellingProductsService));
+        _logger = loggerFactory?.CreateLogger(nameof(ProductSalesRankingService));
     }
 
     public async Task<TopSellingProductsResult> GetAsync(
+        OrderStatusFilter statusFilter,
         int page,
         int pageSize,
         DateTimeOffset? from,
         DateTimeOffset? to,
         CancellationToken ct)
     {
-        _logger.LogInformation("Getting top selling products");
+        ArgumentNullException.ThrowIfNull(statusFilter);
+        _logger.LogInformation("Getting product sales ranking");
 
-        var query = _katinoDbContext.OrderItems
-            .AsNoTracking()
-            .Where(oi => oi.Order.OrderStatus == OrderStatus.Received);
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 20 : pageSize;
+
+        var statuses = statusFilter.Statuses.ToList();
+
+        var query = _katinoDbContext.OrderItems.AsNoTracking();
+
+        query = statusFilter.IsExclusion
+            ? query.Where(oi => !statuses.Contains(oi.Order.OrderStatus))
+            : query.Where(oi => statuses.Contains(oi.Order.OrderStatus));
 
         if (from.HasValue)
         {

@@ -9,5 +9,6 @@ public interface IProductVariantQueryBuilder : IQueryBuilder<ProductVariant>
     IProductVariantQueryBuilder ApplyNameFilter(string productName);
     IProductVariantQueryBuilder ApplyCategoryFilter(Guid? categoryId);
     IProductVariantQueryBuilder ApplyStatusFilter(ProductStatus? productStatus);
+    IProductVariantQueryBuilder ApplyExcludedStatusesFilter(ProductStatus[] productStatusesToExclude);
     IProductVariantQueryBuilder ApplyPaging(int page, int pageSize);
 }

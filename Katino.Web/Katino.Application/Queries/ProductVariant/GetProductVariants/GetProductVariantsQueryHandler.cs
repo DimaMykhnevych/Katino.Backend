@@ -34,11 +34,16 @@ public class GetProductVariantsQueryHandler : IRequestHandler<GetProductVariants
             ? _mapper.Map<ProductStatus>(request.ProductStatus)
             : (ProductStatus?)null;
 
+        var productStatusesToExclude = request.ProductStatusesToExclude != null
+            ? _mapper.Map<ProductStatus[]>(request.ProductStatusesToExclude)
+            : null;
+
         _queryBuilder
             .SetBaseQuery()
             .ApplyNameFilter(request.ProductName)
             .ApplyCategoryFilter(request.CategoryId)
-            .ApplyStatusFilter(productStatus);
+            .ApplyStatusFilter(productStatus)
+            .ApplyExcludedStatusesFilter(productStatusesToExclude);
 
         if (request.GetLastAddedProductVariant == true)
         {

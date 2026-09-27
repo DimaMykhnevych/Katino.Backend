@@ -158,7 +158,7 @@ public class ServiceComponentsDiInstaller : IInstaller
         services.AddTransient<ISewingQueueService, SewingQueueService>();
         services.AddTransient<ISewingProductionReportService, SewingProductionReportService>();
         services.AddTransient<IFinancePnlReportService, FinancePnlReportService>();
-        services.AddTransient<ITopSellingProductsService, TopSellingProductsService>();
+        services.AddTransient<IProductSalesRankingService, ProductSalesRankingService>();
         services.AddTransient<ISewingStatisticsService, SewingStatisticsService>();
         services.AddTransient<ICreateOrdersScanSheetService, CreateOrdersScanSheetService>();
         services.AddTransient<ITelegramService, TelegramService>();

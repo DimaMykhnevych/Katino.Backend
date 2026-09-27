@@ -1,5 +1,6 @@
 using Katino.Application.DTOs.Statistics;
 using Katino.Application.Queries.Statistics.GetSewingStatistics;
+using Katino.Application.Queries.Statistics.GetTopOrderedProducts;
 using Katino.Application.Queries.Statistics.GetTopSellingProducts;
 using Katino.Domain.Constants;
 using MediatR;
@@ -23,6 +24,15 @@ public class StatisticsController : ControllerBase
     [HttpGet("top-selling-products")]
     public async Task<ActionResult<GetTopSellingProductsDto>> GetTopSellingProducts(
         [FromQuery] GetTopSellingProductsQuery query,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(query, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("top-ordered-products")]
+    public async Task<ActionResult<GetTopSellingProductsDto>> GetTopOrderedProducts(
+        [FromQuery] GetTopOrderedProductsQuery query,
         CancellationToken ct)
     {
         var result = await _mediator.Send(query, ct);

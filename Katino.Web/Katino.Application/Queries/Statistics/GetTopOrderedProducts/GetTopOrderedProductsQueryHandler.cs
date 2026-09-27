@@ -1,36 +1,37 @@
 using AutoMapper;
 using Katino.Application.DTOs.Statistics;
+using Katino.Domain.Constants;
 using Katino.Domain.Enums;
 using Katino.Domain.Models.Statistics;
 using Katino.Domain.Services.StatisticsN;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Katino.Application.Queries.Statistics.GetTopSellingProducts;
+namespace Katino.Application.Queries.Statistics.GetTopOrderedProducts;
 
-public class GetTopSellingProductsQueryHandler : IRequestHandler<GetTopSellingProductsQuery, GetTopSellingProductsDto>
+public class GetTopOrderedProductsQueryHandler : IRequestHandler<GetTopOrderedProductsQuery, GetTopSellingProductsDto>
 {
     private readonly IProductSalesRankingService _service;
     private readonly IMapper _mapper;
     private readonly ILogger _logger;
 
-    public GetTopSellingProductsQueryHandler(
+    public GetTopOrderedProductsQueryHandler(
         IProductSalesRankingService service,
         IMapper mapper,
         ILoggerFactory loggerFactory)
     {
         _service = service;
         _mapper = mapper;
-        _logger = loggerFactory?.CreateLogger(nameof(GetTopSellingProductsQueryHandler));
+        _logger = loggerFactory?.CreateLogger(nameof(GetTopOrderedProductsQueryHandler));
     }
 
-    public async Task<GetTopSellingProductsDto> Handle(GetTopSellingProductsQuery request, CancellationToken cancellationToken)
+    public async Task<GetTopSellingProductsDto> Handle(GetTopOrderedProductsQuery request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Handling get top selling products");
+        _logger.LogInformation("Handling get top ordered products");
         ArgumentNullException.ThrowIfNull(request);
 
         var result = await _service.GetAsync(
-            OrderStatusFilter.Only(OrderStatus.Received),
+            OrderStatusFilter.Except([OrderStatus.Exchange, OrderStatus.Refusal, .. InternetDocumentConstants.OrderRejectedStatuses]),
             request.Page,
             request.PageSize,
             request.From,
