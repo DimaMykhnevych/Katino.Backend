@@ -37,11 +37,23 @@ public class BaseNpApiService
         }
 
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(_novaPostOptions.BaseUrl, content);
 
-        response.EnsureSuccessStatusCode();
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(_novaPostOptions.RequestTimeoutSeconds));
 
-        var responseString = await response.Content.ReadAsStringAsync();
+        string responseString;
+        try
+        {
+            var response = await _httpClient.PostAsync(_novaPostOptions.BaseUrl, content, timeoutCts.Token);
+
+            response.EnsureSuccessStatusCode();
+
+            responseString = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            _logger.LogError($"NP API request {request.ModelName}.{request.CalledMethod} timed out after {_novaPostOptions.RequestTimeoutSeconds} seconds");
+            throw;
+        }
 
         return DecodeUnicodeOnly(responseString);
     }
